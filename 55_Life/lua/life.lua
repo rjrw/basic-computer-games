@@ -24,20 +24,22 @@ function fillboard(nx,ny)
    local b = readboard(nx);
    local c = #b;
    local l = 0;
-   for x=1,c do
-      l = math.max(l,string.len(b[x]));
+   for x = 1,c do
+      l = math.max(l,#b[x]);
    end
    local x1 = math.ceil(nx/2-1-c/2)
    local y1 = math.ceil(ny/2-2-l/2)
    local a = {};
    for i = 1, nx do
       a[i] = {};
-      a[i][ny] = 0;
+      for j = 1, ny do
+	 a[i][j] = 0;
+      end
    end
    local p = 0;
    for x=1,c do
-      for y=1,string.len(b[x]) do
-	 if string.sub(b[x],y,y) ~= " " then
+      for y=1,#b[x] do
+	 if b[x][y] ~= " " then
 	    a[x1+x][y1+y]=1;
 	    p = p+1;
 	 end
