@@ -4,7 +4,8 @@ print [[
 
 
 Enter your pattern:]];
-local x1,y1,x2,y2=1,1,24,70;
+local nx,ny = 24, 70;
+local x1,y1,x2,y2=1,1,nx,ny;
 local a, b = {}, {};
 for i = 1, x2 do
    a[i] = {};
@@ -23,13 +24,13 @@ for i = 1,x2 do
    c=i;
 end
 local l=0;
-for x=1,c-1 do
+for x=1,c do
    if string.len(b[x]) > l then
       l = string.len(b[x]);
    end
 end
-x1 = math.ceil(11-c/2)
-y1 = math.ceil(33-l/2)
+x1 = math.ceil(nx/2-1-c/2)
+y1 = math.ceil(ny/2-2-l/2)
 local p = 0;
 for x=1,c do
    for y=1,string.len(b[x]) do
@@ -48,7 +49,7 @@ for ii=0,10 do
    if i9 ~= 0 then
       print("Invalid!");
    end
-   local x3,y3,x4,y4=24,70,1,1
+   local x3,y3,x4,y4=nx,ny,1,1
    g=g+1;
    for x=1,x1-1 do
       print()
@@ -71,7 +72,7 @@ for ii=0,10 do
       end
       print(line);
    end
-   for x=x2+1,24 do
+   for x=x2+1,nx do
       print()
    end
    x1 = x3-1;
@@ -82,16 +83,16 @@ for ii=0,10 do
       x1 = 2;
       i9 = -1;
    end
-   if x2 > 23 then
-      x2 = 23;
+   if x2 > nx-1 then
+      x2 = nx-1;
       i9 = -1;
    end
    if y1 < 2 then
       y1 = 2;
       i9 = -1;
    end
-   if y2 > 69 then
-      y2 = 69
+   if y2 > ny-1 then
+      y2 = ny-1
       i9 = -1;
    end
    for x=x1,x2 do
