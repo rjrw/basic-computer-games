@@ -7,23 +7,22 @@ Enter your pattern:]];
 
 function readboard(nx)
    local b = {};
-   local c=0;
    for i = 1,nx do
-      b[i] = string.lower(io.read("*l"));
-      if b[i] == "done" then
-	 b[i] = "";
+      local s = string.lower(io.read("*l"));
+      if s == "done" then
 	 break;
       end
-      if string.sub(b[i],1,1) == "." then
-	    b[i] = " "..string.sub(b[i],2);
+      if string.sub(s,1,1) == "." then
+	    s = " "..string.sub(s,2);
       end
-      c=i;
+      b[i] = s;
    end
-   return b, c;
+   return b;
 end
 
 function fillboard(nx,ny)
-   local b, c = readboard(nx);
+   local b = readboard(nx);
+   local c = #b;
    local l = 0;
    for x=1,c do
       l = math.max(l,string.len(b[x]));
