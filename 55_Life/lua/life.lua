@@ -62,24 +62,24 @@ function fillboard(nx,ny)
 		    x1 = x1, x2 = x2, y1 = y1, y2 = y2};
 end
 
-function printboard(board)
-   local a = board.a;
+function Board:print()
+   local a = self.a;
 
    print(string.format("Generation:\t%d\tPopulation:\t%d",
-		       board.g,board.p));
-   if board.i9 ~= 0 then
+		       self.g,self.p));
+   if self.i9 ~= 0 then
       print("Invalid!");
    end
-   for x=1,board.x1-1 do
+   for x=1,self.x1-1 do
       print()
    end
-   for x=board.x1,board.x2 do
+   for x=self.x1,self.x2 do
       line = "";
-      for y=1,board.y1-1 do
+      for y=1,self.y1-1 do
 	 line = line.." ";
       end
       local ax = a[x];
-      for y=board.y1,board.y2 do
+      for y=self.y1,self.y2 do
 	 if ax[y] == 1 then
 	    line = line.."*";
 	 else
@@ -88,7 +88,7 @@ function printboard(board)
       end
       print(line);
    end
-   for x=board.x2+1,board.nx do
+   for x=self.x2+1,self.nx do
       print()
    end
 end
@@ -176,6 +176,6 @@ print();
 print();
    
 for ii=0,10 do
-   printboard(a);
+   a:print();
    evolve(a);
 end
