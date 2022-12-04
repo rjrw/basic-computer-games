@@ -21,14 +21,6 @@ function readboard(nx)
 end
 
 function fillboard(nx,ny)
-   local b = readboard(nx);
-   local c = #b;
-   local l = 0;
-   for x = 1,c do
-      l = math.max(l,#b[x]);
-   end
-   local x1 = math.ceil(nx/2-1-c/2)
-   local y1 = math.ceil(ny/2-2-l/2)
    local a = {};
    for i = 1, nx do
       a[i] = {};
@@ -36,29 +28,42 @@ function fillboard(nx,ny)
 	 a[i][j] = 0;
       end
    end
+   local b = readboard(nx);
+   local c = #b;
+   local l = 0;
+   for x = 1,c do
+      l = math.max(l,#b[x]);
+   end
+
+   local x1 = math.ceil(nx/2-1-c/2)
+   local y1 = math.ceil(ny/2-2-l/2)
+   local x2, y2 = 1, 1
    local p = 0;
    for x=1,c do
       for y=1,#b[x] do
 	 if b[x][y] ~= " " then
 	    a[x1+x][y1+y]=1;
+	    x2 = math.max(x2,x1+x);
+	    y2 = math.max(y2,y1+x);
 	    p = p+1;
 	 end
       end
    end
-   return {a = a, nx = nx, ny = ny, x1 = x1, y1 = y1}, p;
+   return {a = a, nx = nx, ny = ny,
+	   x1 = x1, x2 = x2, y1 = y1, y2 = y2}, p;
 end
 
-function printboard(board,x2,y2)
+function printboard(board)
    local a = board.a;
    for x=1,board.x1-1 do
       print()
    end
-   for x=board.x1,x2 do
+   for x=board.x1,board.x2 do
       line = "";
       for y=1,board.y1-1 do
 	 line = line.." ";
       end
-      for y=board.y1,y2 do
+      for y=board.y1,board.y2 do
 	 if a[x][y] == 1 then
 	    line = line.."*";
 	 else
@@ -67,7 +72,7 @@ function printboard(board,x2,y2)
       end
       print(line);
    end
-   for x=x2+1,board.nx do
+   for x=board.x2+1,board.nx do
       print()
    end
 end
@@ -80,7 +85,6 @@ print();
 print();
 print();
 local g, i9 = 0, 0;
-local x2,y2=nx,ny;
    
 for ii=0,10 do
    print(string.format("Generation:\t%d\tPopulation:\t%d",g,p));
@@ -89,11 +93,11 @@ for ii=0,10 do
    end
    g=g+1;
 
-   printboard(a,x2,y2);
+   printboard(a);
 
    local x3,y3,x4,y4=a.nx,a.ny,1,1
-   for x=a.x1,x2 do
-      for y=a.y1,y2 do
+   for x=a.x1,a.x2 do
+      for y=a.y1,a.y2 do
 	 if a.a[x][y] == 1 then
 	    x3 = math.min(x,x3);
 	    x4 = math.max(x,x4);
@@ -103,28 +107,28 @@ for ii=0,10 do
       end
    end
    a.x1 = x3-1;
-   x2 = x4+1;
+   a.x2 = x4+1;
    a.y1 = y3-1;
-   y2 = y4+1;
+   a.y2 = y4+1;
    if a.x1 < 2 then
       a.x1 = 2;
       i9 = -1;
    end
-   if x2 > a.nx-1 then
-      x2 = a.nx-1;
+   if a.x2 > a.nx-1 then
+      a.x2 = a.nx-1;
       i9 = -1;
    end
    if a.y1 < 2 then
       a.y1 = 2;
       i9 = -1;
    end
-   if y2 > a.ny-1 then
-      y2 = a.ny-1
+   if a.y2 > a.ny-1 then
+      a.y2 = a.ny-1
       i9 = -1;
    end
 
-   for x=a.x1,x2 do
-      for y=a.y1,y2 do
+   for x=a.x1,a.x2 do
+      for y=a.y1,a.y2 do
 	 c = 0;
 	 for i = x-1, x+1 do
 	    for j = y-1, y+1 do
@@ -145,8 +149,8 @@ for ii=0,10 do
       end
    end
    p = 0;
-   for x=a.x1,x2 do
-      for y=a.y1,y2 do
+   for x=a.x1,a.x2 do
+      for y=a.y1,a.y2 do
 	 if a.a[x][y] == 2 then
 	    a.a[x][y] = 0;
 	 elseif a.a[x][y] == 3 then
