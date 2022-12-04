@@ -79,29 +79,29 @@ for ii=0,10 do
    for x=x2+1,24 do
       print()
    end
-   x1 = x3;
-   x2 = x4;
-   y1 = y3;
-   y2 = y4;
-   if x1 < 3 then
-      x1 = 3;
+   x1 = x3-1;
+   x2 = x4+1;
+   y1 = y3-1;
+   y2 = y4+1;
+   if x1 < 2 then
+      x1 = 2;
       i9 = -1;
    end
-   if x2 > 22 then
-      x2 = 22;
+   if x2 > 23 then
+      x2 = 23;
       i9 = -1;
    end
-   if y1 < 3 then
-      y1 = 3;
+   if y1 < 2 then
+      y1 = 2;
       i9 = -1;
    end
-   if y2 > 68 then
-      y2 = 68
+   if y2 > 69 then
+      y2 = 69
       i9 = -1;
    end
    p = 0;
-   for x=x1-1,x2+1 do
-      for y=y1-1,y2+1 do
+   for x=x1,x2 do
+      for y=y1,y2 do
 	 c = 0;
 	 for i = x-1, x+1 do
 	    for j = y-1, y+1 do
@@ -124,8 +124,4 @@ for ii=0,10 do
 	 end
       end
    end
-   x1 = x1-1;
-   y1 = y1-1;
-   x2 = x2+1;
-   y2 = y2+1;
 end
