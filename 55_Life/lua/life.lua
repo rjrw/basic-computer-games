@@ -59,11 +59,6 @@ for ii=0,10 do
 	 line = line.." ";
       end
       for y=y1,y2 do
-	 if a[x][y] == 2 then
-	    a[x][y] = 0;
-	 elseif a[x][y] == 3 then
-	    a[x][y] = 1;
-	 end
 	 if a[x][y] == 1 then
 	    line = line.."*";
 	    x3 = math.min(x,x3);
@@ -99,7 +94,6 @@ for ii=0,10 do
       y2 = 69
       i9 = -1;
    end
-   p = 0;
    for x=x1,x2 do
       for y=y1,y2 do
 	 c = 0;
@@ -112,15 +106,25 @@ for ii=0,10 do
 	 end
 	 if a[x][y] == 1 then
 	    if c < 3 or c > 4 then
-	       a[x][y] = 2;
-	    else
-	       p = p+1;
+	       a[x][y] = 2; -- Dying
 	    end
 	 else
 	    if c == 3 then
-	       a[x][y] = 3;
-	       p = p+1;
+	       a[x][y] = 3; -- New
 	    end
+	 end
+      end
+   end
+   p = 0;
+   for x=x1,x2 do
+      for y=y1,y2 do
+	 if a[x][y] == 2 then
+	    a[x][y] = 0;
+	 elseif a[x][y] == 3 then
+	    a[x][y] = 1;
+	 end
+	 if a[x][y] == 1 then
+	    p = p+1;
 	 end
       end
    end
