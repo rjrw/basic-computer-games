@@ -45,7 +45,7 @@ function fillboard(nx,ny)
 	 end
       end
    end
-   return a, x1, y1, p;
+   return {a = a}, x1, y1, p;
 end
 
 function printboard(a,nx,x1,x2,y1,y2)
@@ -88,12 +88,12 @@ for ii=0,10 do
    end
    g=g+1;
 
-   printboard(a,nx,x1,x2,y1,y2);
+   printboard(a.a,nx,x1,x2,y1,y2);
 
    local x3,y3,x4,y4=nx,ny,1,1
    for x=x1,x2 do
       for y=y1,y2 do
-	 if a[x][y] == 1 then
+	 if a.a[x][y] == 1 then
 	    x3 = math.min(x,x3);
 	    x4 = math.max(x,x4);
 	    y3 = math.min(y,y3);
@@ -127,18 +127,18 @@ for ii=0,10 do
 	 c = 0;
 	 for i = x-1, x+1 do
 	    for j = y-1, y+1 do
-	       if a[i][j] == 1 or a[i][j] == 2 then
+	       if a.a[i][j] == 1 or a.a[i][j] == 2 then
 		  c = c+1;
 	       end
 	    end
 	 end
-	 if a[x][y] == 1 then
+	 if a.a[x][y] == 1 then
 	    if c < 3 or c > 4 then
-	       a[x][y] = 2; -- Dying
+	       a.a[x][y] = 2; -- Dying
 	    end
 	 else
 	    if c == 3 then
-	       a[x][y] = 3; -- New
+	       a.a[x][y] = 3; -- New
 	    end
 	 end
       end
@@ -146,12 +146,12 @@ for ii=0,10 do
    p = 0;
    for x=x1,x2 do
       for y=y1,y2 do
-	 if a[x][y] == 2 then
-	    a[x][y] = 0;
-	 elseif a[x][y] == 3 then
-	    a[x][y] = 1;
+	 if a.a[x][y] == 2 then
+	    a.a[x][y] = 0;
+	 elseif a.a[x][y] == 3 then
+	    a.a[x][y] = 1;
 	 end
-	 if a[x][y] == 1 then
+	 if a.a[x][y] == 1 then
 	    p = p+1;
 	 end
       end
