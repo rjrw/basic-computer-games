@@ -45,10 +45,11 @@ function fillboard(nx,ny)
 	 end
       end
    end
-   return {a = a}, x1, y1, p;
+   return {a = a, nx = nx, ny = ny}, x1, y1, p;
 end
 
-function printboard(a,nx,x1,x2,y1,y2)
+function printboard(board,x1,x2,y1,y2)
+   local a = board.a;
    for x=1,x1-1 do
       print()
    end
@@ -66,7 +67,7 @@ function printboard(a,nx,x1,x2,y1,y2)
       end
       print(line);
    end
-   for x=x2+1,nx do
+   for x=x2+1,board.nx do
       print()
    end
 end
@@ -88,9 +89,9 @@ for ii=0,10 do
    end
    g=g+1;
 
-   printboard(a.a,nx,x1,x2,y1,y2);
+   printboard(a,x1,x2,y1,y2);
 
-   local x3,y3,x4,y4=nx,ny,1,1
+   local x3,y3,x4,y4=a.nx,a.ny,1,1
    for x=x1,x2 do
       for y=y1,y2 do
 	 if a.a[x][y] == 1 then
@@ -109,16 +110,16 @@ for ii=0,10 do
       x1 = 2;
       i9 = -1;
    end
-   if x2 > nx-1 then
-      x2 = nx-1;
+   if x2 > a.nx-1 then
+      x2 = a.nx-1;
       i9 = -1;
    end
    if y1 < 2 then
       y1 = 2;
       i9 = -1;
    end
-   if y2 > ny-1 then
-      y2 = ny-1
+   if y2 > a.ny-1 then
+      y2 = a.ny-1
       i9 = -1;
    end
 
