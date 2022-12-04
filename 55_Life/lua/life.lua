@@ -49,14 +49,15 @@ function fillboard(nx,ny)
 	 end
       end
    end
-   return {a = a, i9 = 0, nx = nx, ny = ny, p = p,
+   return {a = a, g=0, i9 = 0, nx = nx, ny = ny, p = p,
 	   x1 = x1, x2 = x2, y1 = y1, y2 = y2};
 end
 
-function printboard(board, g)
+function printboard(board)
    local a = board.a;
 
-   print(string.format("Generation:\t%d\tPopulation:\t%d",g,board.p));
+   print(string.format("Generation:\t%d\tPopulation:\t%d",
+		       board.g,board.p));
    if board.i9 ~= 0 then
       print("Invalid!");
    end
@@ -106,7 +107,9 @@ function expand(a)
 end
 
 function evolve(board)
+
    expand(board)
+
    local a = board.a
 
    for x=board.x1,board.x2 do
@@ -147,7 +150,8 @@ function evolve(board)
 	 end
       end
    end
-   board.x1, board.x2, board.y1, board.y2, board.p = x1, x2, y1, y2, p;
+   board.x1, board.x2, board.y1, board.y2, board.p, board.g =
+      x1, x2, y1, y2, p, board.g+1;
 end
 
 print(banner);
@@ -156,11 +160,8 @@ local a = fillboard(nx,ny);
 print();
 print();
 print();
-local g = 0;
    
 for ii=0,10 do
-
-   printboard(a, g);
-   g=g+1;
+   printboard(a);
    evolve(a);
 end
