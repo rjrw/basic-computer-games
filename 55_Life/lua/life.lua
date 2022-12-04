@@ -6,11 +6,12 @@ print [[
 Enter your pattern:]];
 local x1,y1,x2,y2=1,1,24,70;
 local a, b = {}, {};
-for i = x1, x2 do
+for i = 1, x2 do
    a[i] = {};
+   a[i][y2] = 0;
 end
 local c=0;
-for i = x1,x2 do
+for i = 1,x2 do
    b[i] = string.lower(io.read("*l"));
    if b[i] == "done" then
       b[i] = "";
@@ -21,46 +22,64 @@ for i = x1,x2 do
    end
    c=i;
 end
+local l=0;
+for x=1,c-1 do
+   if string.len(b[x]) > l then
+      l = string.len(b[x]);
+   end
+end
+x1 = math.ceil(11-c/2)
+y1 = math.ceil(33-l/2)
+local p = 0;
+for x=1,c do
+   for y=1,string.len(b[x]) do
+      if string.sub(b[x],y,y) ~= " " then
+	 a[x1+x][y1+y]=1;
+	 p = p+1;
+      end
+   end
+end
+print();
+print();
+print();
+local g, i9 = 0, 0;
+print(string.format("Generation:\t%d\tPopulation:\t%d",g,p));
+if i9 ~= 0 then
+   print("Invalid!");
+end
+local x3,y3,x4,y4=24,70,1,1
+p=0;
+g=g+1;
+for x=1,x1-1 do
+   print()
+end
+for x=x1,x2 do
+   line = "";
+   for y=1,y2 do
+      if a[x][y] == 2 then
+	 a[x][y] = 0;
+      elseif a[x][y] == 3 then
+	 a[x][y] = 1;
+      end
+      if a[x][y] == 1 then
+	 line = line.."*";
+	 x3 = math.min(x,x3);
+	 x4 = math.max(x,x4);
+	 y3 = math.min(y,y3);
+	 y4 = math.max(y,y4);
+      else
+	 line = line.." ";
+      end
+   end
+   print(line);
+end
+for x=x2+1,24 do
+   print()
+end
+	 
 return;
+
 --[[
-9 X1=1: Y1=1: X2=24: Y2=70
-10 DIM A(24,70),B$(24)
-20 C=1
-30 INPUT B$(C)
-40 IF B$(C)="DONE" THEN B$(C)="": GOTO 80
-50 IF LEFT$(B$(C),1)="." THEN B$(C)=" "+RIGHT$(B$(C),LEN(B$(C))-1)
-60 C=C+1
-70 GOTO 30
-80 C=C-1: L=0
-90 FOR X=1 TO C-1
-100 IF LEN(B$(X))>L THEN L=LEN(B$(X))
-110 NEXT X
-120 X1=11-C/2
-130 Y1=33-L/2
-140 FOR X=1 TO C
-150 FOR Y=1 TO LEN(B$(X))
-160 IF MID$(B$(X),Y,1)<>" " THEN A(X1+X,Y1+Y)=1:P=P+1
-170 NEXT Y
-180 NEXT X
-200 PRINT:PRINT:PRINT
-210 PRINT "GENERATION:";G,"POPULATION:";P;: IF I9 THEN PRINT "INVALID!";
-215 X3=24:Y3=70:X4=1: Y4=1: P=0
-220 G=G+1
-225 FOR X=1 TO X1-1: PRINT: NEXT X
-230 FOR X=X1 TO X2
-240 PRINT
-250 FOR Y=Y1 TO Y2
-253 IF A(X,Y)=2 THEN A(X,Y)=0:GOTO 270
-256 IF A(X,Y)=3 THEN A(X,Y)=1:GOTO 261
-260 IF A(X,Y)<>1 THEN 270
-261 PRINT TAB(Y);"*";
-262 IF X<X3 THEN X3=X
-264 IF X>X4 THEN X4=X
-266 IF Y<Y3 THEN Y3=Y
-268 IF Y>Y4 THEN Y4=Y
-270 NEXT Y
-290 NEXT X
-295 FOR X=X2+1 TO 24: PRINT: NEXT X
 299 X1=X3: X2=X4: Y1=Y3: Y2=Y4
 301 IF X1<3 THEN X1=3:I9=-1
 303 IF X2>22 THEN X2=22:I9=-1
