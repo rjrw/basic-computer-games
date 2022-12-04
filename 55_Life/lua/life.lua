@@ -1,9 +1,11 @@
+print [[
+                                  Life
+               Creative Computing  Morristown, New Jersey
+
+
+Enter your pattern:]]
 return;
 --[[
-2 PRINT TAB(34);"LIFE"
-4 PRINT TAB(15);"CREATIVE COMPUTING  MORRISTOWN, NEW JERSEY"
-6 PRINT: PRINT: PRINT
-8 PRINT "ENTER YOUR PATTERN:"
 9 X1=1: Y1=1: X2=24: Y2=70
 10 DIM A(24,70),B$(24)
 20 C=1
