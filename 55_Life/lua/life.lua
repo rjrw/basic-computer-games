@@ -1,48 +1,61 @@
-print [[
+local banner = [[
                                   Life
                Creative Computing  Morristown, New Jersey
 
 
 Enter your pattern:]];
-local nx,ny = 24, 70;
-local x1,y1,x2,y2=1,1,nx,ny;
-local b = {}, {};
-local c=0;
-for i = 1,x2 do
-   b[i] = string.lower(io.read("*l"));
-   if b[i] == "done" then
-      b[i] = "";
-      break;
+
+function readboard(nx)
+   local b = {};
+   local c=0;
+   for i = 1,nx do
+      b[i] = string.lower(io.read("*l"));
+      if b[i] == "done" then
+	 b[i] = "";
+	 break;
+      end
+      if string.sub(b[i],1,1) == "." then
+	    b[i] = " "..string.sub(b[i],2);
+      end
+      c=i;
    end
-   if string.sub(b[i],1,1) == "." then
-      b[i] = " "..string.sub(b[i],2);
+   return b, c;
+end
+
+function fillboard(nx,ny)
+   local b, c = readboard(nx);
+   local l = 0;
+   for x=1,c do
+      l = math.max(l,string.len(b[x]));
    end
-   c=i;
-end
-local l=0;
-for x=1,c do
-   l = math.max(l,string.len(b[x]));
-end
-x1 = math.ceil(nx/2-1-c/2)
-y1 = math.ceil(ny/2-2-l/2)
-local a = {};
-for i = 1, x2 do
-   a[i] = {};
-   a[i][y2] = 0;
-end
-local p = 0;
-for x=1,c do
-   for y=1,string.len(b[x]) do
-      if string.sub(b[x],y,y) ~= " " then
-	 a[x1+x][y1+y]=1;
-	 p = p+1;
+   local x1 = math.ceil(nx/2-1-c/2)
+   local y1 = math.ceil(ny/2-2-l/2)
+   local a = {};
+   for i = 1, nx do
+      a[i] = {};
+      a[i][ny] = 0;
+   end
+   local p = 0;
+   for x=1,c do
+      for y=1,string.len(b[x]) do
+	 if string.sub(b[x],y,y) ~= " " then
+	    a[x1+x][y1+y]=1;
+	    p = p+1;
+	 end
       end
    end
+   return a, x1, y1, p;
 end
+
+
+print(banner);
+local nx, ny = 24, 70;
+local a, x1, y1, p = fillboard(nx,ny);
 print();
 print();
 print();
 local g, i9 = 0, 0;
+local x2,y2=nx,ny;
 for ii=0,10 do
    print(string.format("Generation:\t%d\tPopulation:\t%d",g,p));
    if i9 ~= 0 then
