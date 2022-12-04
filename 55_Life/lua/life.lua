@@ -96,21 +96,10 @@ for ii=0,10 do
    printboard(a, g);
    g=g+1;
 
-   local x3,y3,x4,y4=a.nx,a.ny,1,1
-   for x=a.x1,a.x2 do
-      for y=a.y1,a.y2 do
-	 if a.a[x][y] == 1 then
-	    x3 = math.min(x,x3);
-	    x4 = math.max(x,x4);
-	    y3 = math.min(y,y3);
-	    y4 = math.max(y,y4);
-	 end
-      end
-   end
-   a.x1 = x3-1;
-   a.x2 = x4+1;
-   a.y1 = y3-1;
-   a.y2 = y4+1;
+   a.x1 = a.x1-1;
+   a.x2 = a.x2+1;
+   a.y1 = a.y1-1;
+   a.y2 = a.y2+1;
    if a.x1 < 2 then
       a.x1 = 2;
       a.i9 = -1;
@@ -150,6 +139,7 @@ for ii=0,10 do
       end
    end
    a.p = 0;
+   local x1,x2,y1,y2=a.nx,1,a.ny,1;
    for x=a.x1,a.x2 do
       for y=a.y1,a.y2 do
 	 if a.a[x][y] == 2 then
@@ -159,7 +149,12 @@ for ii=0,10 do
 	 end
 	 if a.a[x][y] == 1 then
 	    a.p = a.p+1;
+	    x1 = math.min(x,x1);
+	    x2 = math.max(x,x2);
+	    y1 = math.min(y,y1);
+	    y2 = math.max(y,y2);
 	 end
       end
    end
+   a.x1, a.x2, a.y1, a.y2 = x1, x2, y1, y2;
 end
