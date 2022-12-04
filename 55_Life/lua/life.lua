@@ -3,7 +3,19 @@ print [[
                Creative Computing  Morristown, New Jersey
 
 
-Enter your pattern:]]
+Enter your pattern:]];
+local x1,y1,x2,y2=1,1,24,70;
+local a, b = {}, {};
+for i = x1, x2 do
+   a[i] = {};
+end
+for c = x1,x2 do
+   b[c] = io.read("*l");
+   if b[c] == "DONE" then
+      b[c] = "";
+      break;
+   end
+end
 return;
 --[[
 9 X1=1: Y1=1: X2=24: Y2=70
