@@ -9,12 +9,17 @@ local a, b = {}, {};
 for i = x1, x2 do
    a[i] = {};
 end
-for c = x1,x2 do
-   b[c] = io.read("*l");
-   if b[c] == "DONE" then
-      b[c] = "";
+local c=0;
+for i = x1,x2 do
+   b[i] = string.lower(io.read("*l"));
+   if b[i] == "done" then
+      b[i] = "";
       break;
    end
+   if string.sub(b[i],1,1) == "." then
+      b[i] = " "..string.sub(b[i],2);
+   end
+   c=i;
 end
 return;
 --[[
