@@ -49,7 +49,7 @@ function fillboard(nx,ny)
 	 end
       end
    end
-   return {a = a, nx = nx, ny = ny,
+   return {a = a, i9 = 0, nx = nx, ny = ny,
 	   x1 = x1, x2 = x2, y1 = y1, y2 = y2}, p;
 end
 
@@ -84,11 +84,11 @@ local a, p = fillboard(nx,ny);
 print();
 print();
 print();
-local g, i9 = 0, 0;
+local g = 0;
    
 for ii=0,10 do
    print(string.format("Generation:\t%d\tPopulation:\t%d",g,p));
-   if i9 ~= 0 then
+   if a.i9 ~= 0 then
       print("Invalid!");
    end
    g=g+1;
@@ -112,19 +112,19 @@ for ii=0,10 do
    a.y2 = y4+1;
    if a.x1 < 2 then
       a.x1 = 2;
-      i9 = -1;
+      a.i9 = -1;
    end
    if a.x2 > a.nx-1 then
       a.x2 = a.nx-1;
-      i9 = -1;
+      a.i9 = -1;
    end
    if a.y1 < 2 then
       a.y1 = 2;
-      i9 = -1;
+      a.i9 = -1;
    end
    if a.y2 > a.ny-1 then
       a.y2 = a.ny-1
-      i9 = -1;
+      a.i9 = -1;
    end
 
    for x=a.x1,a.x2 do
