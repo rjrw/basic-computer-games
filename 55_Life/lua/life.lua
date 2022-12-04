@@ -49,12 +49,17 @@ function fillboard(nx,ny)
 	 end
       end
    end
-   return {a = a, i9 = 0, nx = nx, ny = ny,
-	   x1 = x1, x2 = x2, y1 = y1, y2 = y2}, p;
+   return {a = a, i9 = 0, nx = nx, ny = ny, p = p,
+	   x1 = x1, x2 = x2, y1 = y1, y2 = y2};
 end
 
-function printboard(board)
+function printboard(board, g)
    local a = board.a;
+
+   print(string.format("Generation:\t%d\tPopulation:\t%d",g,board.p));
+   if board.i9 ~= 0 then
+      print("Invalid!");
+   end
    for x=1,board.x1-1 do
       print()
    end
@@ -80,20 +85,16 @@ end
 
 print(banner);
 local nx, ny = 24, 70;
-local a, p = fillboard(nx,ny);
+local a = fillboard(nx,ny);
 print();
 print();
 print();
 local g = 0;
    
 for ii=0,10 do
-   print(string.format("Generation:\t%d\tPopulation:\t%d",g,p));
-   if a.i9 ~= 0 then
-      print("Invalid!");
-   end
-   g=g+1;
 
-   printboard(a);
+   printboard(a, g);
+   g=g+1;
 
    local x3,y3,x4,y4=a.nx,a.ny,1,1
    for x=a.x1,a.x2 do
@@ -148,7 +149,7 @@ for ii=0,10 do
 	 end
       end
    end
-   p = 0;
+   a.p = 0;
    for x=a.x1,a.x2 do
       for y=a.y1,a.y2 do
 	 if a.a[x][y] == 2 then
@@ -157,7 +158,7 @@ for ii=0,10 do
 	    a.a[x][y] = 1;
 	 end
 	 if a.a[x][y] == 1 then
-	    p = p+1;
+	    a.p = a.p+1;
 	 end
       end
    end
