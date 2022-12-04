@@ -48,22 +48,7 @@ function fillboard(nx,ny)
    return a, x1, y1, p;
 end
 
-
-print(banner);
-local nx, ny = 24, 70;
-local a, x1, y1, p = fillboard(nx,ny);
-print();
-print();
-print();
-local g, i9 = 0, 0;
-local x2,y2=nx,ny;
-for ii=0,10 do
-   print(string.format("Generation:\t%d\tPopulation:\t%d",g,p));
-   if i9 ~= 0 then
-      print("Invalid!");
-   end
-   g=g+1;
-   local x3,y3,x4,y4=nx,ny,1,1
+function printboard(a,nx,x1,x2,y1,y2)
    for x=1,x1-1 do
       print()
    end
@@ -75,10 +60,6 @@ for ii=0,10 do
       for y=y1,y2 do
 	 if a[x][y] == 1 then
 	    line = line.."*";
-	    x3 = math.min(x,x3);
-	    x4 = math.max(x,x4);
-	    y3 = math.min(y,y3);
-	    y4 = math.max(y,y4);
 	 else
 	    line = line.." ";
 	 end
@@ -87,6 +68,38 @@ for ii=0,10 do
    end
    for x=x2+1,nx do
       print()
+   end
+end
+
+
+print(banner);
+local nx, ny = 24, 70;
+local a, x1, y1, p = fillboard(nx,ny);
+print();
+print();
+print();
+local g, i9 = 0, 0;
+local x2,y2=nx,ny;
+   
+for ii=0,10 do
+   print(string.format("Generation:\t%d\tPopulation:\t%d",g,p));
+   if i9 ~= 0 then
+      print("Invalid!");
+   end
+   g=g+1;
+
+   printboard(a,nx,x1,x2,y1,y2);
+
+   local x3,y3,x4,y4=nx,ny,1,1
+   for x=x1,x2 do
+      for y=y1,y2 do
+	 if a[x][y] == 1 then
+	    x3 = math.min(x,x3);
+	    x4 = math.max(x,x4);
+	    y3 = math.min(y,y3);
+	    y4 = math.max(y,y4);
+	 end
+      end
    end
    x1 = x3-1;
    x2 = x4+1;
@@ -108,6 +121,7 @@ for ii=0,10 do
       y2 = ny-1
       i9 = -1;
    end
+
    for x=x1,x2 do
       for y=y1,y2 do
 	 c = 0;
