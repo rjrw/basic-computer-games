@@ -6,11 +6,7 @@ print [[
 Enter your pattern:]];
 local nx,ny = 24, 70;
 local x1,y1,x2,y2=1,1,nx,ny;
-local a, b = {}, {};
-for i = 1, x2 do
-   a[i] = {};
-   a[i][y2] = 0;
-end
+local b = {}, {};
 local c=0;
 for i = 1,x2 do
    b[i] = string.lower(io.read("*l"));
@@ -29,6 +25,11 @@ for x=1,c do
 end
 x1 = math.ceil(nx/2-1-c/2)
 y1 = math.ceil(ny/2-2-l/2)
+local a = {};
+for i = 1, x2 do
+   a[i] = {};
+   a[i][y2] = 0;
+end
 local p = 0;
 for x=1,c do
    for y=1,string.len(b[x]) do
@@ -47,8 +48,8 @@ for ii=0,10 do
    if i9 ~= 0 then
       print("Invalid!");
    end
-   local x3,y3,x4,y4=nx,ny,1,1
    g=g+1;
+   local x3,y3,x4,y4=nx,ny,1,1
    for x=1,x1-1 do
       print()
    end
