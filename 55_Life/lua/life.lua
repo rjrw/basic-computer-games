@@ -25,9 +25,7 @@ for i = 1,x2 do
 end
 local l=0;
 for x=1,c do
-   if string.len(b[x]) > l then
-      l = string.len(b[x]);
-   end
+   l = math.max(l,string.len(b[x]));
 end
 x1 = math.ceil(nx/2-1-c/2)
 y1 = math.ceil(ny/2-2-l/2)
