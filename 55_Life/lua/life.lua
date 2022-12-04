@@ -5,6 +5,14 @@ local banner = [[
 
 Enter your pattern:]];
 
+local Board = {};
+function Board:new(o)
+   o = o or {};
+   setmetatable(o, self);
+   self.__index = self;
+   return o;
+end
+   
 function readboard(nx)
    local b = {};
    for i = 1,nx do
@@ -50,8 +58,8 @@ function fillboard(nx,ny)
 	 end
       end
    end
-   return {a = a, g=0, i9 = 0, nx = nx, ny = ny, p = p,
-	   x1 = x1, x2 = x2, y1 = y1, y2 = y2};
+   return Board:new{a = a, g=0, i9 = 0, nx = nx, ny = ny, p = p,
+		    x1 = x1, x2 = x2, y1 = y1, y2 = y2};
 end
 
 function printboard(board)
