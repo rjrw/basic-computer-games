@@ -45,20 +45,20 @@ function fillboard(nx,ny)
 	 end
       end
    end
-   return {a = a, nx = nx, ny = ny}, x1, y1, p;
+   return {a = a, nx = nx, ny = ny, x1 = x1, y1 = y1}, p;
 end
 
-function printboard(board,x1,x2,y1,y2)
+function printboard(board,x2,y2)
    local a = board.a;
-   for x=1,x1-1 do
+   for x=1,board.x1-1 do
       print()
    end
-   for x=x1,x2 do
+   for x=board.x1,x2 do
       line = "";
-      for y=1,y1-1 do
+      for y=1,board.y1-1 do
 	 line = line.." ";
       end
-      for y=y1,y2 do
+      for y=board.y1,y2 do
 	 if a[x][y] == 1 then
 	    line = line.."*";
 	 else
@@ -75,7 +75,7 @@ end
 
 print(banner);
 local nx, ny = 24, 70;
-local a, x1, y1, p = fillboard(nx,ny);
+local a, p = fillboard(nx,ny);
 print();
 print();
 print();
@@ -89,11 +89,11 @@ for ii=0,10 do
    end
    g=g+1;
 
-   printboard(a,x1,x2,y1,y2);
+   printboard(a,x2,y2);
 
    local x3,y3,x4,y4=a.nx,a.ny,1,1
-   for x=x1,x2 do
-      for y=y1,y2 do
+   for x=a.x1,x2 do
+      for y=a.y1,y2 do
 	 if a.a[x][y] == 1 then
 	    x3 = math.min(x,x3);
 	    x4 = math.max(x,x4);
@@ -102,20 +102,20 @@ for ii=0,10 do
 	 end
       end
    end
-   x1 = x3-1;
+   a.x1 = x3-1;
    x2 = x4+1;
-   y1 = y3-1;
+   a.y1 = y3-1;
    y2 = y4+1;
-   if x1 < 2 then
-      x1 = 2;
+   if a.x1 < 2 then
+      a.x1 = 2;
       i9 = -1;
    end
    if x2 > a.nx-1 then
       x2 = a.nx-1;
       i9 = -1;
    end
-   if y1 < 2 then
-      y1 = 2;
+   if a.y1 < 2 then
+      a.y1 = 2;
       i9 = -1;
    end
    if y2 > a.ny-1 then
@@ -123,8 +123,8 @@ for ii=0,10 do
       i9 = -1;
    end
 
-   for x=x1,x2 do
-      for y=y1,y2 do
+   for x=a.x1,x2 do
+      for y=a.y1,y2 do
 	 c = 0;
 	 for i = x-1, x+1 do
 	    for j = y-1, y+1 do
@@ -145,8 +145,8 @@ for ii=0,10 do
       end
    end
    p = 0;
-   for x=x1,x2 do
-      for y=y1,y2 do
+   for x=a.x1,x2 do
+      for y=a.y1,y2 do
 	 if a.a[x][y] == 2 then
 	    a.a[x][y] = 0;
 	 elseif a.a[x][y] == 3 then
