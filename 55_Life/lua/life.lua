@@ -82,20 +82,7 @@ function printboard(board, g)
    end
 end
 
-
-print(banner);
-local nx, ny = 24, 70;
-local a = fillboard(nx,ny);
-print();
-print();
-print();
-local g = 0;
-   
-for ii=0,10 do
-
-   printboard(a, g);
-   g=g+1;
-
+function expand(a)
    a.x1 = a.x1-1;
    a.x2 = a.x2+1;
    a.y1 = a.y1-1;
@@ -116,39 +103,43 @@ for ii=0,10 do
       a.y2 = a.ny-1
       a.i9 = -1;
    end
+end
 
-   for x=a.x1,a.x2 do
-      for y=a.y1,a.y2 do
-	 c = 0;
+function evolve(board)
+   expand(board)
+   local a = board.a
+
+   for x=board.x1,board.x2 do
+      for y=board.y1,board.y2 do
+	 local c = 0;
 	 for i = x-1, x+1 do
 	    for j = y-1, y+1 do
-	       if a.a[i][j] == 1 or a.a[i][j] == 2 then
+	       if a[i][j] == 1 or a[i][j] == 2 then
 		  c = c+1;
 	       end
 	    end
 	 end
-	 if a.a[x][y] == 1 then
+	 if a[x][y] == 1 then
 	    if c < 3 or c > 4 then
-	       a.a[x][y] = 2; -- Dying
+	       a[x][y] = 2; -- Dying
 	    end
 	 else
 	    if c == 3 then
-	       a.a[x][y] = 3; -- New
+	       a[x][y] = 3; -- New
 	    end
 	 end
       end
    end
-   a.p = 0;
-   local x1,x2,y1,y2=a.nx,1,a.ny,1;
-   for x=a.x1,a.x2 do
-      for y=a.y1,a.y2 do
-	 if a.a[x][y] == 2 then
-	    a.a[x][y] = 0;
-	 elseif a.a[x][y] == 3 then
-	    a.a[x][y] = 1;
+   local x1,x2,y1,y2,p = board.nx,1,board.ny,1,0;
+   for x=board.x1,board.x2 do
+      for y=board.y1,board.y2 do
+	 if a[x][y] == 2 then
+	    a[x][y] = 0;
+	 elseif a[x][y] == 3 then
+	    a[x][y] = 1;
 	 end
-	 if a.a[x][y] == 1 then
-	    a.p = a.p+1;
+	 if a[x][y] == 1 then
+	    p = p+1;
 	    x1 = math.min(x,x1);
 	    x2 = math.max(x,x2);
 	    y1 = math.min(y,y1);
@@ -156,5 +147,20 @@ for ii=0,10 do
 	 end
       end
    end
-   a.x1, a.x2, a.y1, a.y2 = x1, x2, y1, y2;
+   board.x1, board.x2, board.y1, board.y2, board.p = x1, x2, y1, y2, p;
+end
+
+print(banner);
+local nx, ny = 24, 70;
+local a = fillboard(nx,ny);
+print();
+print();
+print();
+local g = 0;
+   
+for ii=0,10 do
+
+   printboard(a, g);
+   g=g+1;
+   evolve(a);
 end
