@@ -40,9 +40,10 @@ function fillboard(nx,ny)
    local x2, y2 = 1, 1
    local p = 0;
    for x=1,c do
-      for y=1,#b[x] do
-	 if b[x][y] ~= " " then
-	    a[x1+x][y1+y]=1;
+      local bx, ax1x = b[x], a[x1+x];
+      for y=1,#bx do
+	 if bx[y] ~= " " then
+	    ax1x[y1+y]=1;
 	    x2 = math.max(x2,x1+x);
 	    y2 = math.max(y2,y1+x);
 	    p = p+1;
@@ -69,8 +70,9 @@ function printboard(board)
       for y=1,board.y1-1 do
 	 line = line.." ";
       end
+      local ax = a[x];
       for y=board.y1,board.y2 do
-	 if a[x][y] == 1 then
+	 if ax[y] == 1 then
 	    line = line.."*";
 	 else
 	    line = line.." ";
@@ -113,35 +115,39 @@ function evolve(board)
    local a = board.a
 
    for x=board.x1,board.x2 do
+      local ax = a[x];
       for y=board.y1,board.y2 do
 	 local c = 0;
 	 for i = x-1, x+1 do
+	    local ai = a[i];
 	    for j = y-1, y+1 do
-	       if a[i][j] == 1 or a[i][j] == 2 then
+	       local aij = ai[j];
+	       if aij == 1 or aij == 2 then
 		  c = c+1;
 	       end
 	    end
 	 end
-	 if a[x][y] == 1 then
+	 if ax[y] == 1 then
 	    if c < 3 or c > 4 then
-	       a[x][y] = 2; -- Dying
+	       ax[y] = 2; -- Dying
 	    end
 	 else
 	    if c == 3 then
-	       a[x][y] = 3; -- New
+	       ax[y] = 3; -- New
 	    end
 	 end
       end
    end
    local x1,x2,y1,y2,p = board.nx,1,board.ny,1,0;
    for x=board.x1,board.x2 do
+      local ax = a[x];
       for y=board.y1,board.y2 do
-	 if a[x][y] == 2 then
-	    a[x][y] = 0;
-	 elseif a[x][y] == 3 then
-	    a[x][y] = 1;
+	 if ax[y] == 2 then
+	    ax[y] = 0;
+	 elseif ax[y] == 3 then
+	    ax[y] = 1;
 	 end
-	 if a[x][y] == 1 then
+	 if ax[y] == 1 then
 	    p = p+1;
 	    x1 = math.min(x,x1);
 	    x2 = math.max(x,x2);
