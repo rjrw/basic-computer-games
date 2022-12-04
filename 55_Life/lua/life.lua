@@ -5,15 +5,7 @@ local banner = [[
 
 Enter your pattern:]];
 
-local Board = {};
-function Board:new(o)
-   o = o or {};
-   setmetatable(o, self);
-   self.__index = self;
-   return o;
-end
-   
-function readboard(nx)
+function readlines(nx)
    local b = {};
    for i = 1,nx do
       local s = string.lower(io.read("*l"));
@@ -28,7 +20,15 @@ function readboard(nx)
    return b;
 end
 
-function fillboard(nx,ny)
+local Board = {};
+function Board:new(o)
+   o = o or {};
+   setmetatable(o, self);
+   self.__index = self;
+   return o;
+end
+   
+function readboard(nx,ny)
    local a = {};
    for i = 1, nx do
       a[i] = {};
@@ -36,7 +36,7 @@ function fillboard(nx,ny)
 	 a[i][j] = 0;
       end
    end
-   local b = readboard(nx);
+   local b = readlines(nx);
    local c = #b;
    local l = 0;
    for x = 1,c do
@@ -116,7 +116,7 @@ function Board:expand()
    end
 end
 
-function evolve(self)
+function Board:evolve()
 
    self:expand()
 
@@ -170,12 +170,12 @@ end
 
 print(banner);
 local nx, ny = 24, 70;
-local a = fillboard(nx,ny);
+local a = readboard(nx,ny);
 print();
 print();
 print();
    
 for ii=0,10 do
    a:print();
-   evolve(a);
+   a:evolve();
 end
