@@ -93,38 +93,38 @@ function Board:print()
    end
 end
 
-function expand(a)
-   a.x1 = a.x1-1;
-   a.x2 = a.x2+1;
-   a.y1 = a.y1-1;
-   a.y2 = a.y2+1;
-   if a.x1 < 2 then
-      a.x1 = 2;
-      a.i9 = -1;
+function Board:expand()
+   self.x1 = self.x1-1;
+   self.x2 = self.x2+1;
+   self.y1 = self.y1-1;
+   self.y2 = self.y2+1;
+   if self.x1 < 2 then
+      self.x1 = 2;
+      self.i9 = -1;
    end
-   if a.x2 > a.nx-1 then
-      a.x2 = a.nx-1;
-      a.i9 = -1;
+   if self.x2 > self.nx-1 then
+      self.x2 = self.nx-1;
+      self.i9 = -1;
    end
-   if a.y1 < 2 then
-      a.y1 = 2;
-      a.i9 = -1;
+   if self.y1 < 2 then
+      self.y1 = 2;
+      self.i9 = -1;
    end
-   if a.y2 > a.ny-1 then
-      a.y2 = a.ny-1
-      a.i9 = -1;
+   if self.y2 > self.ny-1 then
+      self.y2 = self.ny-1
+      self.i9 = -1;
    end
 end
 
-function evolve(board)
+function evolve(self)
 
-   expand(board)
+   self:expand()
 
-   local a = board.a
+   local a = self.a
 
-   for x=board.x1,board.x2 do
+   for x=self.x1,self.x2 do
       local ax = a[x];
-      for y=board.y1,board.y2 do
+      for y=self.y1,self.y2 do
 	 local c = 0;
 	 for i = x-1, x+1 do
 	    local ai = a[i];
@@ -146,10 +146,10 @@ function evolve(board)
 	 end
       end
    end
-   local x1,x2,y1,y2,p = board.nx,1,board.ny,1,0;
-   for x=board.x1,board.x2 do
+   local x1,x2,y1,y2,p = self.nx,1,self.ny,1,0;
+   for x=self.x1,self.x2 do
       local ax = a[x];
-      for y=board.y1,board.y2 do
+      for y=self.y1,self.y2 do
 	 if ax[y] == 2 then
 	    ax[y] = 0;
 	 elseif ax[y] == 3 then
@@ -164,8 +164,8 @@ function evolve(board)
 	 end
       end
    end
-   board.x1, board.x2, board.y1, board.y2, board.p, board.g =
-      x1, x2, y1, y2, p, board.g+1;
+   self.x1, self.x2, self.y1, self.y2, self.p, self.g =
+      x1, x2, y1, y2, p, self.g+1;
 end
 
 print(banner);
