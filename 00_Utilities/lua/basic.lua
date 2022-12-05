@@ -30,8 +30,11 @@ local value = m.P {
    digit^1
       + numvar
 };
+local product = m.P {
+   ( value * space * m.R("*/") * space)^0 * value * space
+};
 local sum = m.P {
-   ( value * space * m.R("+-") * space)^0 * value * space
+   ( product * space * m.R("+-") * space)^0 * product * space
 };
 local expression = m.P {
    sum
