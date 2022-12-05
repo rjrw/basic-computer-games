@@ -4,3 +4,4 @@
 40 NEXT JJ
 50 NEXT X1
 60 C=0
+70 C=B

@@ -26,8 +26,12 @@ local nextstatement = m.P {
 local endstatement = m.P {
    m.P("END") * space
 };
-local expression = m.P {
+local value = m.P {
    digit^1
+      + numvar
+};
+local expression = m.P {
+   value
 };
 local numericassignment = m.P {
    numvar * space * m.P("=") * space * expression * space
