@@ -17,11 +17,15 @@ local space = m.S" \t\n"^0;
 local digit = m.R("09");
 local lineno = digit^1;
 local gotostatement = m.P {
-   m.P("GOTO") * space * lineno
+   m.P("GOTO") * space * lineno *space
+};
+local endstatement = m.P {
+   m.P("END") * space
 };
 local statement = m.P {
    gotostatement
-};
+   + endstatement
+}; 
 local compoundstatement = m.P{
    (statement * m.P(":"))^0 * statement
 };
