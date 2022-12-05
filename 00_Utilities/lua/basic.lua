@@ -42,14 +42,19 @@ local expression = m.P {
 local numericassignment = m.P {
    numvar * space * m.P("=") * space * expression * space
 };
+local forstatement = m.P {
+   m.P("FOR") * space * numvar * space * m.P("=") * space * expression
+      * space * m.P("TO") * space * expression * space
+};
 local statement = m.P {
    gotostatement
+      + forstatement
       + nextstatement
       + endstatement
       + numericassignment
 }; 
 local compoundstatement = m.P{
-   (statement * m.P(":"))^0 * statement
+   (statement * m.P(":") * space )^0 * statement
 };
 local numbered = m.P{
    lineno * space * compoundstatement,
@@ -64,7 +69,7 @@ for line in file:lines() do
    elseif mend ~= #line+1 then
       io.write("Syntax Error\n");
       io.write(line, "\n");
-      io.write(string.rep(" ",mend-1).."^");
+      io.write(string.rep(" ",mend-1).."^\n");
    end
 end
 file:close();
