@@ -30,8 +30,11 @@ local value = m.P {
    digit^1
       + numvar
 };
+local sum = m.P {
+   ( value * space * m.R("+-") * space)^0 * value * space
+};
 local expression = m.P {
-   value
+   sum
 };
 local numericassignment = m.P {
    numvar * space * m.P("=") * space * expression * space
