@@ -15,15 +15,20 @@ local file = assert(io.open(arg[1]));
 local any = m.P(1);
 local space = m.S" \t\n"^0;
 local digit = m.R("09");
+local numvar = m.R("AZ") * (m.R("AZ") + m.R("09"))^0;
 local lineno = digit^1;
 local gotostatement = m.P {
-   m.P("GOTO") * space * lineno *space
+   m.P("GOTO") * space * lineno * space
+};
+local nextstatement = m.P {
+   m.P("NEXT") * space * numvar * space
 };
 local endstatement = m.P {
    m.P("END") * space
 };
 local statement = m.P {
    gotostatement
+   + nextstatement
    + endstatement
 }; 
 local compoundstatement = m.P{
