@@ -26,10 +26,17 @@ local nextstatement = m.P {
 local endstatement = m.P {
    m.P("END") * space
 };
+local expression = m.P {
+   digit^1
+};
+local numericassignment = m.P {
+   numvar * space * m.P("=") * space * expression * space
+};
 local statement = m.P {
    gotostatement
-   + nextstatement
-   + endstatement
+      + nextstatement
+      + endstatement
+      + numericassignment
 }; 
 local compoundstatement = m.P{
    (statement * m.P(":"))^0 * statement
@@ -47,7 +54,7 @@ for line in file:lines() do
    elseif mend ~= #line+1 then
       io.write("Syntax Error\n");
       io.write(line, "\n");
-      io.write(string.format("%*c^",mend-1," "));
+      io.write(string.rep(" ",mend-1).."^");
    end
 end
 file:close();
