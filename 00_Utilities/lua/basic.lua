@@ -12,9 +12,24 @@ if #arg ~= 1 then
 end
 local file = assert(io.open(arg[1]));
 
+local any = m.P(1);
+local space = m.S" \t\n"^0;
+local digit = m.R("09");
+local lineno = digit^1;
+local statement = m.P{
+   lineno * space * any^0,
+};
+
 local count = 1;
 for line in file:lines() do
-   io.write(string.format("%6d  ",count), line, "\n");
-   count = count+1;
+   local mend = m.match(statement, line);
+   if not mend then
+      io.write("Syntax Error\n");
+      io.write(line, "\n");
+   elseif mend ~= #line+1 then
+      io.write("Syntax Error\n");
+      io.write(line, "\n");
+      io.write(string.format("%*c^",mend-1," "));
+   end
 end
 file:close();
