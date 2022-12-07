@@ -44,7 +44,8 @@ local numericassignment = m.P {
 };
 local forstatement = m.P {
    m.P("FOR") * space * numvar * space * m.P("=") * space * expression
-      * space * m.P("TO") * space * expression * space
+      * space * m.P("TO") * space * expression * space *
+      ( m.P("STEP") * space * expression * space )^-1
 };
 local statement = m.P {
    gotostatement
