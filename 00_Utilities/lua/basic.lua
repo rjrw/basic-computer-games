@@ -19,6 +19,7 @@ local string_ = m.P("\"") * (any-m.P("\""))^0 * m.P("\"");
 local integer = digit^1;
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = varname;
+local stringvar = varname * m.P("$");
 local lineno = digit^1;
 local gotostatement = m.P {
    m.P("GO") * space * m.P("TO") * space * lineno * space
@@ -39,6 +40,7 @@ local endstatement = m.P {
 local returnstatement = m.P {
    m.P("RETURN") * space
 };
+local stringexpr = m.V"stringexpr";
 local printexpr = m.V"printexpr";
 local printlist = m.V"printlist";
 local printstatement = m.V"printstatement";
@@ -70,7 +72,8 @@ local basicline = m.P {
       + ifstatement + endstatement + printstatement + numericassignment
       + returnstatement,
    printstatement = m.P("PRINT") * space * printlist,
-   printexpr = string_ + expr,
+   stringexpr = string_ + stringvar,
+   printexpr = stringexpr + expr,
    printlist = (printexpr * space * (m.P(";")*space)^-1 )^0,
    ifstatement = m.P("IF") * space * logicalexpr * space *
       m.P("THEN") * space * ( lineno * space + statementlist ),
