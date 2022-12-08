@@ -93,10 +93,12 @@ local statementlist = m.V"statementlist";
 local basicline = m.P {
    "line";
    statement =
-   gotostatement + gosubstatement + forstatement + nextstatement
-      + ifstatement + endstatement + printstatement + numericassignment
-      + returnstatement + stringassignment + dimstatement + inputstatement,
-   printstatement = m.Ct(m.C(m.P("PRINT")) * space * m.Ct(printlist)),
+      m.Ct(
+	 gotostatement + gosubstatement + forstatement + nextstatement
+	    + ifstatement + endstatement + printstatement + numericassignment
+	    + returnstatement + stringassignment + dimstatement +
+	    inputstatement),
+   printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    stringassignment =
@@ -108,8 +110,7 @@ local basicline = m.P {
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * m.P(",")*space)^-1 * inputitem,
    inputstatement = m.C(m.P("INPUT")) * space *
-      (stringexpr * space * m.P(";") * space)^-1
-      * inputlist,
+      (stringexpr * space * m.P(";") * space)^-1 * inputlist,
    ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
       m.P("THEN") * space * ( lineno * space + statementlist ),
    exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
@@ -163,7 +164,10 @@ for line in file:lines() do
 	 nerr = nerr + 1;
       else	 
 	 prog[#prog+1] = {"TARGET",m[1]};
-	 prog[#prog+1] = m[2];
+	 for k,v in ipairs(m[2]) do
+	    --print(">>",k,v[1]); --Confirm strucure of capture is correct
+	    prog[#prog+1] = v;
+	 end
       end
    end      
    count = count + 1;
@@ -210,12 +214,13 @@ if nerr == 0 and mode == 2 then
    local pc = 1;
    local basiclineno = 0;
    while true do
-      for _, arg in ipairs(prog[pc]) do
-	 if arg[1] == "TARGET" then
-	    basiclineno = arg[2];
-	 elseif arg[1] == "PRINT" then
-	    doprint(arg[2]);
-	 end
+      local arg = prog[pc]
+      if arg[1] == "TARGET" then
+	 basiclineno = arg[2];
+      elseif arg[1] == "PRINT" then
+	 doprint(arg[2]);
+      else
+	 --print("Not handled",arg[1]);
       end
       pc = pc + 1;
       if pc > #prog then
