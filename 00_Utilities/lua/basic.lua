@@ -104,7 +104,7 @@ local basicline = m.P {
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    stringassignment =
-      m.Cc("LET") * m.P("LET")^-1 * space *
+      m.Cc("LETS") * m.P("LET")^-1 * space *
       stringlval * space * m.P("=") * space * stringexpr * space,
    stringexpr = string_ + stringvar,
    printexpr = stringexpr + expr,
@@ -151,7 +151,9 @@ local basicline = m.P {
 
 local prog = {};
 local nerr = 0;
+-- Read and parse input file
 local count = 1;
+local targets = {} -- Jump table
 for line in file:lines() do
    local m = basicline:match(line);
    if not m then
@@ -167,6 +169,7 @@ for line in file:lines() do
 	 nerr = nerr + 1;
       else	 
 	 prog[#prog+1] = {"TARGET",m[1]};
+	 targets[m[1]] = #prog;
 	 for k,v in ipairs(m[2]) do
 	    --print(">>",k,v[1]); --Confirm first-level commands are captured
 	    prog[#prog+1] = v;
@@ -282,13 +285,6 @@ function logicaleval(expr)
       return val1 == val2;
    end
    return expr[1];
-end
-
-local targets = {}
-for i,m in ipairs(prog) do
-   if m[1] == "TARGET" then
-      targets[m[2]] = i;
-   end
 end
 
 local pc = 1;
