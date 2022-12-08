@@ -124,9 +124,9 @@ local basicline = m.P {
       m.P("LET")^-1 * space *
       floatlval * space * m.P("=") * space * expr * space,
    expr = Sum,
-   Sum = ( Product * space * m.R("+-") * space)^0 * Product * space,
-   Product = ( Unary * space * m.R("*/") * space)^0 * Unary * space,
-   Unary = m.R("+-")^-1 * Value,
+   Sum = ( Product * space * m.S("+-") * space)^0 * Product * space,
+   Product = ( Unary * space * m.S("*/") * space)^0 * Unary * space,
+   Unary = m.S("+-")^-1 * Value,
    Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
    floatlval = element + floatvar,
    -- Array access/function/builtin call
