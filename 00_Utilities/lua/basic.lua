@@ -302,14 +302,15 @@ function doif(opt,test,statement)
    local switch = logicaleval(test);
    if switch then
       if opt == "IFGOTO" then
-	 print("GOTO",statement);
-	 pc = targets[statement];
+	 pc = targets[statement]-1;
       else
-	 print("EXEC",statement[1]);
-	 exec(statement);
+	 exec(statement); -- And fall through
       end
    else
-      print("SKIP TO NEXT TARGET");
+      while pc < #prog and prog[pc][1] ~= "TARGET" do
+	 pc = pc+1;
+      end
+      pc = pc-1;
    end
 end
 
@@ -322,7 +323,7 @@ function exec(stat)
       doletn(stat[2],stat[3]);
    elseif stat[1] == "GOTO" then
       if dojump then
-	 pc = targets[stat[2]];
+	 pc = targets[stat[2]]-1;
       end
    elseif stat[1] == "IF" then
       doif(stat[3],stat[2],stat[4]);
