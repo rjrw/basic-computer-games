@@ -39,15 +39,10 @@ local endstatement = m.P {
 local returnstatement = m.P {
    m.P("RETURN") * space
 };
-local printexpr = m.P {
-   string_ * space 
-};
-local printlist = m.P {
-   (printexpr * space * (m.P(";")*space)^-1 )^0
-};
-local printstatement = m.P {
-   m.P("PRINT") * space * printlist
-};
+local printexpr = m.V"printexpr";
+local printlist = m.V"printlist";
+local printstatement = m.V"printstatement";
+
 local comparisonop = m.P {
    m.P("=") + m.P("<>") + m.P("<=") + m.P(">=") + m.P("<") + m.P(">")
 };
@@ -74,6 +69,9 @@ local basicline = m.P {
    gotostatement + gosubstatement + forstatement + nextstatement
       + ifstatement + endstatement + printstatement + numericassignment
       + returnstatement,
+   printstatement = m.P("PRINT") * space * printlist,
+   printexpr = string_ * space,
+   printlist = (printexpr * space * (m.P(";")*space)^-1 )^0,
    ifstatement = m.P("IF") * space * logicalexpr * space *
       m.P("THEN") * space * ( lineno * space + statementlist ),
    logicalexpr = Or,
