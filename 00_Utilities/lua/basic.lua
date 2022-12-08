@@ -181,7 +181,7 @@ end
 file:close();
 
 -- Symbol tables
-local fvars = {};
+local fvars, svars = {}, {};
 
 function eval(expr)
    if type(expr) == "table" then
@@ -222,7 +222,7 @@ function eval(expr)
       elseif expr[1] == "FLOATVAR" then
 	 return fvars[expr[2]];
       elseif expr[1] == "STRINGVAR" then
-	 return "{"..expr[2].."}";
+	 return svars[expr[2]];
       end
    end
    return tostring(expr);
@@ -258,6 +258,11 @@ end
 function doletn(lval,expr)
    local target = lval[2];
    fvars[target] = eval(expr);
+end
+
+function dolets(lval,expr)
+   local target = lval[2];
+   svars[target] = eval(expr);
 end
 
 function logicaleval(expr)
@@ -317,6 +322,8 @@ function exec(stat)
       doprint(stat[2]);
    elseif stat[1] == "LETN" then
       doletn(stat[2],stat[3]);
+   elseif stat[1] == "LETS" then
+      dolets(stat[2],stat[3]);
    elseif stat[1] == "GOTO" then
       pc = targets[stat[2]]-1;
    elseif stat[1] == "IF" then
