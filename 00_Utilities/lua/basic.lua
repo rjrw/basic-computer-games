@@ -15,20 +15,21 @@ local file = assert(io.open(arg[1]));
 local any = m.P(1);
 local space = m.S" \t\n"^0;
 local digit = m.R("09");
-local numvar = m.R("AZ") * (m.R("AZ") + m.R("09"))^0;
+local varname = m.R("AZ")^1 * m.R("09")^0;
+local floatvar = varname;
 local lineno = digit^1;
 local gotostatement = m.P {
    m.P("GOTO") * space * lineno * space
 };
 local nextstatement = m.P {
-   m.P("NEXT") * space * numvar * space
+   m.P("NEXT") * space * floatvar * space
 };
 local endstatement = m.P {
    m.P("END") * space
 };
 local value = m.P {
    digit^1
-      + numvar
+      + floatvar
 };
 local product = m.P {
    ( value * space * m.R("*/") * space)^0 * value * space
@@ -36,16 +37,16 @@ local product = m.P {
 local sum = m.P {
    ( product * space * m.R("+-") * space)^0 * product * space
 };
-local expression = m.P {
+local expr = m.P {
    sum
 };
 local numericassignment = m.P {
-   numvar * space * m.P("=") * space * expression * space
+   floatvar * space * m.P("=") * space * expr * space
 };
 local forstatement = m.P {
-   m.P("FOR") * space * numvar * space * m.P("=") * space * expression
-      * space * m.P("TO") * space * expression * space *
-      ( m.P("STEP") * space * expression * space )^-1
+   m.P("FOR") * space * floatvar * space * m.P("=") * space * expr
+      * space * m.P("TO") * space * expr * space *
+      ( m.P("STEP") * space * expr * space )^-1
 };
 local statement = m.P {
    gotostatement
