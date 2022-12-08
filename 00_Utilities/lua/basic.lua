@@ -59,6 +59,8 @@ local Or = m.V"Or";
 local And = m.V"And";
 local Not = m.V"Not";
 local Statement = m.V"Statement";
+local logicalexpr = m.V"logicalexpr"
+local ifstatement = m.V"ifstatement";
 local expr = m.P {
    "Sum";
    Sum = ( Product * space * m.R("+-") * space)^0 * Product * space,
@@ -77,11 +79,7 @@ local forstatement = m.P {
       * space * m.P("TO") * space * expr * space *
       ( m.P("STEP") * space * expr * space )^-1
 };
-local comparison = m.P {
-   expr * space * comparisonop * space * expr
-};
-local logicalexpr = m.V"logicalexpr"
-local ifstatement = m.V"ifstatement";
+local comparison = m.V"comparison";
 local statement = m.P {
    "Statement";
    Statement =
@@ -95,7 +93,8 @@ local statement = m.P {
    And = (Not * space * m.P("AND") * space)^0 * Not,
    Not = (m.P("NOT") * space)^-1 *
       ( comparison
-	   + m.P("(") * space * Or * space * m.P(")") )
+	   + m.P("(") * space * Or * space * m.P(")") ),
+   comparison = expr * space * comparisonop * space * expr
 };
    
 local statementlist = m.P{
