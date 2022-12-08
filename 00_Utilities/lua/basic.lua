@@ -47,6 +47,9 @@ local nextstatement = m.P {
 local endstatement = m.P {
    m.C(m.P("END")) * space
 };
+local remstatement = m.P {
+   m.C(m.P("REM")) * any^0
+};
 local returnstatement = m.P {
    m.C(m.P("RETURN")) * space
 };
@@ -99,7 +102,7 @@ local basicline = m.P {
 	 gotostatement + gosubstatement + forstatement + nextstatement
 	    + endstatement + printstatement + numericassignment
 	    + returnstatement + stringassignment + dimstatement +
-	    inputstatement + endstatement + ifstatement),
+	    inputstatement + endstatement + ifstatement + remstatement ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
@@ -334,6 +337,8 @@ end
 function exec(stat)
    if stat[1] == "TARGET" then
       basiclineno = stat[2];
+   elseif stat[1] == "REM" then
+      -- Do nothing
    elseif stat[1] == "PRINT" then
       doprint(stat[2]);
    elseif stat[1] == "INPUT" then
