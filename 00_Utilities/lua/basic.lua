@@ -114,8 +114,8 @@ local basicline = m.P {
    inputlist = (inputitem * space * m.P(",")*space)^-1 * inputitem,
    inputstatement = m.C(m.P("INPUT")) * space *
       (stringexpr * space * m.P(";") * space)^-1 * inputlist,
-   ifstatement = m.P("IF") * space * logicalexpr * space *
-      m.P("THEN") * space * (m.Cc("IFGOTO") * lineno * space + m.Cc("IF") * statement),
+   ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
+      m.P("THEN") * space * (m.Cc("IFGOTO") * lineno * space + m.Cc("IFSTAT") * statement),
    exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
    dimdef = anyvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
@@ -257,6 +257,10 @@ function doletn(lval,expr)
    fvars[target] = eval(expr);
 end
 
+function doif(opt,test,statement)
+   print("Found",opt);
+end
+
 if nerr == 0 and mode == 2 then
    local targets = {}
    for i,m in ipairs(prog) do
@@ -278,6 +282,8 @@ if nerr == 0 and mode == 2 then
 	 if dojump then
 	    pc = targets[arg[2]];
 	 end
+      elseif arg[1] == "IF" then
+	 doif(arg[4],arg[2],arg[3]);
       elseif arg[1] == "END" then
 	 break;
       else
