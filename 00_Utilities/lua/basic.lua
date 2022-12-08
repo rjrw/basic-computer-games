@@ -20,7 +20,7 @@ local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = varname;
 local lineno = digit^1;
 local gotostatement = m.P {
-   m.P("GOTO") * space * lineno * space
+   m.P("GO") * space * m.P("TO") * space * lineno * space
 };
 local nextstatement = m.P {
    m.P("NEXT") * space * floatvar * space
@@ -75,6 +75,9 @@ local ifstatement = m.P {
    m.P("IF") * space * logicalexpr * space *
       m.P("THEN") * space * lineno * space
 };
+local returnstatement = m.P {
+   m.P("RETURN") * space
+};
 local statement = m.P {
    gotostatement
       + forstatement
@@ -83,6 +86,7 @@ local statement = m.P {
       + endstatement
       + printstatement
       + numericassignment
+      + returnstatement
 }; 
 local compoundstatement = m.P{
    (statement * m.P(":") * space )^0 * statement
