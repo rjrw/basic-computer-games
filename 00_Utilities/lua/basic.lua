@@ -6,11 +6,19 @@
 
 local m = require"lpeg";
 
-if #arg ~= 1 then
-   print("Usage: basic.lua <file>.bas");
+-- Parse = 1, interpret = 2, compile = 3, compile & optimize = 4
+local mode = 1; 
+
+local narg = 1;
+if narg < #arg and arg[narg] == "-i" then
+   narg = narg+1;
+   mode = 2;
+end
+if #arg ~= narg then
+   print("Usage: basic.lua [opts] <file>.bas");
    os.exit(1);
 end
-local file = assert(io.open(arg[1]));
+local file = assert(io.open(arg[narg]));
 
 local any = m.P(1);
 local space = m.S" \t\n"^0;
@@ -88,7 +96,7 @@ local basicline = m.P {
    gotostatement + gosubstatement + forstatement + nextstatement
       + ifstatement + endstatement + printstatement + numericassignment
       + returnstatement + stringassignment + dimstatement + inputstatement,
-   printstatement = m.P("PRINT") * space * printlist,
+   printstatement = m.Ct(m.C(m.P("PRINT")) * space * m.C(printlist)),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    stringassignment =
@@ -133,7 +141,7 @@ local basicline = m.P {
    arg = expr + logicalexpr + stringexpr,
    arglist = ( arg * space * m.P(",") * space)^0 * arg,
    element = floatvar * space * m.P("(") * space * exprlist * space * m.P(")"),
-   statementlist = (statement * m.P(":") * space )^0 * statement,
+   statementlist = m.Ct((statement * m.P(":") * space )^0 * statement),
    line = m.Ct(m.C(lineno) * space * statementlist * m.Cp()),
 };
 
@@ -146,14 +154,15 @@ for line in file:lines() do
       io.write(line, "\n");
       io.write(string.rep(" ",mend-1).."^\n");
    else
-      local basicline = m[1];
-      print(basicline);
+      if mode == 2 then
+	 local basiclineno = m[1];
+	 local stats = m[2];
+	 for i=1,#stats do
+	    if stats[i][1] == "PRINT" then
+	       print(stats[i][2]);
+	    end
+	 end
+      end
    end
-   --print(m[1],m[#m]);
---[[   if not mend then
-      io.write("Syntax Error\n");
-      io.write(line, "\n");
-   else
---]]
 end
 file:close();
