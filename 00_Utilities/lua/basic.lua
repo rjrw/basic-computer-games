@@ -76,6 +76,7 @@ local Not = m.V"Not";
 local Statement = m.V"Statement";
 local logicalexpr = m.V"logicalexpr"
 local ifstatement = m.V"ifstatement";
+local ifstart = m.V"ifstart";
 local expr = m.V"expr";
 local numericassignment = m.V"numericassignment";
 local dimstatement = m.V"dimstatement";
@@ -113,8 +114,9 @@ local basicline = m.P {
    inputlist = (inputitem * space * m.P(",")*space)^-1 * inputitem,
    inputstatement = m.C(m.P("INPUT")) * space *
       (stringexpr * space * m.P(";") * space)^-1 * inputlist,
-   ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
-      m.P("THEN") * space * ( lineno * space + statementlist ),
+   ifstart = m.P("IF") * space * logicalexpr * space *
+      m.P("THEN") * space;
+   ifstatement = ifstart * ( m.Cc("IFGOTO") * lineno * space + m.Cc("IF") * statementlist ),
    exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
    dimdef = anyvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
