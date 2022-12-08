@@ -145,22 +145,37 @@ local basicline = m.P {
    line = m.Ct(m.C(lineno) * space * statementlist * m.Cp()),
 };
 
+local prog = {};
+local nerr = 0;
 local count = 1;
 for line in file:lines() do
    local m = basicline:match(line);
-   local mend = m[#m];
-   if mend ~= #line+1 then
-      io.write("Syntax Error\n");
+   if not m then
+      io.write(string.format("Syntax Error at line %d\n", count));
       io.write(line, "\n");
-      io.write(string.rep(" ",mend-1).."^\n");
    else
-      if mode == 2 then
-	 local basiclineno = m[1];
-	 local stats = m[2];
-	 for i=1,#stats do
-	    if stats[i][1] == "PRINT" then
-	       print(stats[i][2]);
-	    end
+      local mend = m[#m];
+      if mend ~= #line+1 then
+	 io.write(string.format("Syntax Error at line %d:%d\n",
+				count,mend));
+	 io.write(line, "\n");
+	 io.write(string.rep(" ",mend-1).."^\n");
+	 nerr = nerr + 1;
+      else
+	 prog[#prog+1] = m;
+      end
+   end      
+   count = count + 1;
+end
+
+if nerr == 0 and mode == 2 then
+   for i=1,#prog do
+      local m = prog[i];
+      local basiclineno = m[1];
+      local stats = m[2];
+      for i=1,#stats do
+	 if stats[i][1] == "PRINT" then
+	    print(stats[i][2]);
 	 end
       end
    end
