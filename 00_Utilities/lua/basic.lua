@@ -68,8 +68,14 @@ local forstatement = m.P {
 local comparisonop = m.P {
    m.P("=") + m.P("<>") + m.P("<=") + m.P(">=") + m.P("<") + m.P(">")
 };
-local logicalexpr = m.P {
+local comparison = m.P {
    expr * space * comparisonop * space * expr
+};
+local andexpr = m.P {
+   (comparison * space * m.P("AND") * space)^-1 * comparison
+};
+local logicalexpr = m.P {
+   andexpr
 };
 local ifstatement = m.P {
    m.P("IF") * space * logicalexpr * space *
