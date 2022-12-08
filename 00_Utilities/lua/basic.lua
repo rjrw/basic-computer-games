@@ -20,6 +20,7 @@ local integer = digit^1;
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = varname;
 local stringvar = varname * m.P("$");
+local anyvar = m.P { floatvar + stringvar };
 local lineno = digit^1;
 local gotostatement = m.P {
    m.P("GO") * space * m.P("TO") * space * lineno * space
@@ -64,6 +65,10 @@ local logicalexpr = m.V"logicalexpr"
 local ifstatement = m.V"ifstatement";
 local expr = m.V"expr";
 local numericassignment = m.V"numericassignment";
+local dimstatement = m.V"dimstatement";
+local dimlist = m.V"dimlist";
+local dimdef = m.V"dimdef";
+local numericarglist = m.V"numericarglist";
 local forstatement = m.V"forstatement"
 local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
@@ -74,7 +79,7 @@ local basicline = m.P {
    statement =
    gotostatement + gosubstatement + forstatement + nextstatement
       + ifstatement + endstatement + printstatement + numericassignment
-      + returnstatement + stringassignment,
+      + returnstatement + stringassignment + dimstatement,
    printstatement = m.P("PRINT") * space * printlist,
    stringassignment = stringvar * space * m.P("=") * space * stringexpr * space,
    stringexpr = string_ + stringvar,
@@ -82,6 +87,10 @@ local basicline = m.P {
    printlist = (printexpr * space * (m.P(";")*space)^-1 )^0,
    ifstatement = m.P("IF") * space * logicalexpr * space *
       m.P("THEN") * space * ( lineno * space + statementlist ),
+   numericarglist = ( expr * space * m.P(",") * space)^0 * expr,
+   dimdef = anyvar * space * m.P("(") * space * numericarglist * space * m.P(")"),
+   dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
+   dimstatement = m.P("DIM") * space * dimlist,
    logicalexpr = Or,
    Or = (And * space * m.P("OR") * space)^0 * And,
    And = (Not * space * m.P("AND") * space)^0 * Not,
