@@ -26,8 +26,12 @@ local gotostatement = m.P {
 local gosubstatement = m.P {
    m.P("GO") * space * m.P("SUB") * space * lineno * space
 };
+local nextlist = m.P {
+   ( floatvar * space * m.P"," * space)^0 * floatvar * space
+};
 local nextstatement = m.P {
-   m.P("NEXT") * space * floatvar * space
+   m.P("NEXT") * space * nextlist * space
+      + m.P("NEXT")
 };
 local endstatement = m.P {
    m.P("END") * space
