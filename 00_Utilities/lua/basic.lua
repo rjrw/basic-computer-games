@@ -23,6 +23,9 @@ local lineno = digit^1;
 local gotostatement = m.P {
    m.P("GO") * space * m.P("TO") * space * lineno * space
 };
+local gosubstatement = m.P {
+   m.P("GO") * space * m.P("SUB") * space * lineno * space
+};
 local nextstatement = m.P {
    m.P("NEXT") * space * floatvar * space
 };
@@ -79,6 +82,7 @@ local returnstatement = m.P {
 };
 local statement = m.P {
    gotostatement
+   + gosubstatement
       + forstatement
       + nextstatement
       + ifstatement
@@ -87,11 +91,11 @@ local statement = m.P {
       + numericassignment
       + returnstatement
 }; 
-local compoundstatement = m.P{
+local statementlist = m.P{
    (statement * m.P(":") * space )^0 * statement
 };
 local numbered = m.P{
-   lineno * space * compoundstatement,
+   lineno * space * statementlist,
 };
 
 local count = 1;
