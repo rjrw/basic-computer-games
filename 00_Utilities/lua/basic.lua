@@ -43,9 +43,10 @@ local expr = m.P {
    S = ( m.V"P" * space * m.R("+-") * space)^0 * m.V"P" * space,
    P = ( m.V"U" * space * m.R("*/") * space)^0 * m.V"U" * space,
    U = m.R("+-")^-1 * m.V"V",
-   V = integer + m.V"F",
+   V = integer + m.V"F" + m.P("(") * space * m.V"S" * m.P(")"),
    F = m.V"E" + floatvar,
-   E = floatvar * space * m.P("(") * space * m.V"S" * space * m.P(")")
+   -- Array access builtin call
+   E = floatvar * space * m.P("(") * space * m.V"S" * m.P(")")
 };
 local numericassignment = m.P {
    floatvar * space * m.P("=") * space * expr * space
