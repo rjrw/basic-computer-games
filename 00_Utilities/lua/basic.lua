@@ -28,8 +28,8 @@ local string_ =
    m.Ct(m.Cc("STRING")*m.P("\"") * m.C((any-m.P("\""))^0) * m.P("\""));
 local integer = m.Ct(m.Cc("INTEGER")*m.C(digit^1));
 local varname = m.R("AZ")^1 * m.R("09")^0;
-local floatvar = m.C(varname);
-local stringvar = m.C(varname * m.P("$"));
+local floatvar = m.Ct(m.Cc("FLOATVAR")*m.C(varname));
+local stringvar = m.Ct(m.Cc("STRINGVAR")*m.C(varname) * m.P("$"));
 local anyvar = m.P { floatvar + stringvar };
 local lineno = m.C(digit^1);
 local gotostatement = m.P {
@@ -183,6 +183,10 @@ function eval(expr)
       elseif expr[1] == "INTEGER" then
 	 local val = tonumber(expr[2]);
 	 return tostring(val);
+      elseif expr[1] == "FLOATVAR" then
+	 return "["..tostring(expr[2]).."]";
+      elseif expr[1] == "STRINGVAR" then
+	 return "{"..tostring(expr[2]).."}";
       end
    end
    return tostring(expr);
