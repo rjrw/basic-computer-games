@@ -41,6 +41,7 @@ local returnstatement = m.P {
    m.P("RETURN") * space
 };
 local stringexpr = m.V"stringexpr";
+local stringassignment = m.V"stringassignment";
 local printexpr = m.V"printexpr";
 local printlist = m.V"printlist";
 local printstatement = m.V"printstatement";
@@ -70,8 +71,9 @@ local basicline = m.P {
    statement =
    gotostatement + gosubstatement + forstatement + nextstatement
       + ifstatement + endstatement + printstatement + numericassignment
-      + returnstatement,
+      + returnstatement + stringassignment,
    printstatement = m.P("PRINT") * space * printlist,
+   stringassignment = stringvar * space * m.P("=") * space * stringexpr * space,
    stringexpr = string_ + stringvar,
    printexpr = stringexpr + expr,
    printlist = (printexpr * space * (m.P(";")*space)^-1 )^0,
