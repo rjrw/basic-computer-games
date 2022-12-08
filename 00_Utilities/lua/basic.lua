@@ -287,7 +287,15 @@ end
 
 function doif(opt,test,statement)
    local switch = logicaleval(test);
-   print("Found",opt,switch,statement[1]);
+   if switch then
+      if opt == "IFGOTO" then
+	 print("GOTO",statement);
+      else
+	 print("EXEC",statement[1]);
+      end
+   else
+      print("SKIP TO NEXT TARGET");
+   end
 end
 
 if nerr == 0 and mode == 2 then
