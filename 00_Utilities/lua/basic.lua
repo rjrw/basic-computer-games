@@ -285,49 +285,59 @@ function logicaleval(expr)
    return expr[1];
 end
 
+local targets = {}
+for i,m in ipairs(prog) do
+   if m[1] == "TARGET" then
+      targets[m[2]] = i;
+   end
+end
+
+local pc = 1;
+local basiclineno = 0;
+local quit = false;
+
+local exec;
+
 function doif(opt,test,statement)
    local switch = logicaleval(test);
    if switch then
       if opt == "IFGOTO" then
 	 print("GOTO",statement);
+	 pc = targets[statement];
       else
 	 print("EXEC",statement[1]);
+	 exec(statement);
       end
    else
       print("SKIP TO NEXT TARGET");
    end
 end
 
-if nerr == 0 and mode == 2 then
-   local targets = {}
-   for i,m in ipairs(prog) do
-      if m[1] == "TARGET" then
-	 targets[m[2]] = i;
+function exec(stat)
+   if stat[1] == "TARGET" then
+      basiclineno = stat[2];
+   elseif stat[1] == "PRINT" then
+      doprint(stat[2]);
+   elseif stat[1] == "LETN" then
+      doletn(stat[2],stat[3]);
+   elseif stat[1] == "GOTO" then
+      if dojump then
+	 pc = targets[stat[2]];
       end
+   elseif stat[1] == "IF" then
+      doif(stat[3],stat[2],stat[4]);
+   elseif stat[1] == "END" then
+      quit = true;
+   else
+      --print("Not handled",stat[1]);
    end
-   local pc = 1;
-   local basiclineno = 0;
+   pc = pc + 1;
+end
+
+if nerr == 0 and mode == 2 then
    while true do
-      local arg = prog[pc]
-      if arg[1] == "TARGET" then
-	 basiclineno = arg[2];
-      elseif arg[1] == "PRINT" then
-	 doprint(arg[2]);
-      elseif arg[1] == "LETN" then
-	 doletn(arg[2],arg[3]);
-      elseif arg[1] == "GOTO" then
-	 if dojump then
-	    pc = targets[arg[2]];
-	 end
-      elseif arg[1] == "IF" then
-	 doif(arg[3],arg[2],arg[4]);
-      elseif arg[1] == "END" then
-	 break;
-      else
-	 --print("Not handled",arg[1]);
-      end
-      pc = pc + 1;
-      if pc > #prog then
+      exec(prog[pc]);
+      if quit or pc > #prog then
 	 -- Run off end of program
 	 break;
       end
