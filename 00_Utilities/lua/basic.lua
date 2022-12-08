@@ -49,6 +49,9 @@ local printstatement = m.V"printstatement";
 local comparisonop = m.P {
    m.P("=") + m.P("<>") + m.P("<=") + m.P(">=") + m.P("<") + m.P(">")
 };
+local stringcomparisonop = m.P {
+   m.P("=") + m.P("<>")-- + m.P("<=") + m.P(">=") + m.P("<") + m.P(">")
+};
 local Sum = m.V"Sum";
 local Product = m.V"Product"
 local Unary = m.V"Unary";
@@ -85,7 +88,8 @@ local basicline = m.P {
    Not = (m.P("NOT") * space)^-1 *
       ( comparison
 	   + m.P("(") * space * Or * space * m.P(")") ),
-   comparison = expr * space * comparisonop * space * expr,
+   comparison = expr * space * comparisonop * space * expr
+      + stringexpr * space * stringcomparisonop * space * stringexpr,
    forstatement =
       m.P("FOR") * space * floatvar * space * m.P("=") * space * expr
       * space * m.P("TO") * space * expr * space *
@@ -98,7 +102,7 @@ local basicline = m.P {
    Unary = m.R("+-")^-1 * Value,
    Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
    floatlval = m.V"E" + floatvar,
-   -- Array access builtin call
+   -- Array access/function/builtin call
    E = floatvar * space * m.P("(") * space * Sum * m.P(")"),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = lineno * space * statementlist,
