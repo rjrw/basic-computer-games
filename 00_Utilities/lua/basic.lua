@@ -136,8 +136,8 @@ local basicline = m.P {
       floatlval * space * m.P("=") * space * expr * space,
    expr = Sum,
    Sum =
-      ( Product * space * m.C(m.S("+-")) * space)^0 * Product * space,
-   Product = m.Ct(m.Cc("PRODUCT") * ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary * space),
+      m.Ct(m.Cc("SUM") * ( Product * space * m.C(m.S("+-")) * space)^0 * Product) * space,
+   Product = m.Ct(m.Cc("PRODUCT") * ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary) * space,
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
    Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
    floatlval = element + floatvar,
@@ -201,6 +201,16 @@ function eval(expr)
 	       val = val * eval(expr[i+1]);
 	    else
 	       val = val / eval(expr[i+1]);
+	    end
+	 end
+	 return val;
+      elseif expr[1] == "SUM" then
+	 local val = eval(expr[2])
+	 for i=3,#expr,2 do
+	    if expr[i] == "+" then
+	       val = val + eval(expr[i+1]);
+	    else
+	       val = val - eval(expr[i+1]);
 	    end
 	 end
 	 return val;
