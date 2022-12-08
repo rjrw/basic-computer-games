@@ -45,8 +45,11 @@ local value = m.P {
    floatval +
       digit^1
 };
+local unary = m.P {
+   m.R("+-")^-1 * value
+};
 local product = m.P {
-   ( value * space * m.R("*/") * space)^0 * value * space
+   ( unary * space * m.R("*/") * space)^0 * unary * space
 };
 local sum = m.P {
    ( product * space * m.R("+-") * space)^0 * product * space
