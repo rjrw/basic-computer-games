@@ -8,7 +8,6 @@ local m = require"lpeg";
 
 -- Parse = 1, interpret = 2, compile = 3, compile & optimize = 4
 local mode = 1;
-local dojump = false;
 
 local narg = 1;
 if narg < #arg and arg[narg] == "-i" then
@@ -295,6 +294,7 @@ end
 local pc = 1;
 local basiclineno = 0;
 local quit = false;
+local substack = {};
 
 local exec;
 
@@ -322,15 +322,18 @@ function exec(stat)
    elseif stat[1] == "LETN" then
       doletn(stat[2],stat[3]);
    elseif stat[1] == "GOTO" then
-      if dojump then
-	 pc = targets[stat[2]]-1;
-      end
+      pc = targets[stat[2]]-1;
    elseif stat[1] == "IF" then
       doif(stat[3],stat[2],stat[4]);
    elseif stat[1] == "END" then
       quit = true;
+   elseif stat[1] == "GOSUB" then
+      table.insert(substack,pc);
+      pc = targets[stat[2]]-1;
+   elseif stat[1] == "RETURN" then
+      pc = table.remove(substack);
    else
-      --print("Not handled",stat[1]);
+      print("Not handled",stat[1]);
    end
    pc = pc + 1;
 end
