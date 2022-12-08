@@ -219,6 +219,8 @@ if nerr == 0 and mode == 2 then
 	 basiclineno = arg[2];
       elseif arg[1] == "PRINT" then
 	 doprint(arg[2]);
+      elseif arg[1] == "GOTO" then
+	 pc = targets[arg[2]];
       else
 	 --print("Not handled",arg[1]);
       end
