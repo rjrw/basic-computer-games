@@ -71,11 +71,13 @@ local comparisonop = m.P {
 local comparison = m.P {
    expr * space * comparisonop * space * expr
 };
-local andexpr = m.P {
-   (comparison * space * m.P("AND") * space)^-1 * comparison
-};
 local logicalexpr = m.P {
-   andexpr
+   "O";
+   O = (m.V"A" * space * m.P("OR") * space)^0 * m.V"A",
+   A = (m.V"N" * space * m.P("AND") * space)^0 * m.V"N",
+   N = (m.P("NOT") * space)^-1 *
+      ( comparison
+	   + m.P("(") * space * m.V("O") * space * m.P(")") )
 };
 local ifstatement = m.P {
    m.P("IF") * space * logicalexpr * space *
