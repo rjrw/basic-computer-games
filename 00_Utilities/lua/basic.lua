@@ -147,7 +147,7 @@ local basicline = m.P {
    arg = expr + logicalexpr + stringexpr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = floatvar * space * m.P("(") * space * exprlist * space * m.P(")"),
-   statementlist = m.Ct(((statement+m.Ct(ifstatement)) * m.P(":") * space )^0 *
+   statementlist = m.Ct(((statement * m.P(":")+m.Ct(ifstatement) * m.P(":")) * space )^0 *
 	 (statement+m.Ct(ifstatement))),
    line = m.Ct(lineno * space * statementlist * m.Cp()),
 };
