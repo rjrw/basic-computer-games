@@ -55,6 +55,7 @@ local Value = m.V"Value";
 local Or = m.V"Or";
 local And = m.V"And";
 local Not = m.V"Not";
+local Statement = m.V"Statement";
 local expr = m.P {
    "Sum";
    Sum = ( Product * space * m.R("+-") * space)^0 * Product * space,
@@ -92,6 +93,8 @@ local returnstatement = m.P {
    m.P("RETURN") * space
 };
 local statement = m.P {
+   "Statement";
+   Statement =
    gotostatement
    + gosubstatement
       + forstatement
