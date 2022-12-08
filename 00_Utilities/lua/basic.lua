@@ -37,9 +37,13 @@ local printlist = m.P {
 local printstatement = m.P {
    m.P("PRINT") * space * printlist
 };
+local floatval = {
+   floatvar * space * m.P("(") * space * digit^1 * space * m.P(")")
+   + floatvar
+};
 local value = m.P {
-   digit^1
-      + floatvar
+   floatval +
+      digit^1
 };
 local product = m.P {
    ( value * space * m.R("*/") * space)^0 * value * space
@@ -58,10 +62,21 @@ local forstatement = m.P {
       * space * m.P("TO") * space * expr * space *
       ( m.P("STEP") * space * expr * space )^-1
 };
+local comparisonop = m.P {
+   m.P("=") + m.P("<>") + m.P("<=") + m.P(">=") + m.P("<") + m.P(">")
+};
+local logicalexpr = m.P {
+   expr * space * comparisonop * space * expr
+};
+local ifstatement = m.P {
+   m.P("IF") * space * logicalexpr * space *
+      m.P("THEN") * space * lineno * space
+};
 local statement = m.P {
    gotostatement
       + forstatement
       + nextstatement
+      + ifstatement
       + endstatement
       + printstatement
       + numericassignment
