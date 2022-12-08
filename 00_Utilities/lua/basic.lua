@@ -80,14 +80,7 @@ local forstatement = m.P {
 local comparison = m.P {
    expr * space * comparisonop * space * expr
 };
-local logicalexpr = m.P {
-   "Or";
-   Or = (And * space * m.P("OR") * space)^0 * And,
-   And = (Not * space * m.P("AND") * space)^0 * Not,
-   Not = (m.P("NOT") * space)^-1 *
-      ( comparison
-	   + m.P("(") * space * Or * space * m.P(")") )
-};
+local logicalexpr = m.V"logicalexpr"
 local ifstatement = m.V"ifstatement";
 local statement = m.P {
    "Statement";
@@ -96,7 +89,13 @@ local statement = m.P {
       + ifstatement + endstatement + printstatement + numericassignment
       + returnstatement,
    ifstatement = m.P("IF") * space * logicalexpr * space *
-      m.P("THEN") * space * lineno * space
+      m.P("THEN") * space * lineno * space,
+   logicalexpr = Or,
+   Or = (And * space * m.P("OR") * space)^0 * And,
+   And = (Not * space * m.P("AND") * space)^0 * Not,
+   Not = (m.P("NOT") * space)^-1 *
+      ( comparison
+	   + m.P("(") * space * Or * space * m.P(")") )
 };
    
 local statementlist = m.P{
