@@ -123,10 +123,11 @@ local basicline = m.P {
    logicalexpr = Or,
    Or = m.Ct(m.Cc("OR") * (And * space * m.P("OR") * space)^0 * And),
    And = m.Ct(m.Cc("AND") * (Not * space * m.P("AND") * space)^0 * Not),
-   Not = m.Ct(m.C(m.P("NOT")) * space)^-1 *
-      ( comparison + m.P("(") * space * Or * space * m.P(")") ),
-   comparison = expr * space * comparisonop * space * expr 
-      + stringexpr * space * stringcomparisonop * space * stringexpr,
+   Not = m.Ct((m.C("NOT") * space+m.Cc("EQV")) *
+	 ( comparison + m.P("(") * space * Or * space * m.P(")") )),
+   comparison = m.Ct(
+      m.Cc("COMPAREF") * expr * space * comparisonop * space * expr 
+	 + m.Cc("COMPARES") * stringexpr * space * stringcomparisonop * space * stringexpr),
    forstatement =
       m.C(m.P("FOR")) * space * floatvar * space * m.P("=") * space * expr
       * space * m.P("TO") * space * expr * space *
@@ -258,6 +259,29 @@ function doletn(lval,expr)
 end
 
 function logicaleval(expr)
+   if expr[1] == "OR" then
+      local val = logicaleval(expr[2]);
+      for i=2,#expr do
+	 val = val or logicaleval(expr[i]);
+      end
+      return val;
+   elseif expr[1] == "AND" then
+      local val = logicaleval(expr[2]);
+      for i=2,#expr do
+	 val = val and logicaleval(expr[i]);
+      end
+      return val;
+   elseif expr[1] == "NOT" then
+      local val = logicaleval(expr[2]);
+      return not val;
+   elseif expr[1] == "EQV" then
+      local val = logicaleval(expr[2]);
+      return val;
+   elseif expr[1] == "COMPAREF" then
+      local val1 = eval(expr[2]);
+      local val2 = eval(expr[4]);
+      return val1 == val2;
+   end
    return expr[1];
 end
 
