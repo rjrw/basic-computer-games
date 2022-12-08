@@ -72,6 +72,9 @@ local numericarglist = m.V"numericarglist";
 local forstatement = m.V"forstatement"
 local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
+local arg = m.V"arg";
+local arglist = m.V"arglist";
+local element = m.V"element";
 local statement = m.V"statement";
 local statementlist = m.V"statementlist";
 local basicline = m.P {
@@ -110,9 +113,11 @@ local basicline = m.P {
    Product = ( Unary * space * m.R("*/") * space)^0 * Unary * space,
    Unary = m.R("+-")^-1 * Value,
    Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
-   floatlval = m.V"E" + floatvar,
+   floatlval = element + floatvar,
    -- Array access/function/builtin call
-   E = floatvar * space * m.P("(") * space * Sum * m.P(")"),
+   arg = expr + logicalexpr + stringexpr,
+   arglist = ( arg * space * m.P(",") * space)^0 * arg,
+   element = floatvar * space * m.P("(") * space * arglist * space * m.P(")"),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = lineno * space * statementlist,
 };
