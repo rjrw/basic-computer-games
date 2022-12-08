@@ -46,6 +46,9 @@ local stringassignment = m.V"stringassignment";
 local printexpr = m.V"printexpr";
 local printlist = m.V"printlist";
 local printstatement = m.V"printstatement";
+local inputstatement = m.V"inputstatement";
+local inputlist = m.V"inputlist";
+local inputitem = m.V"inputitem";
 
 local comparisonop = m.P {
    m.P("=") + m.P("<>") + m.P("<=") + m.P(">=") + m.P("<") + m.P(">")
@@ -68,12 +71,14 @@ local numericassignment = m.V"numericassignment";
 local dimstatement = m.V"dimstatement";
 local dimlist = m.V"dimlist";
 local dimdef = m.V"dimdef";
-local numericarglist = m.V"numericarglist";
 local forstatement = m.V"forstatement"
 local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
+local stringlval = m.V"stringlval";
+local stringelement = m.V"stringelement";
 local arg = m.V"arg";
 local arglist = m.V"arglist";
+local exprlist = m.V"exprlist";
 local element = m.V"element";
 local statement = m.V"statement";
 local statementlist = m.V"statementlist";
@@ -82,16 +87,25 @@ local basicline = m.P {
    statement =
    gotostatement + gosubstatement + forstatement + nextstatement
       + ifstatement + endstatement + printstatement + numericassignment
-      + returnstatement + stringassignment + dimstatement,
+      + returnstatement + stringassignment + dimstatement + inputstatement,
    printstatement = m.P("PRINT") * space * printlist,
-   stringassignment = stringvar * space * m.P("=") * space * stringexpr * space,
+   stringlval = stringelement + stringvar,
+   stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
+   stringassignment =
+      m.P("LET")^-1 * space *
+      stringlval * space * m.P("=") * space * stringexpr * space,
    stringexpr = string_ + stringvar,
    printexpr = stringexpr + expr,
    printlist = (printexpr * space * (m.P(";")*space)^-1 )^0,
+   inputitem = stringlval + floatlval,
+   inputlist = (inputitem * space * m.P(",")*space)^-1 * inputitem,
+   inputstatement = m.P("INPUT") * space *
+      (stringexpr * space * m.P(";") * space)^-1
+      * inputlist,
    ifstatement = m.P("IF") * space * logicalexpr * space *
       m.P("THEN") * space * ( lineno * space + statementlist ),
-   numericarglist = ( expr * space * m.P(",") * space)^0 * expr,
-   dimdef = anyvar * space * m.P("(") * space * numericarglist * space * m.P(")"),
+   exprlist = ( expr * space * m.P(",") * space)^0 * expr,
+   dimdef = anyvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
    dimstatement = m.P("DIM") * space * dimlist,
    logicalexpr = Or,
@@ -107,6 +121,7 @@ local basicline = m.P {
       * space * m.P("TO") * space * expr * space *
       ( m.P("STEP") * space * expr * space )^-1,
    numericassignment =
+      m.P("LET")^-1 * space *
       floatlval * space * m.P("=") * space * expr * space,
    expr = Sum,
    Sum = ( Product * space * m.R("+-") * space)^0 * Product * space,
@@ -117,7 +132,7 @@ local basicline = m.P {
    -- Array access/function/builtin call
    arg = expr + logicalexpr + stringexpr,
    arglist = ( arg * space * m.P(",") * space)^0 * arg,
-   element = floatvar * space * m.P("(") * space * arglist * space * m.P(")"),
+   element = floatvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = lineno * space * statementlist,
 };
