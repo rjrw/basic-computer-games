@@ -134,19 +134,26 @@ local basicline = m.P {
    arglist = ( arg * space * m.P(",") * space)^0 * arg,
    element = floatvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    statementlist = (statement * m.P(":") * space )^0 * statement,
-   line = lineno * space * statementlist,
+   line = m.Ct(m.C(lineno) * space * statementlist * m.Cp()),
 };
 
 local count = 1;
 for line in file:lines() do
-   local mend = m.match(basicline, line);
-   if not mend then
-      io.write("Syntax Error\n");
-      io.write(line, "\n");
-   elseif mend ~= #line+1 then
+   local m = basicline:match(line);
+   local mend = m[#m];
+   if mend ~= #line+1 then
       io.write("Syntax Error\n");
       io.write(line, "\n");
       io.write(string.rep(" ",mend-1).."^\n");
+   else
+      local basicline = m[1];
+      print(basicline);
    end
+   --print(m[1],m[#m]);
+--[[   if not mend then
+      io.write("Syntax Error\n");
+      io.write(line, "\n");
+   else
+--]]
 end
 file:close();
