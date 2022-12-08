@@ -28,8 +28,14 @@ local nextstatement = m.P {
 local endstatement = m.P {
    m.P("END") * space
 };
+local printexpr = m.P {
+   string_ * space 
+};
+local printlist = m.P {
+   (printexpr * space * (m.P(";")*space)^-1 )^0
+};
 local printstatement = m.P {
-   m.P("PRINT") * space * string_ * space
+   m.P("PRINT") * space * printlist
 };
 local value = m.P {
    digit^1
