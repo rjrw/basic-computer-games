@@ -228,6 +228,22 @@ function eval(expr)
    return tostring(expr);
 end
 
+function doinput(inputlist)
+   local i=2;
+   if inputlist[i][1] == "STRING" then
+      io.write(inputlist[i][2].."? ");
+      i=i+1;
+   end
+   local input = io.read("*l");
+   for j=i,#inputlist do
+      local vartype = inputlist[j][1];
+      local varname = inputlist[j][2];
+      if vartype == "STRINGVAR" then
+	 svars[varname] = input;
+      end
+      --print(inputlist[j][1]);
+   end
+end
 function doprint(printlist)
    local j = 1;
    local ncol = 0;
@@ -320,6 +336,8 @@ function exec(stat)
       basiclineno = stat[2];
    elseif stat[1] == "PRINT" then
       doprint(stat[2]);
+   elseif stat[1] == "INPUT" then
+      doinput(stat);
    elseif stat[1] == "LETN" then
       doletn(stat[2],stat[3]);
    elseif stat[1] == "LETS" then
