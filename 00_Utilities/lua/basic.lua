@@ -47,6 +47,9 @@ local nextstatement = m.P {
 local endstatement = m.P {
    m.C(m.P("END")) * space
 };
+local stopstatement = m.P {
+   m.Cc"END" * m.P("STOP") * space
+};
 local remstatement = m.P {
    m.C(m.P("REM")) * any^0
 };
@@ -100,7 +103,7 @@ local basicline = m.P {
    statement =
       m.Ct(
 	 gotostatement + gosubstatement + forstatement + nextstatement
-	    + endstatement + printstatement + numericassignment
+	    + endstatement + stopstatement + printstatement + numericassignment
 	    + returnstatement + stringassignment + dimstatement +
 	    inputstatement + endstatement + ifstatement + remstatement ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
