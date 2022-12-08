@@ -168,31 +168,35 @@ for line in file:lines() do
    count = count + 1;
 end
 
+function eval(expr)
+   return tostring(expr);
+end
+
 function evalprint(printlist)
    local j = 1;
    local ncol = 0;
    local outstr = "";
+   local flush = true;
    for j=1,#printlist do
       local element = printlist[j]
+      flush = true;
       if element == ";" then
+	 flush = false;
+	 element = "";
+      elseif element == "," then
+	 local newcol = 14*(ncol/14+1);
+	 element = string.rep(" ",newcol-ncol)
+	 flush = false;
       else
-	 if element == "," then
-	    local newcol = 14*(ncol/14+1);
-	    element = string.rep(" ",newcol-ncol)
-	 else
-	    element = tostring(element); -- evaluate...
-	 end
-	 ncol = ncol+#element;
-	 outstr = outstr..element;
+	 element = eval(element);
       end
+      ncol = ncol+#element;
+      outstr = outstr..element;
    end
-   if #printlist > 1 and
-      printlist[#printlist] == "," or
-   printlist[#printlist] == ";" then
-      io.write(outstr);
-   else
-      print(outstr);
+   if flush then
+      outstr = outstr.."\n";
    end
+   io.write(outstr);
 end
 
 if nerr == 0 and mode == 2 then
