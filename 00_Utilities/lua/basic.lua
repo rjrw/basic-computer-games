@@ -24,8 +24,9 @@ local file = assert(io.open(arg[narg]));
 local any = m.P(1);
 local space = m.S" \t\n"^0;
 local digit = m.R("09");
-local string_ = m.P("\"") * m.C((any-m.P("\""))^0) * m.P("\"");
-local integer = m.C(digit^1);
+local string_ =
+   m.Ct(m.Cc("STRING")*m.P("\"") * m.C((any-m.P("\""))^0) * m.P("\""));
+local integer = m.Ct(m.Cc("INTEGER")*m.C(digit^1));
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = m.C(varname);
 local stringvar = m.C(varname * m.P("$"));
@@ -134,7 +135,8 @@ local basicline = m.P {
       m.Cc("LETN") * m.P("LET")^-1 * space *
       floatlval * space * m.P("=") * space * expr * space,
    expr = Sum,
-   Sum = ( Product * space * m.C(m.S("+-")) * space)^0 * Product * space,
+   Sum =
+      ( Product * space * m.C(m.S("+-")) * space)^0 * Product * space,
    Product = ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary * space,
    Unary = m.C(m.S("+-")^-1) * Value,
    Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
@@ -175,6 +177,14 @@ for line in file:lines() do
 end
 
 function eval(expr)
+   if type(expr) == "table" then
+      if expr[1] == "STRING" then
+	 return tostring(expr[2]);
+      elseif expr[1] == "INTEGER" then
+	 local val = tonumber(expr[2]);
+	 return tostring(val);
+      end
+   end
    return tostring(expr);
 end
 
