@@ -16,6 +16,7 @@ local any = m.P(1);
 local space = m.S" \t\n"^0;
 local digit = m.R("09");
 local string_ = m.P("\"") * (any-m.P("\""))^0 * m.P("\"");
+local integer = digit^1;
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = varname;
 local lineno = digit^1;
@@ -37,25 +38,14 @@ local printlist = m.P {
 local printstatement = m.P {
    m.P("PRINT") * space * printlist
 };
-local floatval = {
-   floatvar * space * m.P("(") * space * digit^1 * space * m.P(")")
-   + floatvar
-};
-local value = m.P {
-   floatval +
-      digit^1
-};
-local unary = m.P {
-   m.R("+-")^-1 * value
-};
-local product = m.P {
-   ( unary * space * m.R("*/") * space)^0 * unary * space
-};
-local sum = m.P {
-   ( product * space * m.R("+-") * space)^0 * product * space
-};
 local expr = m.P {
-   sum
+   "S";
+   S = ( m.V"P" * space * m.R("+-") * space)^0 * m.V"P" * space,
+   P = ( m.V"U" * space * m.R("*/") * space)^0 * m.V"U" * space,
+   U = m.R("+-")^-1 * m.V"V",
+   V = integer + m.V"F",
+   F = m.V"E" + floatvar,
+   E = floatvar * space * m.P("(") * space * m.V"S" * space * m.P(")")
 };
 local numericassignment = m.P {
    floatvar * space * m.P("=") * space * expr * space
