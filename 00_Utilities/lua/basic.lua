@@ -77,6 +77,7 @@ local Statement = m.V"Statement";
 local logicalexpr = m.V"logicalexpr"
 local ifstatement = m.V"ifstatement";
 local ifstart = m.V"ifstart";
+local ifgoto = m.V"ifgoto";
 local expr = m.V"expr";
 local numericassignment = m.V"numericassignment";
 local dimstatement = m.V"dimstatement";
@@ -116,7 +117,8 @@ local basicline = m.P {
       (stringexpr * space * m.P(";") * space)^-1 * inputlist,
    ifstart = m.P("IF") * space * logicalexpr * space *
       m.P("THEN") * space;
-   ifstatement = ifstart * ( m.Cc("IFGOTO") * lineno * space + m.Cc("IF") * statementlist ),
+   ifgoto = ifstart * m.Cc("IFGOTO") * lineno * space,
+   ifstatement = ifstart * m.Cc("IF") * statementlist,
    exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
    dimdef = anyvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
@@ -127,7 +129,7 @@ local basicline = m.P {
    Not = (m.C(m.P("NOT")) * space)^-1 *
       ( comparison
 	   + m.P("(") * space * Or * space * m.P(")") ),
-   comparison = expr * space * comparisonop * space * expr
+   comparison = expr * space * comparisonop * space * expr 
       + stringexpr * space * stringcomparisonop * space * stringexpr,
    forstatement =
       m.C(m.P("FOR")) * space * floatvar * space * m.P("=") * space * expr
@@ -147,8 +149,8 @@ local basicline = m.P {
    arg = expr + logicalexpr + stringexpr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = floatvar * space * m.P("(") * space * exprlist * space * m.P(")"),
-   statementlist = m.Ct(((statement * m.P(":")+m.Ct(ifstatement) * m.P(":")) * space )^0 *
-	 (statement+m.Ct(ifstatement))),
+   statementlist = m.Ct(((statement * m.P(":")+m.Ct(ifgoto) * m.P(":")+m.Ct(ifstatement) * m.P(":")) * space )^0 *
+	 (statement+m.Ct(ifgoto)+m.Ct(ifstatement))),
    line = m.Ct(lineno * space * statementlist * m.Cp()),
 };
 
