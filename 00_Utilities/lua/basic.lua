@@ -70,7 +70,7 @@ local basicline = m.P {
       + ifstatement + endstatement + printstatement + numericassignment
       + returnstatement,
    printstatement = m.P("PRINT") * space * printlist,
-   printexpr = string_ * space,
+   printexpr = string_ + expr,
    printlist = (printexpr * space * (m.P(";")*space)^-1 )^0,
    ifstatement = m.P("IF") * space * logicalexpr * space *
       m.P("THEN") * space * ( lineno * space + statementlist ),
