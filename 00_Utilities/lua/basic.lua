@@ -121,9 +121,9 @@ local basicline = m.P {
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
    dimstatement = m.C(m.P("DIM")) * space * dimlist,
    logicalexpr = Or,
-   Or = m.Cc("OR") * m.Ct((And * space * m.P("OR") * space)^0 * And),
-   And = m.Cc("AND") * m.Ct((Not * space * m.P("AND") * space)^0 * Not),
-   Not = (m.C(m.P("NOT")) * space)^-1 *
+   Or = m.Ct(m.Cc("OR") * (And * space * m.P("OR") * space)^0 * And),
+   And = m.Ct(m.Cc("AND") * (Not * space * m.P("AND") * space)^0 * Not),
+   Not = m.Ct(m.C(m.P("NOT")) * space)^-1 *
       ( comparison + m.P("(") * space * Or * space * m.P(")") ),
    comparison = expr * space * comparisonop * space * expr 
       + stringexpr * space * stringcomparisonop * space * stringexpr,
@@ -257,8 +257,13 @@ function doletn(lval,expr)
    fvars[target] = eval(expr);
 end
 
+function logicaleval(expr)
+   return expr[1];
+end
+
 function doif(opt,test,statement)
-   print("Found",opt);
+   local switch = logicaleval(test);
+   print("Found",opt,switch,statement[1]);
 end
 
 if nerr == 0 and mode == 2 then
@@ -283,7 +288,7 @@ if nerr == 0 and mode == 2 then
 	    pc = targets[arg[2]];
 	 end
       elseif arg[1] == "IF" then
-	 doif(arg[4],arg[2],arg[3]);
+	 doif(arg[3],arg[2],arg[4]);
       elseif arg[1] == "END" then
 	 break;
       else
