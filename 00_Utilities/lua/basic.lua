@@ -15,6 +15,7 @@ local file = assert(io.open(arg[1]));
 local any = m.P(1);
 local space = m.S" \t\n"^0;
 local digit = m.R("09");
+local string_ = m.P("\"") * (any-m.P("\""))^0 * m.P("\"");
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = varname;
 local lineno = digit^1;
@@ -26,6 +27,9 @@ local nextstatement = m.P {
 };
 local endstatement = m.P {
    m.P("END") * space
+};
+local printstatement = m.P {
+   m.P("PRINT") * space * string_ * space
 };
 local value = m.P {
    digit^1
@@ -53,6 +57,7 @@ local statement = m.P {
       + forstatement
       + nextstatement
       + endstatement
+      + printstatement
       + numericassignment
 }; 
 local compoundstatement = m.P{
