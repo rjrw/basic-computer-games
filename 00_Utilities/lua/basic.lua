@@ -138,7 +138,7 @@ local basicline = m.P {
    Sum =
       ( Product * space * m.C(m.S("+-")) * space)^0 * Product * space,
    Product = ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary * space,
-   Unary = m.C(m.S("+-"))^-1 * Value,
+   Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
    Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
    floatlval = element + floatvar,
    -- Array access/function/builtin call
@@ -184,6 +184,16 @@ function eval(expr)
    if type(expr) == "table" then
       if expr[1] == "STRING" then
 	 return expr[2];
+      elseif expr[1] == "UNARY" then
+	 if #expr == 3 then
+	    if expr[2] == "-" then
+	       return -eval(expr[3]);
+	    else
+	       return eval(expr[3]);
+	    end
+	 else
+	    return eval(expr[2]);
+	 end
       elseif expr[1] == "INTEGER" then
 	 return tonumber(expr[2]);
       elseif expr[1] == "FLOATVAR" then
