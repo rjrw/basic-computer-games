@@ -99,7 +99,7 @@ local basicline = m.P {
 	 gotostatement + gosubstatement + forstatement + nextstatement
 	    + ifstatement + endstatement + printstatement + numericassignment
 	    + returnstatement + stringassignment + dimstatement +
-	    inputstatement),
+	    inputstatement + endstatement),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
@@ -175,7 +175,9 @@ for line in file:lines() do
    end      
    count = count + 1;
 end
+file:close();
 
+-- Symbol tables
 local fvars = {};
 
 function eval(expr)
@@ -246,6 +248,8 @@ if nerr == 0 and mode == 2 then
 	 if dojump then
 	    pc = targets[arg[2]];
 	 end
+      elseif arg[1] == "END" then
+	 break;
       else
 	 --print("Not handled",arg[1]);
       end
@@ -256,4 +260,3 @@ if nerr == 0 and mode == 2 then
       end
    end
 end
-file:close();
