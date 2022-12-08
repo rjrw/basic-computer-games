@@ -7,7 +7,8 @@
 local m = require"lpeg";
 
 -- Parse = 1, interpret = 2, compile = 3, compile & optimize = 4
-local mode = 1; 
+local mode = 1;
+local dojump = false;
 
 local narg = 1;
 if narg < #arg and arg[narg] == "-i" then
@@ -220,7 +221,9 @@ if nerr == 0 and mode == 2 then
       elseif arg[1] == "PRINT" then
 	 doprint(arg[2]);
       elseif arg[1] == "GOTO" then
-	 pc = targets[arg[2]];
+	 if dojump then
+	    pc = targets[arg[2]];
+	 end
       else
 	 --print("Not handled",arg[1]);
       end
