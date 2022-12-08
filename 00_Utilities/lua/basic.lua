@@ -179,14 +179,13 @@ end
 function eval(expr)
    if type(expr) == "table" then
       if expr[1] == "STRING" then
-	 return tostring(expr[2]);
+	 return expr[2];
       elseif expr[1] == "INTEGER" then
-	 local val = tonumber(expr[2]);
-	 return tostring(val);
+	 return tonumber(expr[2]);
       elseif expr[1] == "FLOATVAR" then
-	 return "["..tostring(expr[2]).."]";
+	 return "["..expr[2].."]";
       elseif expr[1] == "STRINGVAR" then
-	 return "{"..tostring(expr[2]).."}";
+	 return "{"..expr[2].."}";
       end
    end
    return tostring(expr);
@@ -208,7 +207,7 @@ function doprint(printlist)
 	 element = string.rep(" ",newcol-ncol)
 	 flush = false;
       else
-	 element = eval(element);
+	 element = tostring(eval(element));
       end
       ncol = ncol+#element;
       outstr = outstr..element;
