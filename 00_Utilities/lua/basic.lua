@@ -361,8 +361,18 @@ function exec(stat)
       pc = targets[stat[2]]-1;
    elseif stat[1] == "RETURN" then
       pc = table.remove(substack);
+   elseif stat[1] == "DATA" or
+      stat[1] == "DEF" or
+      stat[1] == "DIM" or --<<<
+      stat[1] == "FOR" or --<<<
+      stat[1] == "NEXT" or --<<<
+      stat[1] == "ON" or
+      stat[1] == "RANDOMIZE" or
+      stat[1] == "READ" or
+      stat[1] == "RESTORE" then
+	 print("Not handled",stat[1]);
    else
-      print("Not handled",stat[1]);
+      print("Unknown statement",stat[1]);
    end
    pc = pc + 1;
 end
