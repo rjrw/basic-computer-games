@@ -172,7 +172,7 @@ function eval(expr)
    return tostring(expr);
 end
 
-function evalprint(printlist)
+function doprint(printlist)
    local j = 1;
    local ncol = 0;
    local outstr = "";
@@ -206,7 +206,7 @@ if nerr == 0 and mode == 2 then
       local stats = m[2];
       for i=1,#stats do
 	 if stats[i][1] == "PRINT" then
-	    evalprint(stats[i][2]);
+	    doprint(stats[i][2]);
 	 end
       end
    end
