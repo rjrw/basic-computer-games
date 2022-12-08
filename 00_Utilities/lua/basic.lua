@@ -161,8 +161,9 @@ for line in file:lines() do
 	 io.write(line, "\n");
 	 io.write(string.rep(" ",mend-1).."^\n");
 	 nerr = nerr + 1;
-      else
-	 prog[#prog+1] = m;
+      else	 
+	 prog[#prog+1] = {"TARGET",m[1]};
+	 prog[#prog+1] = m[2];
       end
    end      
    count = count + 1;
@@ -202,16 +203,18 @@ end
 if nerr == 0 and mode == 2 then
    local targets = {}
    for i,m in ipairs(prog) do
-      targets[m[1]] = i;
+      if m[1] == "TARGET" then
+	 targets[m[2]] = i;
+      end
    end
    local pc = 1;
+   local basiclineno = 0;
    while true do
-      local m = prog[pc];
-      local basiclineno = m[1];
-      local stats = m[2];
-      for i=1,#stats do
-	 if stats[i][1] == "PRINT" then
-	    doprint(stats[i][2]);
+      for _, arg in ipairs(prog[pc]) do
+	 if arg[1] == "TARGET" then
+	    basiclineno = arg[2];
+	 elseif arg[1] == "PRINT" then
+	    doprint(arg[2]);
 	 end
       end
       pc = pc + 1;
