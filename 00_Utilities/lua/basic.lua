@@ -137,7 +137,7 @@ local basicline = m.P {
    expr = Sum,
    Sum =
       ( Product * space * m.C(m.S("+-")) * space)^0 * Product * space,
-   Product = ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary * space,
+   Product = m.Ct(m.Cc("PRODUCT") * ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary * space),
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
    Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
    floatlval = element + floatvar,
@@ -194,6 +194,16 @@ function eval(expr)
 	 else
 	    return eval(expr[2]);
 	 end
+      elseif expr[1] == "PRODUCT" then
+	 local val = eval(expr[2])
+	 for i=3,#expr,2 do
+	    if expr[i] == "*" then
+	       val = val * eval(expr[i+1]);
+	    else
+	       val = val / eval(expr[i+1]);
+	    end
+	 end
+	 return val;
       elseif expr[1] == "INTEGER" then
 	 return tonumber(expr[2]);
       elseif expr[1] == "FLOATVAR" then
