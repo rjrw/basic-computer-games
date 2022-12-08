@@ -45,15 +45,25 @@ local printlist = m.P {
 local printstatement = m.P {
    m.P("PRINT") * space * printlist
 };
+local comparisonop = m.P {
+   m.P("=") + m.P("<>") + m.P("<=") + m.P(">=") + m.P("<") + m.P(">")
+};
+local Sum = m.V"Sum";
+local Product = m.V"Product"
+local Unary = m.V"Unary";
+local Value = m.V"Value";
+local Or = m.V"Or";
+local And = m.V"And";
+local Not = m.V"Not";
 local expr = m.P {
-   "S";
-   S = ( m.V"P" * space * m.R("+-") * space)^0 * m.V"P" * space,
-   P = ( m.V"U" * space * m.R("*/") * space)^0 * m.V"U" * space,
-   U = m.R("+-")^-1 * m.V"V",
-   V = integer + m.V"F" + m.P("(") * space * m.V"S" * m.P(")"),
+   "Sum";
+   Sum = ( Product * space * m.R("+-") * space)^0 * Product * space,
+   Product = ( Unary * space * m.R("*/") * space)^0 * Unary * space,
+   Unary = m.R("+-")^-1 * Value,
+   Value = integer + m.V"F" + m.P("(") * space * Sum * m.P(")"),
    F = m.V"E" + floatvar,
    -- Array access builtin call
-   E = floatvar * space * m.P("(") * space * m.V"S" * m.P(")")
+   E = floatvar * space * m.P("(") * space * Sum * m.P(")")
 };
 local numericassignment = m.P {
    floatvar * space * m.P("=") * space * expr * space
@@ -63,19 +73,16 @@ local forstatement = m.P {
       * space * m.P("TO") * space * expr * space *
       ( m.P("STEP") * space * expr * space )^-1
 };
-local comparisonop = m.P {
-   m.P("=") + m.P("<>") + m.P("<=") + m.P(">=") + m.P("<") + m.P(">")
-};
 local comparison = m.P {
    expr * space * comparisonop * space * expr
 };
 local logicalexpr = m.P {
-   "O";
-   O = (m.V"A" * space * m.P("OR") * space)^0 * m.V"A",
-   A = (m.V"N" * space * m.P("AND") * space)^0 * m.V"N",
-   N = (m.P("NOT") * space)^-1 *
+   "Or";
+   Or = (And * space * m.P("OR") * space)^0 * And,
+   And = (Not * space * m.P("AND") * space)^0 * Not,
+   Not = (m.P("NOT") * space)^-1 *
       ( comparison
-	   + m.P("(") * space * m.V("O") * space * m.P(")") )
+	   + m.P("(") * space * Or * space * m.P(")") )
 };
 local ifstatement = m.P {
    m.P("IF") * space * logicalexpr * space *
