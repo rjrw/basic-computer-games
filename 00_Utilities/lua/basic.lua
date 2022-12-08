@@ -61,25 +61,11 @@ local Not = m.V"Not";
 local Statement = m.V"Statement";
 local logicalexpr = m.V"logicalexpr"
 local ifstatement = m.V"ifstatement";
-local expr = m.P {
-   "Sum";
-   Sum = ( Product * space * m.R("+-") * space)^0 * Product * space,
-   Product = ( Unary * space * m.R("*/") * space)^0 * Unary * space,
-   Unary = m.R("+-")^-1 * Value,
-   Value = integer + m.V"F" + m.P("(") * space * Sum * m.P(")"),
-   F = m.V"E" + floatvar,
-   -- Array access builtin call
-   E = floatvar * space * m.P("(") * space * Sum * m.P(")")
-};
-local numericassignment = m.P {
-   floatvar * space * m.P("=") * space * expr * space
-};
-local forstatement = m.P {
-   m.P("FOR") * space * floatvar * space * m.P("=") * space * expr
-      * space * m.P("TO") * space * expr * space *
-      ( m.P("STEP") * space * expr * space )^-1
-};
+local expr = m.V"expr";
+local numericassignment = m.V"numericassignment";
+local forstatement = m.V"forstatement"
 local comparison = m.V"comparison";
+local floatlval = m.V"floatlval";
 local statement = m.P {
    "Statement";
    Statement =
@@ -94,7 +80,21 @@ local statement = m.P {
    Not = (m.P("NOT") * space)^-1 *
       ( comparison
 	   + m.P("(") * space * Or * space * m.P(")") ),
-   comparison = expr * space * comparisonop * space * expr
+   comparison = expr * space * comparisonop * space * expr,
+   forstatement =
+      m.P("FOR") * space * floatvar * space * m.P("=") * space * expr
+      * space * m.P("TO") * space * expr * space *
+      ( m.P("STEP") * space * expr * space )^-1,
+   numericassignment =
+      floatlval * space * m.P("=") * space * expr * space,
+   expr = Sum,
+   Sum = ( Product * space * m.R("+-") * space)^0 * Product * space,
+   Product = ( Unary * space * m.R("*/") * space)^0 * Unary * space,
+   Unary = m.R("+-")^-1 * Value,
+   Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
+   floatlval = m.V"E" + floatvar,
+   -- Array access builtin call
+   E = floatvar * space * m.P("(") * space * Sum * m.P(")"),
 };
    
 local statementlist = m.P{
