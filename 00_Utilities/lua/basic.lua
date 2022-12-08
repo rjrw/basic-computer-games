@@ -68,8 +68,8 @@ local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
 local statement = m.V"statement";
 local statementlist = m.V"statementlist";
-local grammar = m.P {
-   "statementlist";
+local basicline = m.P {
+   "line";
    statement =
    gotostatement + gosubstatement + forstatement + nextstatement
       + ifstatement + endstatement + printstatement + numericassignment
@@ -97,16 +97,13 @@ local grammar = m.P {
    floatlval = m.V"E" + floatvar,
    -- Array access builtin call
    E = floatvar * space * m.P("(") * space * Sum * m.P(")"),
-   statementlist = (statement * m.P(":") * space )^0 * statement
-};
-   
-local numbered = m.P{
-   lineno * space * grammar,
+   statementlist = (statement * m.P(":") * space )^0 * statement,
+   line = lineno * space * statementlist,
 };
 
 local count = 1;
 for line in file:lines() do
-   local mend = m.match(numbered, line);
+   local mend = m.match(basicline, line);
    if not mend then
       io.write("Syntax Error\n");
       io.write(line, "\n");
