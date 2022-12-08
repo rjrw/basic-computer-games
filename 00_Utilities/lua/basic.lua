@@ -36,6 +36,9 @@ local nextstatement = m.P {
 local endstatement = m.P {
    m.P("END") * space
 };
+local returnstatement = m.P {
+   m.P("RETURN") * space
+};
 local printexpr = m.P {
    string_ * space 
 };
@@ -85,26 +88,17 @@ local logicalexpr = m.P {
       ( comparison
 	   + m.P("(") * space * Or * space * m.P(")") )
 };
-local ifstatement = m.P {
-   m.P("IF") * space * logicalexpr * space *
-      m.P("THEN") * space * lineno * space
-};
-local returnstatement = m.P {
-   m.P("RETURN") * space
-};
+local ifstatement = m.V"ifstatement";
 local statement = m.P {
    "Statement";
    Statement =
-   gotostatement
-   + gosubstatement
-      + forstatement
-      + nextstatement
-      + ifstatement
-      + endstatement
-      + printstatement
-      + numericassignment
-      + returnstatement
-}; 
+   gotostatement + gosubstatement + forstatement + nextstatement
+      + ifstatement + endstatement + printstatement + numericassignment
+      + returnstatement,
+   ifstatement = m.P("IF") * space * logicalexpr * space *
+      m.P("THEN") * space * lineno * space
+};
+   
 local statementlist = m.P{
    (statement * m.P(":") * space )^0 * statement
 };
