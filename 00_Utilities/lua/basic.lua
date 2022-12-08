@@ -138,7 +138,7 @@ local basicline = m.P {
    Sum =
       ( Product * space * m.C(m.S("+-")) * space)^0 * Product * space,
    Product = ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary * space,
-   Unary = m.C(m.S("+-")^-1) * Value,
+   Unary = m.C(m.S("+-"))^-1 * Value,
    Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
    floatlval = element + floatvar,
    -- Array access/function/builtin call
@@ -168,13 +168,15 @@ for line in file:lines() do
       else	 
 	 prog[#prog+1] = {"TARGET",m[1]};
 	 for k,v in ipairs(m[2]) do
-	    --print(">>",k,v[1]); --Confirm strucure of capture is correct
+	    --print(">>",k,v[1]); --Confirm first-level commands are captured
 	    prog[#prog+1] = v;
 	 end
       end
    end      
    count = count + 1;
 end
+
+local fvars = {};
 
 function eval(expr)
    if type(expr) == "table" then
@@ -183,7 +185,7 @@ function eval(expr)
       elseif expr[1] == "INTEGER" then
 	 return tonumber(expr[2]);
       elseif expr[1] == "FLOATVAR" then
-	 return "["..expr[2].."]";
+	 return fvars[expr[2]];
       elseif expr[1] == "STRINGVAR" then
 	 return "{"..expr[2].."}";
       end
@@ -218,6 +220,11 @@ function doprint(printlist)
    io.write(outstr);
 end
 
+function doletn(lval,expr)
+   local target = lval[2];
+   fvars[target] = eval(expr);
+end
+
 if nerr == 0 and mode == 2 then
    local targets = {}
    for i,m in ipairs(prog) do
@@ -233,6 +240,8 @@ if nerr == 0 and mode == 2 then
 	 basiclineno = arg[2];
       elseif arg[1] == "PRINT" then
 	 doprint(arg[2]);
+      elseif arg[1] == "LETN" then
+	 doletn(arg[2],arg[3]);
       elseif arg[1] == "GOTO" then
 	 if dojump then
 	    pc = targets[arg[2]];
