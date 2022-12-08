@@ -176,8 +176,29 @@ if nerr == 0 and mode == 2 then
       for i=1,#stats do
 	 if stats[i][1] == "PRINT" then
 	    local printlist = stats[i][2];
+	    local j = 1;
+	    local ncol = 0;
+	    local outstr = "";
 	    for j=1,#printlist do
-	       print(printlist[j]);
+	       local element = printlist[j]
+	       if element == ";" then
+	       else
+		  if element == "," then
+		     local newcol = 14*(ncol/14+1);
+		     element = string.rep(" ",newcol-ncol)
+		  else
+		     element = tostring(element); -- evaluate...
+		  end
+		  ncol = ncol+#element;
+		  outstr = outstr..element;
+	       end
+	    end
+	    if #printlist > 1 and
+	       printlist[#printlist] == "," or
+	    printlist[#printlist] == ";" then
+	       io.write(outstr);
+	    else
+	       print(outstr);
 	    end
 	 end
       end
