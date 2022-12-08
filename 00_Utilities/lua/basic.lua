@@ -200,14 +200,24 @@ function doprint(printlist)
 end
 
 if nerr == 0 and mode == 2 then
-   for i=1,#prog do
-      local m = prog[i];
+   local targets = {}
+   for i,m in ipairs(prog) do
+      targets[m[1]] = i;
+   end
+   local pc = 1;
+   while true do
+      local m = prog[pc];
       local basiclineno = m[1];
       local stats = m[2];
       for i=1,#stats do
 	 if stats[i][1] == "PRINT" then
 	    doprint(stats[i][2]);
 	 end
+      end
+      pc = pc + 1;
+      if pc > #prog then
+	 -- Run off end of program
+	 break;
       end
    end
 end
