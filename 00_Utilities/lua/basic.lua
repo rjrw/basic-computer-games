@@ -66,14 +66,16 @@ local numericassignment = m.V"numericassignment";
 local forstatement = m.V"forstatement"
 local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
-local statement = m.P {
-   "Statement";
-   Statement =
+local statement = m.V"statement";
+local statementlist = m.V"statementlist";
+local grammar = m.P {
+   "statementlist";
+   statement =
    gotostatement + gosubstatement + forstatement + nextstatement
       + ifstatement + endstatement + printstatement + numericassignment
       + returnstatement,
    ifstatement = m.P("IF") * space * logicalexpr * space *
-      m.P("THEN") * space * lineno * space,
+      m.P("THEN") * space * ( lineno * space + statementlist ),
    logicalexpr = Or,
    Or = (And * space * m.P("OR") * space)^0 * And,
    And = (Not * space * m.P("AND") * space)^0 * Not,
@@ -95,13 +97,11 @@ local statement = m.P {
    floatlval = m.V"E" + floatvar,
    -- Array access builtin call
    E = floatvar * space * m.P("(") * space * Sum * m.P(")"),
+   statementlist = (statement * m.P(":") * space )^0 * statement
 };
    
-local statementlist = m.P{
-   (statement * m.P(":") * space )^0 * statement
-};
 local numbered = m.P{
-   lineno * space * statementlist,
+   lineno * space * grammar,
 };
 
 local count = 1;
