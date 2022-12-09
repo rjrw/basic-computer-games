@@ -122,7 +122,7 @@ local basicline = m.P {
    ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
       m.P("THEN") * space * (m.Ct (m.Cc("GOTO") * lineno) * space + statement),
    exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
-   dimdef = anyvar * space * m.P("(") * space * exprlist * space * m.P(")"),
+   dimdef = m.Ct(anyvar * space * m.P("(") * space * exprlist * space * m.P(")")),
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
    dimstatement = m.C(m.P("DIM")) * space * dimlist,
    logicalexpr = Or,
@@ -193,7 +193,7 @@ local quit = false;
 local substack = {};
 
 -- Symbol tables
-local fvars, svars = {}, {};
+local fvars, svars, favars = {}, {}, {};
 
 local printstr = "";
 function printtab(n)
@@ -393,6 +393,23 @@ function doif(test,statement)
    end
 end
 
+function dodim(stat)
+   for i = 2,#stat do
+      local dimvar = stat[i][1];
+      local dimtype = dimvar[1];
+      local name = dimvar[2];
+      local shape = stat[i][2];
+      if #shape > 1 then
+	 assert(false,"Don't yet handle multi-dimensional arrays");
+      end
+      local store = {};
+      for j = 1, eval(shape[1]) do
+	 store[j] = 0;
+      end
+      favars[name] = store;
+   end
+end
+
 function exec(stat)
    if stat[1] == "TARGET" then
       basiclineno = stat[2];
@@ -417,9 +434,10 @@ function exec(stat)
       pc = targets[stat[2]]-1;
    elseif stat[1] == "RETURN" then
       pc = table.remove(substack);
+   elseif stat[1] == "DIM" then
+      dodim(stat);
    elseif stat[1] == "DATA" or
       stat[1] == "DEF" or
-      stat[1] == "DIM" or --<<<
       stat[1] == "FOR" or --<<<
       stat[1] == "NEXT" or --<<<
       stat[1] == "ON" or
