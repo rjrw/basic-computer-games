@@ -80,6 +80,7 @@ local printexpr = m.V"printexpr";
 local printlist = m.V"printlist";
 local printstatement = m.V"printstatement";
 local inputstatement = m.V"inputstatement";
+local readstatement = m.V"readstatement";
 local inputlist = m.V"inputlist";
 local inputitem = m.V"inputitem";
 
@@ -130,7 +131,8 @@ local basicline = m.P {
 	    + endstatement + stopstatement + printstatement + numericassignment
 	    + returnstatement + stringassignment + dimstatement +
 	    inputstatement + endstatement + ifstatement + remstatement +
-	    onstatement + datastatement + randomizestatement + restorestatement ),
+	    onstatement + datastatement + randomizestatement + restorestatement +
+	    readstatement ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
@@ -141,9 +143,10 @@ local basicline = m.P {
    printexpr = stringexpr + expr + m.C((m.S(";,")*space)),
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
-   inputlist = (inputitem * space * m.P(",")*space)^-1 * inputitem,
+   inputlist = (inputitem * space * m.P(",") * space)^0 * inputitem,
    inputstatement = m.C(m.P("INPUT")) * space *
       (stringexpr * space * m.P(";") * space)^-1 * inputlist,
+   readstatement = m.C(m.P("READ")) * space * inputlist,
    ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
       m.P("THEN") * space * (m.Ct (m.Cc("GOTO") * lineno) * space + statement),
    exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
