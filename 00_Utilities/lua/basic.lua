@@ -118,8 +118,8 @@ local basicline = m.P {
       m.Cc("LETS") * m.P("LET")^-1 * space *
       stringlval * space * m.P("=") * space * stringexpr * space,
    stringexpr = string_ + stringvar,
-   printexpr = stringexpr + expr,
-   printlist = (printexpr * space * m.C((m.S(";,")*space))^-1 )^0,
+   printexpr = stringexpr + expr + m.C((m.S(";,")*space)),
+   printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * m.P(",")*space)^-1 * inputitem,
    inputstatement = m.C(m.P("INPUT")) * space *
@@ -230,7 +230,7 @@ function makernd()
    end
 end
 
-local builtins = { TAB = printtab, INT = math.floor, RND = makernd()};
+local builtins = { INT = math.floor, RND = makernd(), TAB = printtab};
 
 function eval(expr)
    if type(expr) == "table" then
