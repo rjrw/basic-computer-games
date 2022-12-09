@@ -190,7 +190,7 @@ file:close();
 local pc = 1;
 local basiclineno = 0;
 local quit = false;
-local substack = {};
+local substack,forstack = {}, {};
 
 -- Symbol tables
 local fvars, svars, favars = {}, {}, {};
@@ -417,6 +417,17 @@ function doif(test,statement)
    end
 end
 
+function dofor(stat)
+   local var = stat[2][2];
+   doletn(stat[2],stat[3]);
+   local frame = {
+      pc, var, eval(stat[4]), 1};
+   if #stat == 5 then
+      frame[4] = eval(stat[5]);
+   end   
+   table.insert(forstack,frame);
+end
+
 function dodim(stat)
    for i = 2,#stat do
       local dimvar = stat[i][1];
@@ -460,9 +471,10 @@ function exec(stat)
       pc = table.remove(substack);
    elseif stat[1] == "DIM" then
       dodim(stat);
+   elseif stat[1] == "FOR" then
+      dofor(stat);
    elseif stat[1] == "DATA" or
       stat[1] == "DEF" or
-      stat[1] == "FOR" or --<<<
       stat[1] == "NEXT" or --<<<
       stat[1] == "ON" or
       stat[1] == "RANDOMIZE" or
