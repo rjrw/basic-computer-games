@@ -260,6 +260,13 @@ function eval(expr)
 	 if builtin then
 	    return builtin(table.unpack(args));
 	 end
+	 local arr = favars[name];
+	 if arr then
+	    if #args > 1 then
+	       assert(false,"Multi-dimensional access not yet implemented");
+	    end
+	    return arr[args[1]];
+	 end
 	 print ("Accessing compound",access);
 	 return 0;
       else
@@ -312,8 +319,22 @@ function doprint(printlist)
 end
 
 function doletn(lval,expr)
+   local ttype = lval[1];
    local target = lval[2];
-   fvars[target] = eval(expr);
+   local value = eval(expr)
+   if ttype == "ELEMENT" then
+      local eltype = target[1];
+      if #lval[3] > 1 then
+	 assert(false,"Multi-dimensional access not yet implemented");
+      end
+      if eltype ~= "FLOATVAR" then
+	 assert(false,"Non-floatvar access not yet implemented");
+      end
+      local index = eval(lval[3][1]);
+      favars[target[2]][index] = value;
+   else
+      fvars[target] = value;
+   end
 end
 
 function dolets(lval,expr)
