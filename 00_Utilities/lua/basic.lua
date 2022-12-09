@@ -502,7 +502,6 @@ function exec(stat)
       donext(stat);
    elseif stat[1] == "DATA" or
       stat[1] == "DEF" or
-      stat[1] == "NEXT" or --<<<
       stat[1] == "ON" or
       stat[1] == "RANDOMIZE" or
       stat[1] == "READ" or
