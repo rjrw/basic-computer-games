@@ -334,15 +334,14 @@ function eval(expr)
 	 if builtin then
 	    return builtin(table.unpack(args));
 	 end
-	 local arr = favars[name];
-	 if arr then
-	    if #args == 1 then
-	       return arr[args[1]];
-	    elseif #args == 2 then
-	       return arr[args[1]][args[2]];
-	    else
-	       error("More than 2-dimensional access not yet implemented");
+	 local val = favars[name];
+	 if val then
+	    for _, v in ipairs(args) do
+	       val = val[v];
 	    end
+	    return val;
+	 else
+	    error("Array "..name.." not known");
 	 end
 	 error ("Compound "..access.." not found");
 	 return 0;
