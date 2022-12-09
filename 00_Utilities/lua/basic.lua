@@ -41,7 +41,7 @@ local nextlist = m.P {
    ( floatvar * space * m.P"," * space)^0 * floatvar * space
 };
 local nextstatement = m.P {
-   --m.C(m.P("NEXT")) * space * nextlist * space +
+   m.C(m.P("NEXT")) * space * nextlist * space +
    m.C(m.P("NEXT"))
 };
 local endstatement = m.P {
@@ -431,6 +431,18 @@ end
 function donext(stat)
    local frame = forstack[#forstack];
    local var = frame[2];
+   if #stat > 1 then
+      for i=2,#stat do
+	 if stat[i][1] ~= "FLOATVAR" then
+	    error("NEXT tag must be floating variable");
+	 end
+	 while var ~= stat[i][2] do
+	    table.remove(forstack);
+	    frame = forstack[#forstack];
+	    var = frame[2];
+	 end
+      end
+   end
    local last = frame[3];
    local step = frame[4];
    local oldval = fvars[var];
