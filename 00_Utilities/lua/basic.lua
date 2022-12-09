@@ -200,7 +200,12 @@ function printtab(n)
    if n > #printstr then
       printstr = printstr..string.rep(" ",n-#printstr);
    end
+   return "";
 end
+
+-- Builtin function table
+local builtins = { TAB = printtab };
+
 function eval(expr)
    if type(expr) == "table" then
       if expr[1] == "STRING" then
@@ -251,9 +256,9 @@ function eval(expr)
 	    access = access..args[#args]..",";
 	 end
 	 access=access..")";
-	 if name == "TAB" then
-	    printtab(args[1]);
-	    return "";
+	 local builtin = builtins[name];
+	 if builtin then
+	    return builtin(table.unpack(args));
 	 end
 	 print ("Accessing compound",access);
 	 return 0;
