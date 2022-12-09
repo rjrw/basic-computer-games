@@ -90,12 +90,14 @@ local dimdef = m.V"dimdef";
 local forstatement = m.V"forstatement"
 local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
+local floatrval = m.V"floatrval";
 local stringlval = m.V"stringlval";
 local stringelement = m.V"stringelement";
 local arg = m.V"arg";
 local arglist = m.V"arglist";
 local exprlist = m.V"exprlist";
 local element = m.V"element";
+local call = m.V"call";
 local statement = m.V"statement";
 local statementlist = m.V"statementlist";
 local basicline = m.P {
@@ -145,12 +147,14 @@ local basicline = m.P {
       m.Ct(m.Cc("SUM") * ( Product * space * m.C(m.S("+-")) * space)^0 * Product) * space,
    Product = m.Ct(m.Cc("PRODUCT") * ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary) * space,
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
-   Value = integer + floatlval + m.P("(") * space * Sum * m.P(")"),
+   Value = integer + floatrval + m.P("(") * space * Sum * m.P(")"),
    floatlval = element + floatvar,
+   floatrval = call + floatvar,
    -- Array access/function/builtin call
    arg = expr + logicalexpr + stringexpr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = m.Ct(m.Cc("ELEMENT") * floatvar * space * m.P("(") * space * exprlist * space * m.P(")")),
+   call = m.Ct(m.Cc("CALL") * floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
@@ -204,6 +208,8 @@ function printtab(n)
 end
 
 -- Builtin function table
+-- ABS, ASC, ATN,CHR$,COS,EXP,LEFT$,LEN,LOG,MID$,RIGHT$,RND,
+-- SGN,SIN,SPC,SQR,STR,TAN,VAL
 local builtins = { TAB = printtab, INT = math.floor };
 
 function eval(expr)
@@ -246,7 +252,7 @@ function eval(expr)
 	 return fvars[expr[2]];
       elseif expr[1] == "STRINGVAR" then
 	 return svars[expr[2]];
-      elseif expr[1] == "ELEMENT" then
+      elseif expr[1] == "CALL" then
 	 local name = expr[2][2];
 	 local arglist = expr[3];
 	 local args = {};
