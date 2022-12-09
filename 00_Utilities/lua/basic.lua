@@ -438,27 +438,44 @@ function dofor(stat)
 end
 
 function donext(stat)
-   local frame = forstack[#forstack];
-   local var = frame[2];
-   for i=2,#stat do
-      if stat[i][1] ~= "FLOATVAR" then
-	 error("NEXT tag must be floating variable");
-      end
-      while var ~= stat[i][2] do
+   if #stat == 1 then
+      local frame = forstack[#forstack];
+      local var = frame[2];
+      local last = frame[3];
+      local step = frame[4];
+      local oldval = fvars[var];
+      local newval = oldval + step;
+      fvars[var] = newval;
+      if step*(newval-last) <= 0 then
+	 pc = frame[1];
+	 return;
+      else
 	 table.remove(forstack);
-	 frame = forstack[#forstack];
-	 var = frame[2];
       end
-   end
-   local last = frame[3];
-   local step = frame[4];
-   local oldval = fvars[var];
-   local newval = oldval + step;
-   fvars[var] = newval;
-   if step*(newval-last) <= 0 then
-      pc = frame[1];
    else
-      table.remove(forstack);
+      for i=2,#stat do
+	 if stat[i][1] ~= "FLOATVAR" then
+	    error("NEXT tag must be floating variable");
+	 end
+	 local frame = forstack[#forstack];
+	 local var = frame[2];
+	 while var ~= stat[i][2] do
+	    table.remove(forstack);
+	    frame = forstack[#forstack];
+	    var = frame[2];
+	 end
+	 local last = frame[3];
+	 local step = frame[4];
+	 local oldval = fvars[var];
+	 local newval = oldval + step;
+	 fvars[var] = newval;
+	 if step*(newval-last) <= 0 then
+	    pc = frame[1];
+	    return;
+	 else
+	    table.remove(forstack);
+	 end
+      end
    end
 end
 
