@@ -263,11 +263,11 @@ function eval(expr)
 	 local arr = favars[name];
 	 if arr then
 	    if #args > 1 then
-	       assert(false,"Multi-dimensional access not yet implemented");
+	       error("Multi-dimensional access not yet implemented");
 	    end
 	    return arr[args[1]];
 	 end
-	 print ("Accessing compound",access);
+	 error ("Compound "..access.." not found");
 	 return 0;
       else
 	 print(false,"Bad expr "..tostring(expr[1]).." at "..basiclineno);
@@ -325,10 +325,10 @@ function doletn(lval,expr)
    if ttype == "ELEMENT" then
       local eltype = target[1];
       if #lval[3] > 1 then
-	 assert(false,"Multi-dimensional access not yet implemented");
+	 error("Multi-dimensional access not yet implemented");
       end
       if eltype ~= "FLOATVAR" then
-	 assert(false,"Non-floatvar access not yet implemented");
+	 error("Non-floatvar access not yet implemented");
       end
       local index = eval(lval[3][1]);
       favars[target[2]][index] = value;
@@ -378,7 +378,7 @@ function logicaleval(expr)
       elseif expr[3] == "<" then
 	 val = val1 < val2;
       else
-	 assert(false);
+	 error("Operator "..expr[3].." not recognized");
       end      
       return val;
    elseif expr[1] == "COMPARES" then
@@ -390,12 +390,11 @@ function logicaleval(expr)
       elseif expr[3] == "<>" then
 	 val = val1 ~= val2;
       else
-	 assert(false);
+	 error("Operator "..expr[3].." not recognized");
       end      
       return val;
    else
-      print("Failed to interpret",expr[1]);
-      assert(false);
+      error("Failed to interpret "..expr[1]);
    end
    return nil;
 end
@@ -421,7 +420,7 @@ function dodim(stat)
       local name = dimvar[2];
       local shape = stat[i][2];
       if #shape > 1 then
-	 assert(false,"Don't yet handle multi-dimensional arrays");
+	 error("Don't yet handle multi-dimensional arrays");
       end
       local store = {};
       for j = 1, eval(shape[1]) do
@@ -476,7 +475,7 @@ if nerr == 0 and mode == 2 then
    while true do
       local status, err = pcall(function () exec(prog[pc]) end);
       if not status then
-	 print("At BASIC line",basiclineno);
+	 print("At BASIC line "..basiclineno);
 	 print(err);
 	 quit = true;
       end
