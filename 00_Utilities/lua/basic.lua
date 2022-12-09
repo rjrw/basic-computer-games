@@ -42,7 +42,7 @@ local lineno = m.C(digit^1);
 local gotostatement = m.P {
    m.Cc("GOTO") * m.P("GO") * space * m.P("TO") * space * lineno * space
 };
-local literal = m.P { floatval + stringval + m.Ct(m.Cc("STRING")*(any-m.S(", \t"))^1) };
+local literal = m.P { floatval + stringval + m.Ct(m.Cc("STRING")*m.C((any-m.S(", \t"))^1)) };
 local datastatement = m.P {
    m.C(m.P("DATA")) * space * ( literal * space * m.P(",") * space ) ^0 * literal * space
 };
