@@ -28,9 +28,9 @@ end
 local file = assert(io.open(arg[narg]));
 
 local any = m.P(1);
-local space = m.S" \t\n"^0;
+local space = m.S" \t"^0;
 local digit = m.R("09");
-local string_ =
+local stringval =
    m.Ct(m.Cc("STRING")*m.P("\"") * m.C((any-m.P("\""))^0) * m.P("\""));
 local float = m.P( (digit^0 * m.P(".") * digit^1 + digit^1) *(m.P("E")*m.S("+-")^-1*digit^1)^-1);
 local floatval = m.Ct(m.Cc("FLOATVAL")*m.C(float));
@@ -41,6 +41,10 @@ local anyvar = m.P { stringvar + floatvar };
 local lineno = m.C(digit^1);
 local gotostatement = m.P {
    m.Cc("GOTO") * m.P("GO") * space * m.P("TO") * space * lineno * space
+};
+local literal = m.P { floatval + stringval + m.C((any-m.S(", \t"))^1) };
+local datastatement = m.P {
+   m.C(m.P("DATA")) * space * ( literal * space * m.P(",") * space ) ^0 * literal * space
 };
 local gosubstatement = m.P {
    m.Cc("GOSUB") * m.P("GO") * space * m.P("SUB") * space * lineno * space
@@ -120,14 +124,14 @@ local basicline = m.P {
 	    + endstatement + stopstatement + printstatement + numericassignment
 	    + returnstatement + stringassignment + dimstatement +
 	    inputstatement + endstatement + ifstatement + remstatement +
-	    onstatement ),
+	    onstatement + datastatement ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    stringassignment =
       m.Cc("LETS") * m.P("LET")^-1 * space *
       stringlval * space * m.P("=") * space * stringexpr * space,
-   stringexpr = string_ + stringcall + stringvar,
+   stringexpr = stringval + stringcall + stringvar,
    printexpr = stringexpr + expr + m.C((m.S(";,")*space)),
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
