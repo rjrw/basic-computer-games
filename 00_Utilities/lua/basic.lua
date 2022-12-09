@@ -290,13 +290,13 @@ end
 function logicaleval(expr)
    if expr[1] == "OR" then
       local val = logicaleval(expr[2]);
-      for i=2,#expr do
+      for i=3,#expr do
 	 val = val or logicaleval(expr[i]);
       end
       return val;
    elseif expr[1] == "AND" then
       local val = logicaleval(expr[2]);
-      for i=2,#expr do
+      for i=3,#expr do
 	 val = val and logicaleval(expr[i]);
       end
       return val;
@@ -309,7 +309,23 @@ function logicaleval(expr)
    elseif expr[1] == "COMPAREF" then
       local val1 = eval(expr[2]);
       local val2 = eval(expr[4]);
-      return val1 == val2;
+      local val = false;
+      if expr[3] == "=" then
+	 val = val1 == val2;
+      elseif expr[3] == "<>" then
+	 val = val1 ~= val2;
+      elseif expr[3] == ">=" then
+	 val = val1 >= val2;
+      elseif expr[3] == "<=" then
+	 val = val1 <= val2;
+      elseif expr[3] == ">" then
+	 val = val1 > val2;
+      elseif expr[3] == "<" then
+	 val = val1 < val2;
+      else
+	 assert(false);
+      end      
+      return val;
    end
    return expr[1];
 end
