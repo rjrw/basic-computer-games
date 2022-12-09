@@ -101,6 +101,7 @@ local arglist = m.V"arglist";
 local exprlist = m.V"exprlist";
 local element = m.V"element";
 local call = m.V"call";
+local stringcall = m.V"stringcall";
 local statement = m.V"statement";
 local statementlist = m.V"statementlist";
 local basicline = m.P {
@@ -118,7 +119,7 @@ local basicline = m.P {
    stringassignment =
       m.Cc("LETS") * m.P("LET")^-1 * space *
       stringlval * space * m.P("=") * space * stringexpr * space,
-   stringexpr = string_ + stringvar,
+   stringexpr = string_ + stringcall + stringvar,
    printexpr = stringexpr + expr + m.C((m.S(";,")*space)),
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
@@ -163,6 +164,7 @@ local basicline = m.P {
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = m.Ct(m.Cc("ELEMENT") * floatvar * space * m.P("(") * space * exprlist * space * m.P(")")),
    call = m.Ct(m.Cc("CALL") * floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
+   stringcall = m.Ct(m.Cc("CALL") * stringvar * space * m.P("(") * space * arglist * space * m.P(")")),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
@@ -251,13 +253,15 @@ function spc(x)
 end
 
 -- Builtin function table
--- CHR$,LEFT$,MID$,RIGHT$
+-- LEFT$,MID$,RIGHT$
 
-local builtins = { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos, EXP = math.exp,
+local builtins = { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos,
+		   EXP = math.exp,
 		   INT = math.floor, LEN=len, LOG = math.log,
 		   RND = makernd(), SGN = sgn,
 		   SIN = math.sin, SPC = spc, SQR = math.sqrt, STR=tostring,
 		   TAB = printtab, TAN = math.tan, VAL=tonumber };
+builtins["CHR$"] = string.char;
 
 function eval(expr)
    if type(expr) == "table" then
@@ -307,6 +311,7 @@ function eval(expr)
 	 return svars[expr[2]];
       elseif expr[1] == "CALL" then
 	 local name = expr[2][2];
+	 local exprtype = expr[2][1];
 	 local arglist = expr[3];
 	 local args = {};
 	 local access = name.."(";
@@ -315,7 +320,7 @@ function eval(expr)
 	    access = access..args[#args]..",";
 	 end
 	 access=access..")";
-	 local builtin = builtins[name];
+	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins[name.."$"];
 	 if builtin then
 	    return builtin(table.unpack(args));
 	 end
