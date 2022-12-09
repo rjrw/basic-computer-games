@@ -88,6 +88,8 @@ local dimstatement = m.V"dimstatement";
 local dimlist = m.V"dimlist";
 local dimdef = m.V"dimdef";
 local forstatement = m.V"forstatement"
+local onstatement = m.V"onstatement"
+-- "DATA" "DEF" "RANDOMIZE" "READ" "RESTORE"
 local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
 local floatrval = m.V"floatrval";
@@ -107,7 +109,8 @@ local basicline = m.P {
 	 gotostatement + gosubstatement + forstatement + nextstatement
 	    + endstatement + stopstatement + printstatement + numericassignment
 	    + returnstatement + stringassignment + dimstatement +
-	    inputstatement + endstatement + ifstatement + remstatement ),
+	    inputstatement + endstatement + ifstatement + remstatement +
+	    onstatement ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
@@ -139,6 +142,9 @@ local basicline = m.P {
       m.C(m.P("FOR")) * space * floatvar * space * m.P("=") * space * expr
       * space * m.P("TO") * space * expr * space *
       ( m.P("STEP") * space * expr * space )^-1,
+   onstatement =
+      m.C(m.P("ON")) * space * expr * space * m.P("GO") * space * m.P("TO") * space *
+      (lineno * space * m.P(",") * space)^0 * lineno * space,
    numericassignment =
       m.Cc("LETN") * m.P("LET")^-1 * space *
       floatlval * space * m.P("=") * space * expr * space,
@@ -359,6 +365,13 @@ function dolets(lval,expr)
    svars[target] = eval(expr);
 end
 
+function doon(stat)
+   local switch = math.floor(eval(stat[2]));
+   if switch > 0 and switch+2 <= #stat then
+      pc = targets[stat[2+switch]]-1;
+   end
+end
+
 function logicaleval(expr)
    if expr[1] == "OR" then
       local val = logicaleval(expr[2]);
@@ -530,9 +543,10 @@ function exec(stat)
       dofor(stat);
    elseif stat[1] == "NEXT" then
       donext(stat);
+   elseif stat[1] == "ON" then
+      doon(stat);
    elseif stat[1] == "DATA" or
       stat[1] == "DEF" or
-      stat[1] == "ON" or
       stat[1] == "RANDOMIZE" or
       stat[1] == "READ" or
       stat[1] == "RESTORE" then
