@@ -468,9 +468,9 @@ function exec(stat)
       stat[1] == "RANDOMIZE" or
       stat[1] == "READ" or
       stat[1] == "RESTORE" then
-	 print("Not handled",stat[1]);
+	 error("Not handled "..stat[1]);
    else
-      print("Unknown statement",stat[1]);
+      error("Unknown statement "..stat[1]);
    end
    pc = pc + 1;
 end
