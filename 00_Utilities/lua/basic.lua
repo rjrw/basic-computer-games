@@ -216,7 +216,21 @@ end
 -- Builtin function table
 -- ABS, ASC, ATN,CHR$,COS,EXP,LEFT$,LEN,LOG,MID$,RIGHT$,RND,
 -- SGN,SIN,SPC,SQR,STR,TAN,VAL
-local builtins = { TAB = printtab, INT = math.floor };
+
+function makernd()
+   local rndval=0.1;
+   return function(arg)
+      if arg <= 0 then
+	 math.randomseed(math.floor(-arg));
+      end
+      if arg ~= 0 then
+	 rndval = math.random();
+      end
+      return rndval;
+   end
+end
+
+local builtins = { TAB = printtab, INT = math.floor, RND = makernd()};
 
 function eval(expr)
    if type(expr) == "table" then
