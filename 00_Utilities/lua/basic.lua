@@ -109,7 +109,7 @@ local dimlist = m.V"dimlist";
 local dimdef = m.V"dimdef";
 local forstatement = m.V"forstatement"
 local onstatement = m.V"onstatement"
---  "DEF" "READ"
+local defstatement = m.V"defstatement";
 local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
 local floatrval = m.V"floatrval";
@@ -117,6 +117,7 @@ local stringlval = m.V"stringlval";
 local stringelement = m.V"stringelement";
 local arg = m.V"arg";
 local arglist = m.V"arglist";
+local dummylist = m.V"dummylist";
 local exprlist = m.V"exprlist";
 local element = m.V"element";
 local call = m.V"call";
@@ -132,7 +133,7 @@ local basicline = m.P {
 	    + returnstatement + stringassignment + dimstatement +
 	    inputstatement + endstatement + ifstatement + remstatement +
 	    onstatement + datastatement + randomizestatement + restorestatement +
-	    readstatement ),
+	    readstatement + defstatement ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
@@ -153,6 +154,10 @@ local basicline = m.P {
    dimdef = m.Ct(anyvar * space * m.P("(") * space * exprlist * space * m.P(")")),
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
    dimstatement = m.C(m.P("DIM")) * space * dimlist,
+   dummylist = m.Ct( (m.C(varname)*space*m.P(",")*space)^0*m.C(varname)),
+   defstatement = m.C(m.P("DEF")) * m.S(" \t")^1 * m.P("FN") * space
+      * m.C(varname) * space * m.P("(") * space * dummylist * space * m.P(")")
+      * space * m.P("=") * space * expr,
    logicalexpr = Or,
    Or = m.Ct(m.Cc("OR") * (And * space * m.P("OR") * space)^0 * And),
    And = m.Ct(m.Cc("AND") * (Not * space * m.P("AND") * space)^0 * Not),
