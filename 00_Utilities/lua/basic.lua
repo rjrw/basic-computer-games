@@ -8,11 +8,18 @@ local m = require"lpeg";
 
 -- Parse = 1, interpret = 2, compile = 3, compile & optimize = 4
 local mode = 1;
+local verbose = false;
 
 local narg = 1;
-if narg < #arg and arg[narg] == "-i" then
+while narg < #arg do
+   if arg[narg] == "-i" then
+      mode = 2;
+   elseif arg[narg] == "-v" then
+      verbose = true;
+   else
+      break;
+   end
    narg = narg+1;
-   mode = 2;
 end
 if #arg ~= narg then
    print("Usage: basic.lua [opts] <file>.bas");
@@ -176,6 +183,7 @@ local nerr = 0;
 local count = 1;
 local targets = {} -- Jump table
 for line in file:lines() do
+   if verbose then print(line); end
    local m = basicline:match(line);
    if not m then
       io.write(string.format("Syntax Error at line %d\n", count));
