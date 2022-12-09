@@ -646,7 +646,9 @@ function exec(stat)
       donext(stat);
    elseif stat[1] == "ON" then
       doon(stat);
-   elseif stat[1] == "DATA" or
+   elseif stat[1] == "DATA" then
+      -- Do nothing at run time
+   elseif
       stat[1] == "DEF" or
       stat[1] == "RANDOMIZE" or
       stat[1] == "READ" or
