@@ -150,7 +150,7 @@ local basicline = m.P {
    -- Array access/function/builtin call
    arg = expr + logicalexpr + stringexpr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
-   element = floatvar * space * m.P("(") * space * exprlist * space * m.P(")"),
+   element = m.Ct(m.Cc("ELEMENT") * floatvar * space * m.P("(") * space * exprlist * space * m.P(")")),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
@@ -235,7 +235,11 @@ function eval(expr)
 	 return fvars[expr[2]];
       elseif expr[1] == "STRINGVAR" then
 	 return svars[expr[2]];
+      else
+	 print(false,"Bad expr "..tostring(expr[1]).." at "..basiclineno);
       end
+   else
+      print(false,"Parser failure at "..pc);
    end
    return tostring(expr);
 end
