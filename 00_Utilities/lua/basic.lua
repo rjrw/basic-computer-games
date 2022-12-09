@@ -42,7 +42,7 @@ local lineno = m.C(digit^1);
 local gotostatement = m.P {
    m.Cc("GOTO") * m.P("GO") * space * m.P("TO") * space * lineno * space
 };
-local literal = m.P { floatval + stringval + m.C((any-m.S(", \t"))^1) };
+local literal = m.P { floatval + stringval + m.Ct(m.Cc("STRING")*(any-m.S(", \t"))^1) };
 local datastatement = m.P {
    m.C(m.P("DATA")) * space * ( literal * space * m.P(",") * space ) ^0 * literal * space
 };
@@ -195,7 +195,8 @@ local basicline = m.P {
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
 
-local prog = {};
+local prog, data, datatarget = {}, {}, {};
+local datapc = 1;
 local nerr = 0;
 -- Read and parse input file
 local count = 1;
@@ -220,6 +221,12 @@ for line in file:lines() do
 	 for k,v in ipairs(m[2]) do
 	    --print(">>",k,v[1]); --Confirm first-level commands are captured
 	    prog[#prog+1] = v;
+	    if v[1] == "DATA" then
+	       datatarget[m[1]] = #data+1;
+	       for i = 2, #v do
+		  table.insert(data,v[i]);
+	       end
+	    end
 	 end
       end
    end      
@@ -364,10 +371,10 @@ function eval(expr)
 	 error ("Compound "..access.." not found");
 	 return 0;
       else
-	 print(false,"Bad expr "..tostring(expr[1]).." at "..basiclineno);
+	 error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
       end
    else
-      print(false,"Parser failure at "..pc);
+      error("Parser failure at "..pc);
    end
    return tostring(expr);
 end
@@ -599,13 +606,13 @@ function dodim(stat)
       end
       local store = {};
       if #shape == 1 then
-	 for j = 1, eval(shape[1]) do
+	 for j = 0, eval(shape[1]) do
 	    store[j] = 0.0;
 	 end
       else
-	 for j = 1, eval(shape[1]) do
+	 for j = 0, eval(shape[1]) do
 	    store[j] = {};
-	    for k = 1, eval(shape[2]) do
+	    for k = 0, eval(shape[2]) do
 	       store[j][k] = 0.0;
 	    end
 	 end
@@ -648,12 +655,27 @@ function exec(stat)
       doon(stat);
    elseif stat[1] == "DATA" then
       -- Do nothing at run time
-   elseif
-      stat[1] == "DEF" or
-      stat[1] == "RANDOMIZE" or
-      stat[1] == "READ" or
-      stat[1] == "RESTORE" then
-	 error("Not handled "..stat[1]);
+   elseif stat[1] == "RESTORE" then
+      if #stat then
+	 datapc = 1;
+      else
+	 datapc = datatargets[stat[2]];
+      end
+   elseif stat[1] == "READ" then
+      for i=2,#stat do
+	 local target = stat[i];
+	 local dat = data[datapc][2];
+	 if target[1] == "FLOATVAR" then
+	    fvars[target[2]] = dat;
+	 elseif target[1] == "STRINGVAR" then
+	    svars[target[2]] = dat;
+	 else
+	    error("READ target type "..target[1].."not implemented");
+	 end
+	 datapc = datapc+1;
+      end
+   elseif stat[1] == "DEF" or stat[1] == "RANDOMIZE" then
+      error("Not handled "..stat[1]);
    else
       error("Unknown statement "..stat[1]);
    end
