@@ -204,7 +204,7 @@ function printtab(n)
 end
 
 -- Builtin function table
-local builtins = { TAB = printtab };
+local builtins = { TAB = printtab, INT = math.floor };
 
 function eval(expr)
    if type(expr) == "table" then
