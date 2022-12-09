@@ -290,6 +290,10 @@ function doinput(inputlist)
       local varname = inputlist[j][2];
       if vartype == "STRINGVAR" then
 	 svars[varname] = input;
+      elseif vartype == "FLOATVAR" then
+	 fvars[varname] = tonumber(input);
+      else
+	 error("Vartype "..vartype.." not yet supported");
       end
       --print(inputlist[j][1]);
    end
