@@ -262,6 +262,9 @@ local builtins = { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos
 		   SIN = math.sin, SPC = spc, SQR = math.sqrt, STR=tostring,
 		   TAB = printtab, TAN = math.tan, VAL=tonumber };
 builtins["CHR$"] = string.char;
+builtins["LEFT$"] = function(s,j) return s:sub(1,j) end
+builtins["RIGHT$"] = function(s,j) return s:sub(-j) end
+builtins["MID$"] = function(s,i,j) return s:sub(i,i+j-1) end
 
 function eval(expr)
    if type(expr) == "table" then
