@@ -41,8 +41,8 @@ local nextlist = m.P {
    ( floatvar * space * m.P"," * space)^0 * floatvar * space
 };
 local nextstatement = m.P {
-   m.C(m.P("NEXT")) * space * nextlist * space
-      + m.C(m.P("NEXT"))
+   --m.C(m.P("NEXT")) * space * nextlist * space +
+   m.C(m.P("NEXT"))
 };
 local endstatement = m.P {
    m.C(m.P("END")) * space
@@ -419,13 +419,28 @@ end
 
 function dofor(stat)
    local var = stat[2][2];
-   doletn(stat[2],stat[3]);
+   fvars[var] = eval(stat[3]);
    local frame = {
       pc, var, eval(stat[4]), 1};
    if #stat == 5 then
       frame[4] = eval(stat[5]);
    end   
    table.insert(forstack,frame);
+end
+
+function donext(stat)
+   local frame = forstack[#forstack];
+   local var = frame[2];
+   local last = frame[3];
+   local step = frame[4];
+   local oldval = fvars[var];
+   local newval = oldval + step;
+   fvars[var] = newval;
+   if step*(newval-last) <= 0 then
+      pc = frame[1];
+   else
+      table.remove(forstack);
+   end
 end
 
 function dodim(stat)
@@ -473,6 +488,8 @@ function exec(stat)
       dodim(stat);
    elseif stat[1] == "FOR" then
       dofor(stat);
+   elseif stat[1] == "NEXT" then
+      donext(stat);
    elseif stat[1] == "DATA" or
       stat[1] == "DEF" or
       stat[1] == "NEXT" or --<<<
