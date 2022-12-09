@@ -32,7 +32,7 @@ local space = m.S" \t"^0;
 local digit = m.R("09");
 local stringval =
    m.Ct(m.Cc("STRING")*m.P("\"") * m.C((any-m.P("\""))^0) * m.P("\""));
-local float = m.P( (digit^0 * m.P(".") * digit^1 + digit^1) *(m.P("E")*m.S("+-")^-1*digit^1)^-1);
+local float = m.P( (digit^0 * m.P(".") * digit^1 + digit^1 * m.P(".")^-1) *(m.P("E")*m.S("+-")^-1*digit^1)^-1);
 local floatval = m.Ct(m.Cc("FLOATVAL")*m.C(float));
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = m.Ct(m.Cc("FLOATVAR")*m.C(varname));
