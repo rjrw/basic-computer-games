@@ -195,6 +195,12 @@ local substack = {};
 -- Symbol tables
 local fvars, svars = {}, {};
 
+local printstr = "";
+function printtab(n)
+   if n > #printstr then
+      printstr = printstr..string.rep(" ",n-#printstr);
+   end
+end
 function eval(expr)
    if type(expr) == "table" then
       if expr[1] == "STRING" then
@@ -245,6 +251,10 @@ function eval(expr)
 	    access = access..args[#args]..",";
 	 end
 	 access=access..")";
+	 if name == "TAB" then
+	    printtab(args[1]);
+	    return "";
+	 end
 	 print ("Accessing compound",access);
 	 return 0;
       else
@@ -273,30 +283,27 @@ function doinput(inputlist)
    end
 end
 function doprint(printlist)
-   local j = 1;
-   local ncol = 0;
-   local outstr = "";
+   printstr="";
    local flush = true;
+   local j = 1;
    for j=1,#printlist do
       local element = printlist[j]
       flush = true;
       if element == ";" then
 	 flush = false;
-	 element = "";
       elseif element == "," then
-	 local newcol = 14*(ncol/14+1);
-	 element = string.rep(" ",newcol-ncol)
+	 local newcol = 14*(#printstr/14+1);
+	 printtab(newcol);
 	 flush = false;
       else
-	 element = tostring(eval(element));
+	 local eps = tostring(eval(element));
+	 printstr = printstr..eps;
       end
-      ncol = ncol+#element;
-      outstr = outstr..element;
    end
    if flush then
-      outstr = outstr.."\n";
+      printstr = printstr.."\n";
    end
-   io.write(outstr);
+   io.write(printstr);
 end
 
 function doletn(lval,expr)
