@@ -160,7 +160,7 @@ local basicline = m.P {
    floatlval = element + floatvar,
    floatrval = call + floatvar,
    -- Array access/function/builtin call
-   arg = expr + logicalexpr + stringexpr,
+   arg = logicalexpr + stringexpr + expr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = m.Ct(m.Cc("ELEMENT") * floatvar * space * m.P("(") * space * exprlist * space * m.P(")")),
    call = m.Ct(m.Cc("CALL") * floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
@@ -253,8 +253,6 @@ function spc(x)
 end
 
 -- Builtin function table
--- LEFT$,MID$,RIGHT$
-
 local builtins = { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos,
 		   EXP = math.exp,
 		   INT = math.floor, LEN=len, LOG = math.log,
