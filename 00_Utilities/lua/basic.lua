@@ -25,7 +25,8 @@ local space = m.S" \t\n"^0;
 local digit = m.R("09");
 local string_ =
    m.Ct(m.Cc("STRING")*m.P("\"") * m.C((any-m.P("\""))^0) * m.P("\""));
-local integer = m.Ct(m.Cc("INTEGER")*m.C(digit^1));
+local float = m.P( (digit^0 * m.P(".") * digit^1 + digit^1) *(m.P("E")*m.S("+-")^-1*digit^1)^-1);
+local floatval = m.Ct(m.Cc("FLOATVAL")*m.C(float));
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = m.Ct(m.Cc("FLOATVAR")*m.C(varname));
 local stringvar = m.Ct(m.Cc("STRINGVAR")*m.C(varname) * m.P("$"));
@@ -156,7 +157,7 @@ local basicline = m.P {
    Product = m.Ct(m.Cc("PRODUCT") * ( Power * space * m.C(m.S("*/")) * space)^0 * Power) * space,
    Power = m.Ct(m.Cc("POWER") * ( Unary * space * m.S("^") * space)^0 * Unary) * space,
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
-   Value = integer + floatrval + m.P("(") * space * Sum * m.P(")"),
+   Value = floatval + floatrval + m.P("(") * space * Sum * m.P(")"),
    floatlval = element + floatvar,
    floatrval = call + floatvar,
    -- Array access/function/builtin call
@@ -304,7 +305,7 @@ function eval(expr)
 	    end
 	 end
 	 return val;
-      elseif expr[1] == "INTEGER" then
+      elseif expr[1] == "FLOATVAL" then
 	 return tonumber(expr[2]);
       elseif expr[1] == "FLOATVAR" then
 	 return fvars[expr[2]];
@@ -350,8 +351,11 @@ function doinput(inputlist)
       prompt = inputlist[i][2]..prompt;
       i=i+1;
    end
-   io.write(prompt);
-   local input = io.read("*l");
+   local input = "";
+   while input == "" do
+      io.write(prompt);
+      input = io.read("*l");
+   end
    for j=i,#inputlist do
       local vartype = inputlist[j][1];
       local varname = inputlist[j][2];
