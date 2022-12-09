@@ -120,7 +120,7 @@ local basicline = m.P {
    inputstatement = m.C(m.P("INPUT")) * space *
       (stringexpr * space * m.P(";") * space)^-1 * inputlist,
    ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
-      m.P("THEN") * space * (m.Cc("IFGOTO") * lineno * space + m.Cc("IFSTAT") * statement),
+      m.P("THEN") * space * (m.Ct (m.Cc("GOTO") * lineno) * space + statement),
    exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
    dimdef = anyvar * space * m.P("(") * space * exprlist * space * m.P(")"),
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
@@ -151,8 +151,8 @@ local basicline = m.P {
    arg = expr + logicalexpr + stringexpr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = floatvar * space * m.P("(") * space * exprlist * space * m.P(")"),
-   statementlist = m.Ct((statement * m.P(":") * space )^0 * statement),
-   line = m.Ct(lineno * space * statementlist * m.Cp()),
+   statementlist = (statement * m.P(":") * space )^0 * statement,
+   line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
 
 local prog = {};
@@ -321,14 +321,10 @@ local substack = {};
 
 local exec;
 
-function doif(opt,test,statement)
+function doif(test,statement)
    local switch = logicaleval(test);
    if switch then
-      if opt == "IFGOTO" then
-	 pc = targets[statement]-1;
-      else
-	 exec(statement); -- And fall through
-      end
+      exec(statement); -- And fall through
    else
       while pc < #prog and prog[pc][1] ~= "TARGET" do
 	 pc = pc+1;
@@ -353,7 +349,7 @@ function exec(stat)
    elseif stat[1] == "GOTO" then
       pc = targets[stat[2]]-1;
    elseif stat[1] == "IF" then
-      doif(stat[3],stat[2],stat[4]);
+      doif(stat[2],stat[3]);
    elseif stat[1] == "END" then
       quit = true;
    elseif stat[1] == "GOSUB" then
