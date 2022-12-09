@@ -336,10 +336,13 @@ function eval(expr)
 	 end
 	 local arr = favars[name];
 	 if arr then
-	    if #args > 1 then
-	       error("Multi-dimensional access not yet implemented");
+	    if #args == 1 then
+	       return arr[args[1]];
+	    elseif #args == 2 then
+	       return arr[args[1]][args[2]];
+	    else
+	       error("More than 2-dimensional access not yet implemented");
 	    end
-	    return arr[args[1]];
 	 end
 	 error ("Compound "..access.." not found");
 	 return 0;
@@ -414,14 +417,19 @@ function doletn(lval,expr)
    local value = eval(expr)
    if ttype == "ELEMENT" then
       local eltype = target[1];
-      if #lval[3] > 1 then
-	 error("Multi-dimensional access not yet implemented");
+      if #lval[3] > 2 then
+	 error("More than 2-dimensional access not yet implemented");
       end
       if eltype ~= "FLOATVAR" then
 	 error("Non-floatvar access not yet implemented");
       end
-      local index = eval(lval[3][1]);
-      favars[target[2]][index] = value;
+      if #lval[3] == 1 then
+	 local index = eval(lval[3][1]);
+	 favars[target[2]][index] = value;
+      else
+	 local i1, i2 = eval(lval[3][1]),eval(lval[3][2]);
+	 favars[target[2]][i1][i2] = value;
+      end
    else
       fvars[target] = value;
    end
@@ -569,12 +577,21 @@ function dodim(stat)
       local dimtype = dimvar[1];
       local name = dimvar[2];
       local shape = stat[i][2];
-      if #shape > 1 then
-	 error("Don't yet handle multi-dimensional arrays");
+      if #shape > 2 then
+	 error("Don't yet handle more than 2-dimensional arrays");
       end
       local store = {};
-      for j = 1, eval(shape[1]) do
-	 store[j] = 0;
+      if #shape == 1 then
+	 for j = 1, eval(shape[1]) do
+	    store[j] = 0.0;
+	 end
+      else
+	 for j = 1, eval(shape[1]) do
+	    store[j] = {};
+	    for k = 1, eval(shape[2]) do
+	       store[j][k] = 0.0;
+	    end
+	 end
       end
       favars[name] = store;
    end
