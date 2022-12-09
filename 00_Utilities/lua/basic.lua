@@ -29,7 +29,7 @@ local integer = m.Ct(m.Cc("INTEGER")*m.C(digit^1));
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = m.Ct(m.Cc("FLOATVAR")*m.C(varname));
 local stringvar = m.Ct(m.Cc("STRINGVAR")*m.C(varname) * m.P("$"));
-local anyvar = m.P { floatvar + stringvar };
+local anyvar = m.P { stringvar + floatvar };
 local lineno = m.C(digit^1);
 local gotostatement = m.P {
    m.Cc("GOTO") * m.P("GO") * space * m.P("TO") * space * lineno * space
