@@ -318,8 +318,11 @@ function doprint(printlist)
 	 printtab(newcol);
 	 flush = false;
       else
-	 local eps = tostring(eval(element));
-	 printstr = printstr..eps;
+	 local val = eval(element);
+	 if type(val) == "number" then
+	    val = " "..tostring(val).." ";
+	 end
+	 printstr = printstr..val;
       end
    end
    if flush then
