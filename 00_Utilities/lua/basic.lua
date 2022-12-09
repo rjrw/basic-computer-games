@@ -345,10 +345,12 @@ end
 
 function doinput(inputlist)
    local i=2;
+   local prompt = "? ";
    if inputlist[i][1] == "STRING" then
-      io.write(inputlist[i][2].."? ");
+      prompt = inputlist[i][2]..prompt;
       i=i+1;
    end
+   io.write(prompt);
    local input = io.read("*l");
    for j=i,#inputlist do
       local vartype = inputlist[j][1];
