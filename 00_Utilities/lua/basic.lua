@@ -235,6 +235,18 @@ function eval(expr)
 	 return fvars[expr[2]];
       elseif expr[1] == "STRINGVAR" then
 	 return svars[expr[2]];
+      elseif expr[1] == "ELEMENT" then
+	 local name = expr[2][2];
+	 local arglist = expr[3];
+	 local args = {};
+	 local access = name.."(";
+	 for k,v in ipairs(expr[3]) do
+	    args[#args+1] = eval(v);
+	    access = access..args[#args]..",";
+	 end
+	 access=access..")";
+	 print ("Accessing compound",access);
+	 return 0;
       else
 	 print(false,"Bad expr "..tostring(expr[1]).." at "..basiclineno);
       end
