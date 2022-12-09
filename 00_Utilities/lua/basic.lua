@@ -68,6 +68,12 @@ local remstatement = m.P {
 local returnstatement = m.P {
    m.C(m.P("RETURN")) * space
 };
+local randomizestatement = m.P {
+   m.C(m.P("RANDOMIZE")) * space
+};
+local restorestatement = m.P {
+   m.C(m.P("RESTORE")) * space * (lineno * space)^-1
+};
 local stringexpr = m.V"stringexpr";
 local stringassignment = m.V"stringassignment";
 local printexpr = m.V"printexpr";
@@ -102,7 +108,7 @@ local dimlist = m.V"dimlist";
 local dimdef = m.V"dimdef";
 local forstatement = m.V"forstatement"
 local onstatement = m.V"onstatement"
--- "DATA" "DEF" "RANDOMIZE" "READ" "RESTORE"
+--  "DEF" "READ"
 local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
 local floatrval = m.V"floatrval";
@@ -124,7 +130,7 @@ local basicline = m.P {
 	    + endstatement + stopstatement + printstatement + numericassignment
 	    + returnstatement + stringassignment + dimstatement +
 	    inputstatement + endstatement + ifstatement + remstatement +
-	    onstatement + datastatement ),
+	    onstatement + datastatement + randomizestatement + restorestatement ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
