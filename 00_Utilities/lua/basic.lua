@@ -474,7 +474,12 @@ end
 
 if nerr == 0 and mode == 2 then
    while true do
-      exec(prog[pc]);
+      local status, err = pcall(function () exec(prog[pc]) end);
+      if not status then
+	 print("At BASIC line",basiclineno);
+	 print(err);
+	 quit = true;
+      end
       if quit or pc > #prog then
 	 -- Run off end of program
 	 break;
