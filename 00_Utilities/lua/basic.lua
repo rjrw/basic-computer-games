@@ -320,7 +320,11 @@ function doprint(printlist)
       else
 	 local val = eval(element);
 	 if type(val) == "number" then
-	    val = " "..tostring(val).." ";
+	    if (val>0) then
+	       val = " "..tostring(val).." ";
+	    else
+	       val = tostring(val).." ";
+	    end
 	 end
 	 printstr = printstr..val;
       end
@@ -422,8 +426,8 @@ function doif(test,statement)
       while pc < #prog and prog[pc][1] ~= "TARGET" do
 	 pc = pc+1;
       end
-      pc = pc-1;
    end
+   pc=pc-1;
 end
 
 function dofor(stat)
