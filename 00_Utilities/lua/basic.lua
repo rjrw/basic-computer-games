@@ -73,6 +73,7 @@ local stringcomparisonop = m.P {
 };
 local Sum = m.V"Sum";
 local Product = m.V"Product"
+local Power = m.V"Power"
 local Unary = m.V"Unary";
 local Value = m.V"Value";
 local Or = m.V"Or";
@@ -151,7 +152,8 @@ local basicline = m.P {
    expr = Sum,
    Sum =
       m.Ct(m.Cc("SUM") * ( Product * space * m.C(m.S("+-")) * space)^0 * Product) * space,
-   Product = m.Ct(m.Cc("PRODUCT") * ( Unary * space * m.C(m.S("*/")) * space)^0 * Unary) * space,
+   Product = m.Ct(m.Cc("PRODUCT") * ( Power * space * m.C(m.S("*/")) * space)^0 * Power) * space,
+   Power = m.Ct(m.Cc("POWER") * ( Unary * space * m.S("^") * space)^0 * Unary) * space,
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
    Value = integer + floatrval + m.P("(") * space * Sum * m.P(")"),
    floatlval = element + floatvar,
@@ -247,13 +249,19 @@ function eval(expr)
 	    return eval(expr[2]);
 	 end
       elseif expr[1] == "PRODUCT" then
-	 local val = eval(expr[2])
+	 local val = eval(expr[2]);
 	 for i=3,#expr,2 do
 	    if expr[i] == "*" then
 	       val = val * eval(expr[i+1]);
 	    else
 	       val = val / eval(expr[i+1]);
 	    end
+	 end
+	 return val;
+      elseif expr[1] == "POWER" then
+	 local val = eval(expr[#expr]);
+	 for i=#expr-1,2,-1 do
+	    val = eval(expr[i]) ^ val;
 	 end
 	 return val;
       elseif expr[1] == "SUM" then
