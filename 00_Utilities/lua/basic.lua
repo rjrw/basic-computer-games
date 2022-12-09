@@ -186,6 +186,12 @@ for line in file:lines() do
 end
 file:close();
 
+-- Machine state
+local pc = 1;
+local basiclineno = 0;
+local quit = false;
+local substack = {};
+
 -- Symbol tables
 local fvars, svars = {}, {};
 
@@ -326,14 +332,24 @@ function logicaleval(expr)
 	 assert(false);
       end      
       return val;
+   elseif expr[1] == "COMPARES" then
+      local val1 = eval(expr[2]);
+      local val2 = eval(expr[4]);
+      local val = false;
+      if expr[3] == "=" then
+	 val = val1 == val2;
+      elseif expr[3] == "<>" then
+	 val = val1 ~= val2;
+      else
+	 assert(false);
+      end      
+      return val;
+   else
+      print("Failed to interpret",expr[1]);
+      assert(false);
    end
-   return expr[1];
+   return nil;
 end
-
-local pc = 1;
-local basiclineno = 0;
-local quit = false;
-local substack = {};
 
 local exec;
 
