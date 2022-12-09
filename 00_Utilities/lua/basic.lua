@@ -215,10 +215,6 @@ function printtab(n)
    return "";
 end
 
--- Builtin function table
--- ABS, ASC, ATN,CHR$,COS,EXP,LEFT$,LEN,LOG,MID$,RIGHT$,RND,
--- SGN,SIN,SPC,SQR,STR,TAN,VAL
-
 function makernd()
    local rndval=0.1;
    return function(arg)
@@ -232,7 +228,36 @@ function makernd()
    end
 end
 
-local builtins = { INT = math.floor, RND = makernd(), TAB = printtab};
+function abs(x)
+   if x < 0 then
+      return -x;
+   end
+   return x;
+end
+
+function len(x)
+   return #x;
+end
+
+function sgn(x)
+   if x < 0 then
+      return -1;
+   end
+   return 1;
+end
+
+function spc(x)
+   return string.rep(" ",x);
+end
+
+-- Builtin function table
+-- CHR$,LEFT$,MID$,RIGHT$
+
+local builtins = { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos, EXP = math.exp,
+		   INT = math.floor, LEN=len, LOG = math.log,
+		   RND = makernd(), SGN = sgn,
+		   SIN = math.sin, SPC = spc, SQR = math.sqrt, STR=tostring,
+		   TAB = printtab, TAN = math.tan, VAL=tonumber };
 
 function eval(expr)
    if type(expr) == "table" then
