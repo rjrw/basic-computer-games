@@ -88,9 +88,6 @@ local inputitem = m.V"inputitem";
 local comparisonop = m.P {
    m.C(m.P("=") + m.P("<>") + m.P("<=") + m.P(">=") + m.P("<") + m.P(">"))
 };
-local stringcomparisonop = m.P {
-   m.C(m.P("=") + m.P("<>"))
-};
 local Sum = m.V"Sum";
 local Product = m.V"Product"
 local Power = m.V"Power"
@@ -151,7 +148,7 @@ local basicline = m.P {
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * m.P(",") * space)^0 * inputitem,
    inputstatement = m.C(m.P("INPUT")) * space *
-      (stringexpr * space * m.P(";") * space)^-1 * inputlist,
+      (m.Cc("PROMPT") * stringexpr * space * m.P(";") * space)^-1 * inputlist,
    readstatement = m.C(m.P("READ")) * space * inputlist,
    ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
       m.P("THEN") * space * (m.Ct (m.Cc("GOTO") * lineno) * space + statement),
@@ -170,7 +167,7 @@ local basicline = m.P {
 	 ( comparison + m.P("(") * space * Or * space * m.P(")") )),
    comparison = m.Ct(
       m.Cc("COMPAREF") * expr * space * comparisonop * space * expr 
-	 + m.Cc("COMPARES") * stringexpr * space * stringcomparisonop * space * stringexpr),
+	 + m.Cc("COMPARES") * stringexpr * space * comparisonop * space * stringexpr),
    forstatement =
       m.C(m.P("FOR")) * space * floatvar * space * m.P("=") * space * expr
       * space * m.P("TO") * space * expr * space *
@@ -408,9 +405,9 @@ end
 function doinput(inputlist)
    local i=2;
    local prompt = "? ";
-   if inputlist[i][1] == "STRING" then
-      prompt = inputlist[i][2]..prompt;
-      i=i+1;
+   if inputlist[i] == "PROMPT" then
+      prompt = eval(inputlist[i+1])..prompt;
+      i=i+2;
    end
    local input = "";
    while input == "" do
@@ -544,6 +541,14 @@ function logicaleval(expr)
 	 val = val1 == val2;
       elseif expr[3] == "<>" then
 	 val = val1 ~= val2;
+      elseif expr[3] == ">=" then
+	 val = val1 >= val2;
+      elseif expr[3] == "<=" then
+	 val = val1 <= val2;
+      elseif expr[3] == ">" then
+	 val = val1 > val2;
+      elseif expr[3] == "<" then
+	 val = val1 < val2;
       else
 	 error("Operator "..expr[3].." not recognized");
       end      
