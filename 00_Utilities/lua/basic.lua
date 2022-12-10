@@ -114,6 +114,7 @@ local comparison = m.V"comparison";
 local floatlval = m.V"floatlval";
 local floatrval = m.V"floatrval";
 local stringlval = m.V"stringlval";
+local stringrval = m.V"stringrval";
 local stringelement = m.V"stringelement";
 local arg = m.V"arg";
 local arglist = m.V"arglist";
@@ -140,7 +141,8 @@ local basicline = m.P {
    stringassignment =
       m.Cc("LETS") * m.P("LET")^-1 * space *
       stringlval * space * m.P("=") * space * stringexpr * space,
-   stringexpr = stringval + stringcall + stringvar,
+   stringexpr = stringrval,
+   stringrval = stringval + stringcall + stringvar,
    printexpr = stringexpr + expr + m.C((m.S(";,")*space)),
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
