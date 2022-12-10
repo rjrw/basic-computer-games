@@ -148,7 +148,7 @@ local basicline = m.P {
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * m.P(",") * space)^0 * inputitem,
    inputstatement = m.C(m.P("INPUT")) * space *
-      (m.Cc("PROMPT") * stringexpr * space * m.P(";") * space)^-1 * inputlist,
+      (m.Cc("PROMPT") * stringexpr * space * m.P(";") * space)^-1 * inputlist * space,
    readstatement = m.C(m.P("READ")) * space * inputlist,
    ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
       m.P("THEN") * space * (m.Ct (m.Cc("GOTO") * lineno) * space + statement),
@@ -184,7 +184,7 @@ local basicline = m.P {
    Product = m.Ct(m.Cc("PRODUCT") * ( Power * space * m.C(m.S("*/")) * space)^0 * Power) * space,
    Power = m.Ct(m.Cc("POWER") * ( Unary * space * m.S("^") * space)^0 * Unary) * space,
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
-   Value = floatval + floatrval + m.P("(") * space * Sum * m.P(")"),
+   Value = floatval + floatrval + m.P("(") * space * expr * m.P(")"),
    floatlval = element + floatvar,
    floatrval = call + floatvar,
    -- Array access/function/builtin call
