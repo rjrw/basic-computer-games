@@ -251,19 +251,6 @@ function printtab(n)
    return "";
 end
 
-function makernd()
-   local rndval=0.1;
-   return function(arg)
-      if arg <= 0 then
-	 math.randomseed(math.floor(-arg));
-      end
-      if arg ~= 0 then
-	 rndval = math.random();
-      end
-      return rndval;
-   end
-end
-
 function abs(x)
    if x < 0 then
       return -x;
@@ -287,22 +274,44 @@ function spc(x)
 end
 
 -- Builtin function table
-local builtins = { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos,
-		   EXP = math.exp,
-		   INT = math.floor, LEN=len, LOG = math.log,
-		   RND = makernd(), SGN = sgn,
-		   SIN = math.sin, SPC = spc, SQR = math.sqrt, STR=tostring,
-		   TAB = printtab, TAN = math.tan, VAL=tonumber };
+local builtins =
+   { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos,
+     EXP = math.exp, INT = math.floor, LEN=len, LOG = math.log, SGN = sgn,
+     SIN = math.sin, SPC = spc, SQR = math.sqrt, STR=tostring,
+     TAB = printtab, TAN = math.tan, VAL=tonumber };
 builtins["CHR$"] = string.char;
 builtins["LEFT$"] = function(s,j) return s:sub(1,j) end
 builtins["RIGHT$"] = function(s,j) return s:sub(-j) end
 builtins["MID$"] = function(...)
-   local args={...};
-   if #args == 2 then
-      return s:sub(args[2]);
+   local s, i, j = ...;
+   if j then
+      return s:sub(i,i+j-1)
    end
-   return s:sub(args[2],args[2]+args[3]-1)
+   return s:sub(i);
 end
+
+function makernd()
+   local rndval=0.1;
+   function RND(arg)
+      if arg <= 0 then
+	 math.randomseed(math.floor(-arg));
+      end
+      if arg ~= 0 then
+	 rndval = math.random();
+      end
+      return rndval;
+   end
+   function randomize()
+      local now = os.time();
+      local date = os.date("*t",now);
+      local midnight = os.time{year=date.year, month=date.month,
+			       day=date.day, hour=0};
+      rndval = math.randomseed(math.floor(midnight-now));
+   end
+   return RND, randomize;
+end
+local randomize;
+builtins.RND, randomize = makernd();
 
 function eval(expr)
    if type(expr) == "table" then
@@ -680,7 +689,9 @@ function exec(stat)
 	 end
 	 datapc = datapc+1;
       end
-   elseif stat[1] == "DEF" or stat[1] == "RANDOMIZE" then
+   elseif stat[1] == "RANDOMIZE" then
+      randomize();
+   elseif stat[1] == "DEF" then
       error("Not handled "..stat[1]);
    else
       error("Unknown statement "..stat[1]);
