@@ -75,6 +75,7 @@ local restorestatement = m.P {
    m.C(m.P("RESTORE")) * space * (lineno * space)^-1
 };
 local stringexpr = m.V"stringexpr";
+local concat = m.V"concat";
 local stringassignment = m.V"stringassignment";
 local printexpr = m.V"printexpr";
 local printlist = m.V"printlist";
@@ -141,8 +142,10 @@ local basicline = m.P {
    stringassignment =
       m.Cc("LETS") * m.P("LET")^-1 * space *
       stringlval * space * m.P("=") * space * stringexpr * space,
-   stringexpr = stringrval,
-   stringrval = stringval + stringcall + stringvar,
+   stringexpr = concat,
+   concat = m.Ct(m.Cc("CONCAT") *
+		    (stringrval * space * m.P("+") * space)^0 * stringrval),
+   stringrval = stringval + stringcall + stringlval,
    printexpr = stringexpr + expr + m.C((m.S(";,")*space)),
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
@@ -319,6 +322,12 @@ function eval(expr)
    if type(expr) == "table" then
       if expr[1] == "STRING" then
 	 return expr[2];
+      elseif expr[1] == "CONCAT" then -- string concatenation
+	 local val = eval(expr[2]);
+	 for i=3,#expr do
+	    val = val..eval(expr[i]);
+	 end
+	 return val;
       elseif expr[1] == "UNARY" then
 	 if #expr == 3 then
 	    if expr[2] == "-" then
@@ -687,7 +696,7 @@ function exec(stat)
 	 elseif target[1] == "STRINGVAR" then
 	    svars[target[2]] = dat;
 	 else
-	    error("READ target type "..target[1].."not implemented");
+	    error("READ target type "..tostring(target[1]).."not implemented");
 	 end
 	 datapc = datapc+1;
       end
