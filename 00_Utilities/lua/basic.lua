@@ -752,8 +752,14 @@ function exec(stat)
 	 local target = stat[i];
 	 local dat = data[datapc][2];
 	 if target[1] == "FLOATVAR" then
-	    fvars[target[2]] = dat;
+	    if data[datapc][1] ~= "FLOATVAL" then
+	       error("Type mismatch from data to read");
+	    end
+	    fvars[target[2]] = tonumber(dat);
 	 elseif target[1] == "STRINGVAR" then
+	    if data[datapc][1] ~= "STRING" then
+	       error("Type mismatch from data to read");
+	    end
 	    svars[target[2]] = dat;
 	 else
 	    error("READ target type "..tostring(target[1]).." not implemented");
