@@ -135,7 +135,8 @@ local basicline = m.P {
 	    readstatement + defstatement ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
-   stringelement = stringvar * space * m.P("(") * space * exprlist * space * m.P(")"),
+   stringelement = m.Ct(m.Cc("STRINGELEMENT") * stringvar * space *
+			   m.P("(") * space * exprlist * space * m.P(")")),
    stringassignment =
       m.Cc("LETS") * m.P("LET")^-1 * space *
       stringlval * space * m.P("=") * space * stringexpr * space,
@@ -146,9 +147,9 @@ local basicline = m.P {
    printexpr = stringexpr + expr + m.C((m.S(";,")*space)),
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
-   inputlist = (inputitem * space * m.P(",") * space)^0 * inputitem,
+   inputlist = (inputitem * space * m.P(",") * space)^0 * inputitem * space,
    inputstatement = m.C(m.P("INPUT")) * space *
-      (m.Cc("PROMPT") * stringexpr * space * m.P(";") * space)^-1 * inputlist * space,
+      (m.Cc("PROMPT") * stringexpr * space * m.P(";") * space)^-1 * inputlist,
    readstatement = m.C(m.P("READ")) * space * inputlist,
    ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
       m.P("THEN") * space * (m.Ct (m.Cc("GOTO") * lineno) * space + statement),
@@ -364,6 +365,9 @@ function eval(expr)
       elseif expr[1] == "FLOATVAL" then
 	 return tonumber(expr[2]);
       elseif expr[1] == "FLOATVAR" then
+	 if fvars[expr[2]] == nil then
+	    return 0;
+	 end
 	 return fvars[expr[2]];
       elseif expr[1] == "STRINGVAR" then
 	 return svars[expr[2]];
@@ -372,12 +376,9 @@ function eval(expr)
 	 local exprtype = expr[2][1];
 	 local arglist = expr[3];
 	 local args = {};
-	 local access = name.."(";
 	 for k,v in ipairs(expr[3]) do
 	    args[#args+1] = eval(v);
-	    access = access..args[#args]..",";
 	 end
-	 access=access..")";
 	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins[name.."$"];
 	 if builtin then
 	    return builtin(table.unpack(args));
@@ -391,8 +392,6 @@ function eval(expr)
 	 else
 	    error("Array "..name.." not known");
 	 end
-	 error ("Compound "..access.." not found");
-	 return 0;
       else
 	 error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
       end
@@ -701,7 +700,7 @@ function exec(stat)
 	 elseif target[1] == "STRINGVAR" then
 	    svars[target[2]] = dat;
 	 else
-	    error("READ target type "..tostring(target[1]).."not implemented");
+	    error("READ target type "..tostring(target[1]).." not implemented");
 	 end
 	 datapc = datapc+1;
       end
