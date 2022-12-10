@@ -193,7 +193,7 @@ local basicline = m.P {
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = m.Ct(m.Cc("ELEMENT") * floatvar * space * m.P("(") * space * exprlist * space * m.P(")")),
    call = m.Ct(m.Cc("CALL") * floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
-   stringcall = m.Ct(m.Cc("CALL") * stringvar * space * m.P("(") * space * arglist * space * m.P(")")),
+   stringcall = m.Ct(m.Cc("STRINGCALL") * stringvar * space * m.P("(") * space * arglist * space * m.P(")")),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
@@ -244,7 +244,7 @@ local quit = false;
 local substack,forstack = {}, {};
 
 -- Symbol tables
-local fvars, svars, favars = {}, {}, {};
+local fvars, svars, favars, savars = {}, {}, {}, {};
 
 local printstr = "";
 function printtab(n)
@@ -392,6 +392,27 @@ function eval(expr)
 	 else
 	    error("Array "..name.." not known");
 	 end
+      elseif expr[1] == "STRINGCALL" then
+	 local name = expr[2][2];
+	 local exprtype = expr[2][1];
+	 local arglist = expr[3];
+	 local args = {};
+	 for k,v in ipairs(expr[3]) do
+	    args[#args+1] = eval(v);
+	 end
+	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins[name.."$"];
+	 if builtin then
+	    return builtin(table.unpack(args));
+	 end
+	 local val = savars[name];
+	 if val then
+	    for _, v in ipairs(args) do
+	       val = val[v];
+	    end
+	    return val;
+	 else
+	    error("Array "..name.."$ not known");
+	 end
       else
 	 error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
       end
@@ -482,8 +503,27 @@ function doletn(lval,expr)
 end
 
 function dolets(lval,expr)
+   local ttype = lval[1];
    local target = lval[2];
-   svars[target] = eval(expr);
+   local value = eval(expr);
+   if ttype == "STRINGELEMENT" then
+      local eltype = target[1];
+      if #lval[3] > 2 then
+	 error("More than 2-dimensional access not yet implemented");
+      end
+      if eltype ~= "STRINGVAR" then
+	 error("Non-stringvar access not yet implemented");
+      end
+      if #lval[3] == 1 then
+	 local index = eval(lval[3][1]);
+	 savars[target[2]][index] = value;
+      else
+	 local i1, i2 = eval(lval[3][1]),eval(lval[3][2]);
+	 savars[target[2]][i1][i2] = value;
+      end
+   else
+      svars[target] = value;
+   end
 end
 
 function doon(stat)
@@ -635,19 +675,35 @@ function dodim(stat)
 	 error("Don't yet handle more than 2-dimensional arrays");
       end
       local store = {};
-      if #shape == 1 then
-	 for j = 0, eval(shape[1]) do
-	    store[j] = 0.0;
-	 end
-      else
-	 for j = 0, eval(shape[1]) do
-	    store[j] = {};
-	    for k = 0, eval(shape[2]) do
-	       store[j][k] = 0.0;
+      if dimtype == "FLOATVAR" then
+	 if #shape == 1 then
+	    for j = 0, eval(shape[1]) do
+	       store[j] = 0.0;
+	    end
+	 else
+	    for j = 0, eval(shape[1]) do
+	       store[j] = {};
+	       for k = 0, eval(shape[2]) do
+		  store[j][k] = 0.0;
+	       end
 	    end
 	 end
-      end
-      favars[name] = store;
+	 favars[name] = store;
+      else
+	 if #shape == 1 then
+	    for j = 0, eval(shape[1]) do
+	       store[j] = "";
+	    end
+	 else
+	    for j = 0, eval(shape[1]) do
+	       store[j] = {};
+	       for k = 0, eval(shape[2]) do
+		  store[j][k] = "";
+	       end
+	    end
+	 end
+	 savars[name] = store;
+      end	 
    end
 end
 
