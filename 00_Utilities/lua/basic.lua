@@ -296,7 +296,13 @@ local builtins = { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos
 builtins["CHR$"] = string.char;
 builtins["LEFT$"] = function(s,j) return s:sub(1,j) end
 builtins["RIGHT$"] = function(s,j) return s:sub(-j) end
-builtins["MID$"] = function(s,i,j) return s:sub(i,i+j-1) end
+builtins["MID$"] = function(...)
+   local args={...};
+   if #args == 2 then
+      return s:sub(args[2]);
+   end
+   return s:sub(args[2],args[2]+args[3]-1)
+end
 
 function eval(expr)
    if type(expr) == "table" then
