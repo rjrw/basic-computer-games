@@ -552,45 +552,26 @@ function logicaleval(expr)
    elseif expr[1] == "EQV" then
       local val = logicaleval(expr[2]);
       return val;
-   elseif expr[1] == "COMPAREF" then
-      local val1 = eval(expr[2]);
-      local val2 = eval(expr[4]);
-      local val = false;
-      if expr[3] == "=" then
-	 val = val1 == val2;
-      elseif expr[3] == "<>" then
-	 val = val1 ~= val2;
-      elseif expr[3] == ">=" then
-	 val = val1 >= val2;
-      elseif expr[3] == "<=" then
-	 val = val1 <= val2;
-      elseif expr[3] == ">" then
-	 val = val1 > val2;
-      elseif expr[3] == "<" then
-	 val = val1 < val2;
-      else
-	 error("Operator "..expr[3].." not recognized");
-      end      
-      return val;
-   elseif expr[1] == "COMPARES" then
-      local val1 = eval(expr[2]);
-      local val2 = eval(expr[4]);
-      local val = false;
-      if expr[3] == "=" then
-	 val = val1 == val2;
-      elseif expr[3] == "<>" then
-	 val = val1 ~= val2;
-      elseif expr[3] == ">=" then
-	 val = val1 >= val2;
-      elseif expr[3] == "<=" then
-	 val = val1 <= val2;
-      elseif expr[3] == ">" then
-	 val = val1 > val2;
-      elseif expr[3] == "<" then
-	 val = val1 < val2;
-      else
-	 error("Operator "..expr[3].." not recognized");
-      end      
+   elseif expr[1] == "COMPAREF" or expr[1] == "COMPARES" then
+      local val = eval(expr[2]);
+      for i = 3, #expr, 2 do
+	 local op, val2 = expr[i], eval(expr[i+1]);
+	 if op == "=" then
+	    val = val == val2;
+	 elseif op == "<>" then
+	    val = val ~= val2;
+	 elseif op == ">=" then
+	    val = val >= val2;
+	 elseif op == "<=" then
+	    val = val <= val2;
+	 elseif op == ">" then
+	    val = val > val2;
+	 elseif op == "<" then
+	    val = val < val2;
+	 else
+	    error("Operator "..op.." not recognized");
+	 end
+      end
       return val;
    else
       error("Failed to interpret "..expr[1]);
