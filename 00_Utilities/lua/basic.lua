@@ -144,7 +144,7 @@ local basicline = m.P {
    concat = m.Ct(m.Cc("CONCAT") *
 		    (stringrval * space * m.P("+") * space)^0 * stringrval),
    stringrval = stringval + stringcall + stringlval,
-   printexpr = stringexpr + expr + m.C((m.S(";,")*space)),
+   printexpr = stringexpr + expr + m.C(m.S(";,"))*space,
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * m.P(",") * space)^0 * inputitem * space,
