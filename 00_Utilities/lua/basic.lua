@@ -247,7 +247,7 @@ local quit = false;
 local substack,forstack = {}, {};
 
 -- Symbol tables
-local fvars, svars, favars, savars = {}, {}, {}, {};
+local basicenv, svars, favars, savars = {}, {}, {}, {};
 
 local printstr = "";
 function printtab(n)
@@ -368,10 +368,10 @@ function eval(expr)
       elseif expr[1] == "FLOATVAL" then
 	 return tonumber(expr[2]);
       elseif expr[1] == "FLOATVAR" then
-	 if fvars[expr[2]] == nil then
+	 if basicenv[expr[2]] == nil then
 	    return 0;
 	 end
-	 return fvars[expr[2]];
+	 return basicenv[expr[2]];
       elseif expr[1] == "STRINGVAR" then
 	 return svars[expr[2]];
       elseif expr[1] == "CALL" then
@@ -491,7 +491,7 @@ function doinput(inputlist)
       if vartype == "STRINGVAR" then
 	 svars[varname] = input;
       elseif vartype == "FLOATVAR" then
-	 fvars[varname] = tonumber(input);
+	 basicenv[varname] = tonumber(input);
       else
 	 error("Vartype "..vartype.." not yet supported");
       end
@@ -549,7 +549,7 @@ function doletn(lval,expr)
 	 favars[target[2]][i1][i2] = value;
       end
    else
-      fvars[target] = value;
+      basicenv[target] = value;
    end
 end
 
@@ -600,7 +600,7 @@ end
 
 function dofor(stat)
    local var = stat[2][2];
-   fvars[var] = eval(stat[3]);
+   basicenv[var] = eval(stat[3]);
    local frame = {
       pc, var, eval(stat[4]), 1};
    if #stat == 5 then
@@ -615,9 +615,9 @@ function donext(stat)
       local var = frame[2];
       local last = frame[3];
       local step = frame[4];
-      local oldval = fvars[var];
+      local oldval = basicenv[var];
       local newval = oldval + step;
-      fvars[var] = newval;
+      basicenv[var] = newval;
       if step*(newval-last) <= 0 then
 	 pc = frame[1];
 	 return;
@@ -638,9 +638,9 @@ function donext(stat)
 	 end
 	 local last = frame[3];
 	 local step = frame[4];
-	 local oldval = fvars[var];
+	 local oldval = basicenv[var];
 	 local newval = oldval + step;
-	 fvars[var] = newval;
+	 basicenv[var] = newval;
 	 if step*(newval-last) <= 0 then
 	    pc = frame[1];
 	    return;
@@ -741,7 +741,7 @@ function exec(stat)
 	    if data[datapc][1] ~= "FLOATVAL" then
 	       error("Type mismatch from data to read");
 	    end
-	    fvars[target[2]] = tonumber(dat);
+	    basicenv[target[2]] = tonumber(dat);
 	 elseif target[1] == "STRINGVAR" then
 	    if data[datapc][1] ~= "STRING" then
 	       error("Type mismatch from data to read");
