@@ -247,7 +247,7 @@ local quit = false;
 local substack,forstack = {}, {};
 
 -- Symbol tables
-local basicenv, favars, savars = {}, {}, {}, {};
+local basicenv = {};
 
 local printstr = "";
 function printtab(n)
@@ -386,7 +386,7 @@ function eval(expr)
 	 if builtin then
 	    return builtin(table.unpack(args));
 	 end
-	 local val = favars[name];
+	 local val = basicenv["fa_"..name];
 	 if val then
 	    for _, v in ipairs(args) do
 	       val = val[v];
@@ -407,7 +407,7 @@ function eval(expr)
 	 if builtin then
 	    return builtin(table.unpack(args));
 	 end
-	 local val = savars[name];
+	 local val = basicenv["sa_"..name];
 	 if val then
 	    for _, v in ipairs(args) do
 	       val = val[v];
@@ -543,10 +543,10 @@ function doletn(lval,expr)
       end
       if #lval[3] == 1 then
 	 local index = eval(lval[3][1]);
-	 favars[target[2]][index] = value;
+	 basicenv["fa_"..target[2]][index] = value;
       else
 	 local i1, i2 = eval(lval[3][1]),eval(lval[3][2]);
-	 favars[target[2]][i1][i2] = value;
+	 basicenv["fa_"..target[2]][i1][i2] = value;
       end
    else
       basicenv[target] = value;
@@ -567,10 +567,10 @@ function dolets(lval,expr)
       end
       if #lval[3] == 1 then
 	 local index = eval(lval[3][1]);
-	 savars[target[2]][index] = value;
+	 basicenv["sa_"..target[2]][index] = value;
       else
 	 local i1, i2 = eval(lval[3][1]),eval(lval[3][2]);
-	 savars[target[2]][i1][i2] = value;
+	 basicenv["sa_"..target[2]][i1][i2] = value;
       end
    else
       basicenv["s_"..target] = value;
@@ -674,7 +674,7 @@ function dodim(stat)
 	       end
 	    end
 	 end
-	 favars[name] = store;
+	 basicenv["fa_"..name] = store;
       else
 	 if #shape == 1 then
 	    for j = 0, eval(shape[1]) do
@@ -688,7 +688,7 @@ function dodim(stat)
 	       end
 	    end
 	 end
-	 savars[name] = store;
+	 basicenv["sa_"..name] = store;
       end	 
    end
 end
