@@ -286,11 +286,12 @@ end
 local builtins =
    { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos,
      EXP = math.exp, INT = math.floor, LEN=len, LOG = math.log, SGN = sgn,
-     SIN = math.sin, SPC = spc, SQR = math.sqrt, STR=tostring,
+     SIN = math.sin, SPC = spc, SQR = math.sqrt,
      TAB = printtab, TAN = math.tan, VAL=tonumber };
 builtins["CHR$"] = string.char;
 builtins["LEFT$"] = function(s,j) return s:sub(1,j) end
 builtins["RIGHT$"] = function(s,j) return s:sub(-j) end
+builtins["STR$"] = tostring
 builtins["MID$"] = function(...)
    local s, i, j = ...;
    if j then
