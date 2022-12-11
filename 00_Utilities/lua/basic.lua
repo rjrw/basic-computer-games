@@ -7,13 +7,15 @@
 local m = require"lpeg";
 
 -- Parse = 1, interpret = 2, compile = 3, compile & optimize = 4
-local mode = 1;
+local mode = 2;
 local verbose = false;
 
 local narg = 1;
 while narg < #arg do
    if arg[narg] == "-i" then
       mode = 2;
+   elseif arg[narg] == "-p" then
+      mode = 1;
    elseif arg[narg] == "-v" then
       verbose = true;
    else
