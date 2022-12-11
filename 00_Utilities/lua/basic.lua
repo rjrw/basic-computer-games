@@ -415,22 +415,28 @@ function eval(expr)
 	 end
       elseif expr[1] == "OR" then
 	 local val = eval(expr[2]);
-	 for i=3,#expr do
-	    val = val or eval(expr[i]);
+	 if #expr > 2 then
+	    val = val ~= 0
+	    for i=3,#expr do
+	       val = val or (eval(expr[i]) ~= 0);
+	    end
 	 end
-	 return val;
+	 return val and -1 or 0;
       elseif expr[1] == "AND" then
 	 local val = eval(expr[2]);
-	 for i=3,#expr do
-	    val = val and eval(expr[i]);
+	 if #expr > 2 then
+	    val = val ~= 0
+	    for i=3,#expr do
+	       val = val and (eval(expr[i]) ~= 0);
+	    end
 	 end
-	 return val;
+	 return val and -1 or 0;
       elseif expr[1] == "NOT" then
 	 local val = eval(expr[2]);
 	 return not val;
       elseif expr[1] == "EQV" then
-	 local val = eval(expr[2]);
-	 return val;
+	 local val = eval(expr[2]) ~= 0;
+	 return val and -1 or 0;
       elseif expr[1] == "COMPAREF" or expr[1] == "COMPARES" then
 	 local val = eval(expr[2]);
 	 for i = 3, #expr, 2 do
@@ -451,7 +457,7 @@ function eval(expr)
 	       error("Operator "..op.." not recognized");
 	    end
 	 end
-	 return val;
+	 return val and -1 or 0;
       else
 	 error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
       end
@@ -576,8 +582,7 @@ end
 local exec;
 
 function doif(test,statement)
-   local switch = eval(test);
-   if switch then
+   if eval(test) ~= 0 then
       exec(statement); -- And fall through
    else
       while pc < #prog and prog[pc][1] ~= "TARGET" do
