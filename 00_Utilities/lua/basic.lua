@@ -413,6 +413,45 @@ function eval(expr)
 	 else
 	    error("Array "..name.."$ not known");
 	 end
+      elseif expr[1] == "OR" then
+	 local val = eval(expr[2]);
+	 for i=3,#expr do
+	    val = val or eval(expr[i]);
+	 end
+	 return val;
+      elseif expr[1] == "AND" then
+	 local val = eval(expr[2]);
+	 for i=3,#expr do
+	    val = val and eval(expr[i]);
+	 end
+	 return val;
+      elseif expr[1] == "NOT" then
+	 local val = eval(expr[2]);
+	 return not val;
+      elseif expr[1] == "EQV" then
+	 local val = eval(expr[2]);
+	 return val;
+      elseif expr[1] == "COMPAREF" or expr[1] == "COMPARES" then
+	 local val = eval(expr[2]);
+	 for i = 3, #expr, 2 do
+	    local op, val2 = expr[i], eval(expr[i+1]);
+	    if op == "=" then
+	       val = val == val2;
+	    elseif op == "<>" then
+	       val = val ~= val2;
+	    elseif op == ">=" then
+	       val = val >= val2;
+	    elseif op == "<=" then
+	       val = val <= val2;
+	    elseif op == ">" then
+	       val = val > val2;
+	    elseif op == "<" then
+	       val = val < val2;
+	    else
+	       error("Operator "..op.." not recognized");
+	    end
+	 end
+	 return val;
       else
 	 error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
       end
@@ -533,56 +572,11 @@ function doon(stat)
    end
 end
 
-function logicaleval(expr)
-   if expr[1] == "OR" then
-      local val = logicaleval(expr[2]);
-      for i=3,#expr do
-	 val = val or logicaleval(expr[i]);
-      end
-      return val;
-   elseif expr[1] == "AND" then
-      local val = logicaleval(expr[2]);
-      for i=3,#expr do
-	 val = val and logicaleval(expr[i]);
-      end
-      return val;
-   elseif expr[1] == "NOT" then
-      local val = logicaleval(expr[2]);
-      return not val;
-   elseif expr[1] == "EQV" then
-      local val = logicaleval(expr[2]);
-      return val;
-   elseif expr[1] == "COMPAREF" or expr[1] == "COMPARES" then
-      local val = eval(expr[2]);
-      for i = 3, #expr, 2 do
-	 local op, val2 = expr[i], eval(expr[i+1]);
-	 if op == "=" then
-	    val = val == val2;
-	 elseif op == "<>" then
-	    val = val ~= val2;
-	 elseif op == ">=" then
-	    val = val >= val2;
-	 elseif op == "<=" then
-	    val = val <= val2;
-	 elseif op == ">" then
-	    val = val > val2;
-	 elseif op == "<" then
-	    val = val < val2;
-	 else
-	    error("Operator "..op.." not recognized");
-	 end
-      end
-      return val;
-   else
-      error("Failed to interpret "..expr[1]);
-   end
-   return nil;
-end
 
 local exec;
 
 function doif(test,statement)
-   local switch = logicaleval(test);
+   local switch = eval(test);
    if switch then
       exec(statement); -- And fall through
    else
