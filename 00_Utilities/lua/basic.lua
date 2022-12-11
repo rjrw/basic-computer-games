@@ -608,7 +608,9 @@ function doif(test,statement)
 	 pc = pc+1;
       end
    end
-   pc=pc-1;
+   if pc ~= #prog then
+      pc=pc-1;
+   end
 end
 
 function dofor(stat)
