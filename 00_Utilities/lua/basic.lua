@@ -97,7 +97,6 @@ local Or = m.V"Or";
 local And = m.V"And";
 local Not = m.V"Not";
 local Statement = m.V"Statement";
-local logicalexpr = m.V"logicalexpr"
 local ifstatement = m.V"ifstatement";
 local ifstart = m.V"ifstart";
 local expr = m.V"expr";
@@ -151,7 +150,7 @@ local basicline = m.P {
    inputstatement = m.C(m.P("INPUT")) * space *
       (m.Cc("PROMPT") * stringexpr * space * m.P(";") * space)^-1 * inputlist,
    readstatement = m.C(m.P("READ")) * space * inputlist,
-   ifstatement = m.C(m.P("IF")) * space * logicalexpr * space *
+   ifstatement = m.C(m.P("IF")) * space * expr * space *
       m.P("THEN") * space * (m.Ct (m.Cc("GOTO") * lineno) * space + statement),
    exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
    dimdef = m.Ct(anyvar * space * m.P("(") * space * exprlist * space * m.P(")")),
@@ -161,14 +160,14 @@ local basicline = m.P {
    defstatement = m.C(m.P("DEF")) * m.S(" \t")^1 * m.P("FN") * space
       * m.C(varname) * space * m.P("(") * space * dummylist * space * m.P(")")
       * space * m.P("=") * space * expr,
-   logicalexpr = Or,
+   expr = Or,
    Or = m.Ct(m.Cc("OR") * (And * space * m.P("OR") * space)^0 * And),
    And = m.Ct(m.Cc("AND") * (Not * space * m.P("AND") * space)^0 * Not),
    Not = m.Ct((m.C("NOT") * space+m.Cc("EQV")) *
 	 ( comparison + m.P("(") * space * Or * space * m.P(")") )),
    comparison = m.Ct(
-      m.Cc("COMPAREF") * expr * space * comparisonop * space * expr 
-	 + m.Cc("COMPARES") * stringexpr * space * comparisonop * space * stringexpr),
+      m.Cc("COMPARES") * stringexpr * space * comparisonop * space * stringexpr
+	 + m.Cc("COMPAREF") * ( Sum * space * comparisonop * space)^0 * Sum ),
    forstatement =
       m.C(m.P("FOR")) * space * floatvar * space * m.P("=") * space * expr
       * space * m.P("TO") * space * expr * space *
@@ -179,7 +178,6 @@ local basicline = m.P {
    numericassignment =
       m.Cc("LETN") * m.P("LET")^-1 * space *
       floatlval * space * m.P("=") * space * expr * space,
-   expr = Sum,
    Sum =
       m.Ct(m.Cc("SUM") * ( Product * space * m.C(m.S("+-")) * space)^0 * Product) * space,
    Product = m.Ct(m.Cc("PRODUCT") * ( Power * space * m.C(m.S("*/")) * space)^0 * Power) * space,
@@ -189,10 +187,12 @@ local basicline = m.P {
    floatlval = element + floatvar,
    floatrval = call + floatvar,
    -- Array access/function/builtin call
-   arg = logicalexpr + stringexpr + expr,
+   arg = stringexpr + expr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = m.Ct(m.Cc("ELEMENT") * floatvar * space * m.P("(") * space * exprlist * space * m.P(")")),
-   call = m.Ct(m.Cc("CALL") * floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
+   call = m.Ct(m.Cc("CALL") *
+	       --m.Cmt(m.P"",function (s,p,c) print("Matching CALL at",p); return true; end) *
+		  floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
    stringcall = m.Ct(m.Cc("STRINGCALL") * stringvar * space * m.P("(") * space * arglist * space * m.P(")")),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
@@ -420,8 +420,9 @@ function eval(expr)
 	    for i=3,#expr do
 	       val = val or (eval(expr[i]) ~= 0);
 	    end
+	    val = val and -1 or 0;
 	 end
-	 return val and -1 or 0;
+	 return val
       elseif expr[1] == "AND" then
 	 local val = eval(expr[2]);
 	 if #expr > 2 then
@@ -429,16 +430,17 @@ function eval(expr)
 	    for i=3,#expr do
 	       val = val and (eval(expr[i]) ~= 0);
 	    end
+	    val = val and -1 or 0;
 	 end
-	 return val and -1 or 0;
+	 return val;
       elseif expr[1] == "NOT" then
 	 local val = eval(expr[2]);
-	 return not val;
+	 return val and 0 or -1;
       elseif expr[1] == "EQV" then
-	 local val = eval(expr[2]) ~= 0;
-	 return val and -1 or 0;
-      elseif expr[1] == "COMPAREF" or expr[1] == "COMPARES" then
 	 local val = eval(expr[2]);
+	 return val;
+      elseif expr[1] == "COMPAREF" or expr[1] == "COMPARES" then
+	 local val = eval(expr[2]);	 
 	 for i = 3, #expr, 2 do
 	    local op, val2 = expr[i], eval(expr[i+1]);
 	    if op == "=" then
@@ -456,8 +458,9 @@ function eval(expr)
 	    else
 	       error("Operator "..op.." not recognized");
 	    end
+	    val = val and -1 or 0;
 	 end
-	 return val and -1 or 0;
+	 return val;
       else
 	 error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
       end
