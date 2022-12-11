@@ -34,7 +34,7 @@ local space = m.S" \t"^0;
 local digit = m.R("09");
 local stringval =
    m.Ct(m.Cc("STRING")*m.P("\"") * m.C((any-m.P("\""))^0) * m.P("\""));
-local float = m.P( (digit^0 * m.P(".") * digit^1 + digit^1 * m.P(".")^-1) *(m.P("E")*m.S("+-")^-1*digit^1)^-1);
+local float = m.P( m.P("-")^0 * (digit^0 * m.P(".") * digit^1 + digit^1 * m.P(".")^-1) *(m.P("E")*m.S("+-")^-1*digit^1)^-1);
 local floatval = m.Ct(m.Cc("FLOATVAL")*m.C(float));
 local varname = m.R("AZ")^1 * m.R("09")^0;
 local floatvar = m.Ct(m.Cc("FLOATVAR")*m.C(varname));
@@ -185,6 +185,7 @@ local basicline = m.P {
       m.Ct(m.Cc("SUM") * ( Product * space * m.C(m.S("+-")) * space)^0 * Product) * space,
    Product = m.Ct(m.Cc("PRODUCT") * ( Power * space * m.C(m.S("*/")) * space)^0 * Power) * space,
    Power = m.Ct(m.Cc("POWER") * ( Unary * space * m.S("^") * space)^0 * Unary) * space,
+   -- TODO: address ambiguity about the handling of -1 -- is it "-" "1" or "-1"?
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
    Value = floatval + floatrval + m.P("(") * space * expr * m.P(")"),
    floatlval = element + floatvar,
@@ -494,8 +495,8 @@ function doinput(inputlist)
       local varname = inputlist[j][2];
       if vartype == "STRINGVAR" then
 	 basicenv["s_"..varname] = input;
-      elseif vartype == "FLOATVAR" then
-	 basicenv[varname] = tonumber(input);
+      elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
+	 assignf(inputlist[j],tonumber(input));
       else
 	 error("Vartype "..vartype.." not yet supported");
       end
@@ -533,11 +534,12 @@ function doprint(printlist)
    io.write(printstr);
 end
 
-function doletn(lval,expr)
+function assignf(lval,value)
    local ttype = lval[1];
    local target = lval[2];
-   local value = eval(expr)
-   if ttype == "ELEMENT" then
+   if ttype == "FLOATVAR" then
+      basicenv[target] = value;
+   elseif ttype == "ELEMENT" then
       local eltype = target[1];
       if #lval[3] > 2 then
 	 error("More than 2-dimensional access not yet implemented");
@@ -553,8 +555,12 @@ function doletn(lval,expr)
 	 basicenv["fa_"..target[2]][i1][i2] = value;
       end
    else
-      basicenv[target] = value;
+      error("Type mismatch in floating assignment");
    end
+end
+
+function doletn(lval,expr)
+   assignf(lval,eval(expr))
 end
 
 function dolets(lval,expr)
@@ -739,20 +745,18 @@ function exec(stat)
       end
    elseif stat[1] == "READ" then
       for i=2,#stat do
-	 local target = stat[i];
-	 local dat = data[datapc][2];
-	 if target[1] == "FLOATVAR" then
-	    if data[datapc][1] ~= "FLOATVAL" then
+	 local lval = stat[i];
+	 local value = eval(data[datapc]);
+	 local dtype = data[datapc][1];
+	 if dtype == "FLOATVAL" then
+	    assignf(lval, value);
+	 elseif dtype == "STRING" then
+	    if lval[1] ~= "STRINGVAR" then
 	       error("Type mismatch from data to read");
 	    end
-	    basicenv[target[2]] = tonumber(dat);
-	 elseif target[1] == "STRINGVAR" then
-	    if data[datapc][1] ~= "STRING" then
-	       error("Type mismatch from data to read");
-	    end
-	    basicenv["s_"..target[2]] = dat;
+	    basicenv["s_"..lval[2]] = value;
 	 else
-	    error("READ target type "..tostring(target[1]).." not implemented");
+	    error("READ data type "..tostring(lval[1]).." not implemented");
 	 end
 	 datapc = datapc+1;
       end
