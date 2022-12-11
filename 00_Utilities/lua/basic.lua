@@ -493,8 +493,8 @@ function doinput(inputlist)
    for j=i,#inputlist do
       local vartype = inputlist[j][1];
       local varname = inputlist[j][2];
-      if vartype == "STRINGVAR" then
-	 basicenv["s_"..varname] = input;
+      if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
+	 assigns(inputlist[j],input);
       elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
 	 assignf(inputlist[j],tonumber(input));
       else
@@ -563,10 +563,9 @@ function doletn(lval,expr)
    assignf(lval,eval(expr))
 end
 
-function dolets(lval,expr)
+function assigns(lval,value)
    local ttype = lval[1];
    local target = lval[2];
-   local value = eval(expr);
    if ttype == "STRINGELEMENT" then
       local eltype = target[1];
       if #lval[3] > 2 then
@@ -585,6 +584,10 @@ function dolets(lval,expr)
    else
       basicenv["s_"..target] = value;
    end
+end
+
+function dolets(lval,expr)
+   assigns(lval,eval(expr))
 end
 
 function doon(stat)
@@ -751,10 +754,7 @@ function exec(stat)
 	 if dtype == "FLOATVAL" then
 	    assignf(lval, value);
 	 elseif dtype == "STRING" then
-	    if lval[1] ~= "STRINGVAR" then
-	       error("Type mismatch from data to read");
-	    end
-	    basicenv["s_"..lval[2]] = value;
+	    assigns(lval, value);
 	 else
 	    error("READ data type "..tostring(lval[1]).." not implemented");
 	 end
