@@ -166,8 +166,9 @@ local basicline = m.P {
    Not = m.Ct((m.C("NOT") * space+m.Cc("EQV")) *
 	 ( comparison + m.P("(") * space * Or * space * m.P(")") )),
    comparison = m.Ct(
-      m.Cc("COMPARES") * stringexpr * space * comparisonop * space * stringexpr
-	 + m.Cc("COMPAREF") * ( Sum * space * comparisonop * space)^0 * Sum ),
+      m.Cc("COMPARE") *
+	 ( stringexpr * space * comparisonop * space * stringexpr
+	      + ( Sum * space * comparisonop * space)^0 * Sum ) ),
    forstatement =
       m.C(m.P("FOR")) * space * floatvar * space * m.P("=") * space * expr
       * space * m.P("TO") * space * expr * space *
@@ -439,7 +440,7 @@ function eval(expr)
       elseif expr[1] == "EQV" then
 	 local val = eval(expr[2]);
 	 return val;
-      elseif expr[1] == "COMPAREF" or expr[1] == "COMPARES" then
+      elseif expr[1] == "COMPARE" then
 	 local val = eval(expr[2]);	 
 	 for i = 3, #expr, 2 do
 	    local op, val2 = expr[i], eval(expr[i+1]);
