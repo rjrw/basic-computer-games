@@ -246,7 +246,10 @@ local basiclineno = 0;
 local quit = false;
 local substack,forstack = {}, {};
 
--- Symbol tables
+-- Symbol table -> environment
+-- Loose names are floats, fa_xxx is floating array, s_xxx is string,
+-- sa_xxx is string array
+-- Also need to consider builtins, DEF FN, machine tables
 local basicenv = {};
 
 local printstr = "";
