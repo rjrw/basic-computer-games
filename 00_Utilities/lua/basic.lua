@@ -165,8 +165,7 @@ local basicline = m.P {
    expr = Or,
    Or = m.Ct(m.Cc("OR") * (And * space * m.P("OR") * space)^0 * And),
    And = m.Ct(m.Cc("AND") * (Not * space * m.P("AND") * space)^0 * Not),
-   Not = m.Ct((m.C("NOT") * space+m.Cc("EQV")) *
-	 ( comparison + m.P("(") * space * Or * space * m.P(")") )),
+   Not = m.Ct((m.C("NOT") * space+m.Cc("EQV")) * comparison),
    comparison = m.Ct(
       m.Cc("COMPARE") *
 	 ( stringexpr * space * comparisonop * space * stringexpr
@@ -187,7 +186,7 @@ local basicline = m.P {
    Power = m.Ct(m.Cc("POWER") * ( Unary * space * m.S("^") * space)^0 * Unary) * space,
    -- TODO: address ambiguity about the handling of -1 -- is it "-" "1" or "-1"?
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
-   Value = floatval + floatrval + m.P("(") * space * expr * m.P(")"),
+   Value = floatval + floatrval + m.P("(") * space * expr * space * m.P(")"),
    floatlval = element + floatvar,
    floatrval = call + floatvar,
    -- Array access/function/builtin call
