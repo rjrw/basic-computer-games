@@ -247,7 +247,7 @@ local quit = false;
 local substack,forstack = {}, {};
 
 -- Symbol tables
-local basicenv, svars, favars, savars = {}, {}, {}, {};
+local basicenv, favars, savars = {}, {}, {}, {};
 
 local printstr = "";
 function printtab(n)
@@ -373,7 +373,7 @@ function eval(expr)
 	 end
 	 return basicenv[expr[2]];
       elseif expr[1] == "STRINGVAR" then
-	 return svars[expr[2]];
+	 return basicenv["s_"..expr[2]];
       elseif expr[1] == "CALL" then
 	 local name = expr[2][2];
 	 local exprtype = expr[2][1];
@@ -489,7 +489,7 @@ function doinput(inputlist)
       local vartype = inputlist[j][1];
       local varname = inputlist[j][2];
       if vartype == "STRINGVAR" then
-	 svars[varname] = input;
+	 basicenv["s_"..varname] = input;
       elseif vartype == "FLOATVAR" then
 	 basicenv[varname] = tonumber(input);
       else
@@ -573,7 +573,7 @@ function dolets(lval,expr)
 	 savars[target[2]][i1][i2] = value;
       end
    else
-      svars[target] = value;
+      basicenv["s_"..target] = value;
    end
 end
 
@@ -746,7 +746,7 @@ function exec(stat)
 	    if data[datapc][1] ~= "STRING" then
 	       error("Type mismatch from data to read");
 	    end
-	    svars[target[2]] = dat;
+	    basicenv["s_"..target[2]] = dat;
 	 else
 	    error("READ target type "..tostring(target[1]).." not implemented");
 	 end
