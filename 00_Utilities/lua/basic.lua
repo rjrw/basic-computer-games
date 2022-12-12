@@ -291,6 +291,9 @@ end
 file:close();
 
 -- Machine state
+-- Symbol table -> environment
+-- Loose names are floats, fa_xxx is floating array, s_xxx is string,
+-- sa_xxx is string array
 local function makemachine(prog, targets, data, datatargets)
    return {
       prog = prog,
@@ -308,11 +311,6 @@ local function makemachine(prog, targets, data, datatargets)
       printcol = 0
    };
 end
-
--- Symbol table -> environment
--- Loose names are floats, fa_xxx is floating array, s_xxx is string,
--- sa_xxx is string array
-local basicenv = {_m=makemachine(prog, targets, data, datatargets)};
 
 local function printtab(basicenv,n)
    n = math.floor(n);
@@ -574,7 +572,7 @@ ops.FUNCALL   = dofuncall;
 
 local write = io.write;
 
-local function doinput(inputlist)
+local function doinput(basicenv,inputlist)
    local i=2;
    local prompt = "? ";
    if inputlist[i] == "PROMPT" then
@@ -590,9 +588,9 @@ local function doinput(inputlist)
       local vartype = inputlist[j][1];
       local varname = inputlist[j][2];
       if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
-	 assigns(inputlist[j],input);
+	 assigns(basicenv,inputlist[j],input);
       elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
-	 assignf(inputlist[j],tonumber(input));
+	 assignf(basicenv,inputlist[j],tonumber(input));
       else
 	 error("Vartype "..vartype.." not yet supported");
       end
@@ -635,7 +633,7 @@ local function doprint(basicenv,stat)
    write(m.printstr);
 end
 
-local function assignf(lval,value)
+local function assignf(basicenv,lval,value)
    local ttype = lval[1];
    local target = lval[2];
    if ttype == "FLOATVAR" then
@@ -670,10 +668,10 @@ end
 local function doletn(basicenv,stat)
    local lval = stat[2];
    local expr = stat[3];
-   assignf(lval,eval(basicenv,expr))
+   assignf(basicenv,lval,eval(basicenv,expr))
 end
 
-local function assigns(lval,value)
+local function assigns(basicenv,lval,value)
    local ttype = lval[1];
    local target = lval[2];
    if ttype == "STRINGELEMENT" then
@@ -850,9 +848,9 @@ local function doread(basicenv,stat)
       local value = eval(basicenv,dat);
       local dtype = dat[1];
       if dtype == "FLOATVAL" then
-	 assignf(lval, value);
+	 assignf(basicenv,lval, value);
       elseif dtype == "STRING" then
-	 assigns(lval, value);
+	 assigns(basicenv,lval, value);
       else
 	 error("READ data type "..tostring(lval[1]).." not implemented");
       end
@@ -907,9 +905,9 @@ local function exec(basicenv,stat)
    basicenv._m.pc = basicenv._m.pc + 1;
 end
 
-if nerr == 0 and mode == 2 then
+local function run(prog, targets, data, datatargets)
+   local basicenv = {_m=makemachine(prog, targets, data, datatargets)};
    while true do
-      local prog = basicenv._m.prog;
       local status, err = pcall(
 	 function () exec(basicenv,prog[basicenv._m.pc]) end
       );
@@ -920,7 +918,11 @@ if nerr == 0 and mode == 2 then
       end
       if basicenv._m.quit or basicenv._m.pc > #prog then
 	 -- Run off end of program
-	 break;
+	 return;
       end
    end
+end
+
+if nerr == 0 and mode == 2 then
+   run(prog, targets, data, datatargets);
 end
