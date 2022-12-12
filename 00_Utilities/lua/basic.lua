@@ -271,42 +271,47 @@ exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
 basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
 
-local prog, data, datatargets = {}, {}, {};
-local nerr = 0;
--- Read and parse input file
-local count = 1;
-local targets = {} -- Jump table
-for _,line in ipairs(lines) do
-   if verbose then print(line); end
-   local m = basicline:match(line);
-   if not m then
-      io.write(string.format("Syntax Error at line %d\n", count));
-      io.write(line, "\n");
-   else
-      local mend = m[#m];
-      if mend ~= #line+1 then
-	 io.write(string.format("Syntax Error at line %d:%d\n",
-				count,mend));
+function parse(lines)
+   local prog, targets, data, datatargets = {}, {}, {}, {};
+   local nerr = 0;
+   -- Read and parse input file
+   for count,line in ipairs(lines) do
+      if verbose then print(line); end
+      local m = basicline:match(line);
+      if not m then
+	 io.write(string.format("Syntax Error at line %d\n", count));
 	 io.write(line, "\n");
-	 io.write(string.rep(" ",mend-1).."^\n");
-	 nerr = nerr + 1;
-      else	 
-	 prog[#prog+1] = {"TARGET",m[1]};
-	 targets[m[1]] = #prog;
-	 for k,v in ipairs(m[2]) do
-	    --print(">>",k,v[1]); --Confirm first-level commands are captured
-	    prog[#prog+1] = v;
-	    if v[1] == "DATA" then
-	       datatargets[m[1]] = #data+1;
-	       for i = 2, #v do
-		  table.insert(data,v[i]);
+      else
+	 local mend = m[#m];
+	 if mend ~= #line+1 then
+	    io.write(string.format("Syntax Error at line %d:%d\n",
+				   count,mend));
+	    io.write(line, "\n");
+	    io.write(string.rep(" ",mend-1).."^\n");
+	    nerr = nerr + 1;
+	 else	 
+	    prog[#prog+1] = {"TARGET",m[1]};
+	    targets[m[1]] = #prog;
+	    for k,v in ipairs(m[2]) do
+	       --print(">>",k,v[1]); --Confirm first-level commands are captured
+	       prog[#prog+1] = v;
+	       if v[1] == "DATA" then
+		  datatargets[m[1]] = #data+1;
+		  for i = 2, #v do
+		     table.insert(data,v[i]);
+		  end
 	       end
 	    end
 	 end
-      end
-   end      
-   count = count + 1;
+      end      
+   end
+   if nerr ~= 0 then
+      error("Parser failure");
+   end
+   return prog, data, datatargets, targets;
 end
+
+local prog, data, datatargets, targets = parse(lines);
 
 function deepwrite(file,dat,level)
    local indent = string.rep(" ",level);
@@ -329,23 +334,21 @@ function deepwrite(file,dat,level)
    end      
 end
 
-if nerr == 0 then
-   if mode == 2 then
-      rtl.run(prog, targets, data, datatargets);
-   else
-      -- Save
-      local outfile = string.gsub(filename,baspat,".lua");
-      local file = assert(io.open(outfile,"w"));
-      file:write("local rtl = require\"basicrtl\";\n");
-      file:write("local prog = ");
-      deepwrite(file,prog,0);
-      file:write(";\nlocal targets = ");
-      deepwrite(file,targets,0);
-      file:write(";\nlocal data = ");
-      deepwrite(file,data,0);
-      file:write(";\nlocal datatargets = ");
-      deepwrite(file,datatargets,0);
-      file:write(";\nrtl.run(prog, targets, data, datatargets);\n");
-      file:close();
-   end
+if mode == 2 then
+   rtl.run(prog, targets, data, datatargets);
+else
+   -- Save
+   local outfile = string.gsub(filename,baspat,".lua");
+   local file = assert(io.open(outfile,"w"));
+   file:write("local rtl = require\"basicrtl\";\n");
+   file:write("local prog = ");
+   deepwrite(file,prog,0);
+   file:write(";\nlocal targets = ");
+   deepwrite(file,targets,0);
+   file:write(";\nlocal data = ");
+   deepwrite(file,data,0);
+   file:write(";\nlocal datatargets = ");
+   deepwrite(file,datatargets,0);
+   file:write(";\nrtl.run(prog, targets, data, datatargets);\n");
+   file:close();
 end
