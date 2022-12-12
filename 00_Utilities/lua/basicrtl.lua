@@ -1,5 +1,7 @@
 local m = {};
 
+local parser = require"basicparser";
+
 -- Builtin function table
 
 local function abs(x)
@@ -392,22 +394,31 @@ local function doinput(basicenv,inputlist)
       prompt = eval(basicenv,inputlist[i+1])..prompt;
       i=i+2;
    end
-   local input = "";
-   while input == "" do
-      write(prompt);
-      input = io.read("*l");
-   end
-   for j=i,#inputlist do
-      local vartype = inputlist[j][1];
-      local varname = inputlist[j][2];
-      if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
-	 assigns(basicenv,inputlist[j],input);
-      elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
-	 assignf(basicenv,inputlist[j],tonumber(input));
-      else
-	 error("Vartype "..vartype.." not yet supported");
+   local j = i;
+   while j <= #inputlist do
+      local input = "";
+      while input == "" do
+	 write(prompt);
+	 input = io.read("*l");
       end
-      --print(inputlist[j][1]);
+      local fields = parser.input:match(input);
+      for _,v in ipairs(fields) do
+	 local input = v[2];
+	 local vartype = inputlist[j][1];
+	 local varname = inputlist[j][2];
+	 if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
+	    assigns(basicenv,inputlist[j],input);
+	 elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
+	    assignf(basicenv,inputlist[j],tonumber(input));
+	 else
+	    error("Vartype "..vartype.." not yet supported");
+	 end
+	 j = j+1;
+	 if j > #inputlist then
+	    return
+	 end
+	 --print(inputlist[j][1]);
+      end
    end
 end
 

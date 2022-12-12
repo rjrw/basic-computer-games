@@ -17,11 +17,17 @@ local lineno = lpeg.C(digit^1);
 local gotostatement = lpeg.P {
    lpeg.Cc("GOTO") * lpeg.P("GO") * space * lpeg.P("TO") * space * lineno * space
 };
-local literal = lpeg.P {
-   floatval + stringval + lpeg.Ct(lpeg.Cc("STRING")*lpeg.C((any-lpeg.S(", \t"))^1))
+local dataliteral = lpeg.P {
+   floatval + stringval
+      + lpeg.Ct(lpeg.Cc("STRING")*lpeg.C((any-lpeg.S(", \t"))^1))
 };
 local datalist = lpeg.P {
-   space * ( literal * space * lpeg.P(",") * space ) ^0 * literal * space
+   space * ( dataliteral * space * lpeg.P(",") * space ) ^0 *
+      dataliteral * space
+};
+local input = lpeg.P{
+   "input";
+   input = lpeg.Ct(datalist)
 };
 local datastatement = lpeg.P {
    lpeg.C(lpeg.P("DATA")) * datalist
@@ -262,5 +268,6 @@ function parse(lines)
 end
 
 m.parse = parse;
+m.input = input;
 
 return m;
