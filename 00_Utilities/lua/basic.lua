@@ -577,7 +577,7 @@ function doprint(printlist)
       else
 	 local val = eval(element);
 	 if type(val) == "number" then
-	    if (val>0) then
+	    if val>=0 then
 	       val = " "..tostring(val).." ";
 	    else
 	       val = tostring(val).." ";
