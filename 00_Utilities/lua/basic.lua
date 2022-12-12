@@ -291,8 +291,9 @@ end
 file:close();
 
 -- Machine state
+local machine = {};
 local pc = 1;
-local basiclineno = 0;
+machine.basiclineno = 0;
 local quit = false;
 local substack,forstack = {}, {};
 
@@ -300,7 +301,7 @@ local substack,forstack = {}, {};
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
 -- sa_xxx is string array
 -- Also need to consider builtins, machine tables
-local basicenv = {};
+local basicenv = {_m=machine};
 
 local printstr = "";
 local printcol = 0;
@@ -612,7 +613,7 @@ function eval(basicenv,expr)
    end
    local op = ops[expr[1]];
    if not op then
-      error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
+      error("Bad expr "..tostring(expr[1]).." at "..basicenv._m.basiclineno);
    end      
    return op(basicenv, expr);
 end
@@ -761,7 +762,7 @@ function doif(basicenv,stat)
    local statement = stat[3];
    if eval(basicenv,test) ~= 0 then
       -- If true, run immediate statement and fall through to rest of line
-      exec(statement); 
+      exec(basicenv,statement); 
    else
       -- Walk forward to next line
       while pc < #prog and prog[pc][1] ~= "TARGET" do
@@ -906,7 +907,7 @@ function dodef(basicenv,stat)
 end
 
 local statements = {};
-statements.TARGET    = function(basicenv,stat) basiclineno = stat[2]; end;
+statements.TARGET    = function(basicenv,stat) basicenv._m.basiclineno = stat[2]; end;
 statements.END       = function(basicenv,stat) quit = true; end;
 statements.REM       = function(basicenv,stat) end; -- Do nothing
 statements.DIM       = dodim;
@@ -942,7 +943,7 @@ if nerr == 0 and mode == 2 then
 	 function () exec(basicenv,prog[pc]) end
       );
       if not status then
-	 print("At BASIC line "..basiclineno);
+	 print("At BASIC line "..basicenv._m.basiclineno);
 	 print(err);
 	 quit = true;
       end
