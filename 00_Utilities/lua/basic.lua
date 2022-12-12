@@ -252,7 +252,6 @@ basicexpr = m.P(exprgrammar);
 local basicline = m.P(linegrammar);
 
 local prog, data, datatarget = {}, {}, {};
-local datapc = 1;
 local nerr = 0;
 -- Read and parse input file
 local count = 1;
@@ -293,6 +292,9 @@ file:close();
 -- Machine state
 local machine = {};
 machine.pc = 1;
+machine.datapc = 1;
+machine.data = data;
+machine.datatarget = datatarget;
 machine.basiclineno = 0;
 machine.quit = false;
 machine.substack, machine.forstack = {}, {};
@@ -300,6 +302,7 @@ machine.substack, machine.forstack = {}, {};
 machine.printstr = "";
 machine.printcol = 0;
 machine.prog = prog;
+machine.targets = targets;
 
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
@@ -753,8 +756,9 @@ end
 
 function doon(basicenv,stat)
    local switch = math.floor(eval(basicenv,stat[2]));
+   local m = basicenv._m;
    if switch > 0 and switch+2 <= #stat then
-      basicenv._m.pc = targets[stat[2+switch]]-1;
+      m.pc = m.targets[stat[2+switch]]-1;
    end
 end
 
@@ -875,18 +879,21 @@ function dodim(basicenv,stat)
 end
 
 function dorestore(basicenv,stat)
+   local m = basicenv._m;
    if #stat then
-      datapc = 1;
+      m.datapc = 1;
    else
-      datapc = datatargets[stat[2]];
+      m.datapc = m.datatarget[stat[2]];
    end
 end
 
 function doread(basicenv,stat)
+   local m = basicenv._m;
    for i=2,#stat do
       local lval = stat[i];
-      local value = eval(basicenv,data[datapc]);
-      local dtype = data[datapc][1];
+      local dat = m.data[m.datapc];
+      local value = eval(basicenv,dat);
+      local dtype = dat[1];
       if dtype == "FLOATVAL" then
 	 assignf(lval, value);
       elseif dtype == "STRING" then
@@ -894,19 +901,22 @@ function doread(basicenv,stat)
       else
 	 error("READ data type "..tostring(lval[1]).." not implemented");
       end
-      datapc = datapc+1;
+      m.datapc = m.datapc+1;
    end
 end
 
 function dogoto(basicenv,stat)
-   basicenv._m.pc = targets[stat[2]]-1;
+   local m = basicenv._m;
+   m.pc = m.targets[stat[2]]-1;
 end
 function dogosub(basicenv,stat)
-   table.insert(basicenv._m.substack,basicenv._m.pc);
-   basicenv._m.pc = targets[stat[2]]-1;
+   local m = basicenv._m;
+   table.insert(m.substack,m.pc);
+   m.pc = m.targets[stat[2]]-1;
 end
 function doreturn(basicenv,stat)
-   basicenv._m.pc = table.remove(basicenv._m.substack);
+   local m = basicenv._m;
+   m.pc = table.remove(m.substack);
 end
 function dodef(basicenv,stat)
    basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
