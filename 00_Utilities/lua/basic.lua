@@ -369,188 +369,187 @@ local randomize;
 builtins.RND, randomize = makernd();
 
 function eval(expr)
-   if type(expr) == "table" then
-      if expr[1] == "STRING" then
-	 return expr[2];
-      elseif expr[1] == "CONCAT" then -- string concatenation
-	 local val = eval(expr[2]);
-	 for i=3,#expr do
-	    val = val..eval(expr[i]);
-	 end
-	 return val;
-      elseif expr[1] == "UNARY" then
-	 if #expr == 3 then
-	    if expr[2] == "-" then
-	       return -eval(expr[3]);
-	    else
-	       return eval(expr[3]);
-	    end
+   if type(expr) ~= "table" then
+      error("Parser failure at "..pc);
+   end
+   if expr[1] == "STRING" then
+      return expr[2];
+   elseif expr[1] == "CONCAT" then -- string concatenation
+      local val = eval(expr[2]);
+      for i=3,#expr do
+	 val = val..eval(expr[i]);
+      end
+      return val;
+   elseif expr[1] == "UNARY" then
+      if #expr == 3 then
+	 if expr[2] == "-" then
+	    return -eval(expr[3]);
 	 else
-	    return eval(expr[2]);
+	    return eval(expr[3]);
 	 end
-      elseif expr[1] == "PRODUCT" then
-	 local val = eval(expr[2]);
-	 for i=3,#expr,2 do
-	    if expr[i] == "*" then
-	       val = val * eval(expr[i+1]);
-	    else
-	       val = val / eval(expr[i+1]);
-	    end
-	 end
-	 return val;
-      elseif expr[1] == "POWER" then
-	 local val = eval(expr[#expr]);
-	 for i=#expr-1,2,-1 do
-	    val = eval(expr[i]) ^ val;
-	 end
-	 return val;
-      elseif expr[1] == "SUM" then
-	 local val = eval(expr[2])
-	 for i=3,#expr,2 do
-	    if expr[i] == "+" then
-	       val = val + eval(expr[i+1]);
-	    else
-	       val = val - eval(expr[i+1]);
-	    end
-	 end
-	 return val;
-      elseif expr[1] == "FLOATVAL" then
-	 return tonumber(expr[2]);
-      elseif expr[1] == "FLOATVAR" then
-	 if basicenv[expr[2]] == nil then
-	    return 0;
-	 end
-	 return basicenv[expr[2]];
-      elseif expr[1] == "STRINGVAR" then
-	 return basicenv["s_"..expr[2]];
-      elseif expr[1] == "INDEX" then
-	 local name = expr[2][2];
-	 local exprtype = expr[2][1];
-	 local arglist = expr[3];
-	 local args = {};
-	 for k,v in ipairs(expr[3]) do
-	    args[#args+1] = eval(v);
-	 end
-	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
-	 if builtin then
-	    return builtin(table.unpack(args));
-	 end
-	 local val = basicenv["fa_"..name];
-	 if val == nil then
-	    val = {};
-	    for j=0,10 do
-	       val[j] = 0.0;
-	    end
-	    basicenv["fa_"..name] = val;
-	 end
-	 if val then
-	    for _, v in ipairs(args) do
-	       if v < 0 or v > #val then
-		  error("Out of bounds array access");
-	       end
-	       val = val[v];
-	    end
-	    return val;
+      else
+	 return eval(expr[2]);
+      end
+   elseif expr[1] == "PRODUCT" then
+      local val = eval(expr[2]);
+      for i=3,#expr,2 do
+	 if expr[i] == "*" then
+	    val = val * eval(expr[i+1]);
 	 else
-	    error("Array "..name.." not known");
+	    val = val / eval(expr[i+1]);
 	 end
-      elseif expr[1] == "FUNCALL" then
-	 local name = "FN"..expr[2][2];
-	 local exprtype = expr[2][1];	 
-	 local arglist = expr[3];
-	 local func = basicenv[name];
-	 local args = {};
-	 for i = 1,#arglist do
-	    args[i] = eval(arglist[i]);
-	 end
-	 for k,v in ipairs(func.args) do
-	    local t = basicenv[v]; 
-	    basicenv[v] = args[k];
-	    args[k] = t;
-	 end
-	 local val = eval(func.expr);
-	 for k,v in ipairs(func.args) do
-	    basicenv[v] = args[k];
-	 end
-	 return val;
-      elseif expr[1] == "STRINGINDEX" then
-	 local name = expr[2][2];
-	 local exprtype = expr[2][1];
-	 local arglist = expr[3];
-	 local args = {};
-	 for k,v in ipairs(expr[3]) do
-	    args[#args+1] = eval(v);
-	 end
-	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
-	 if builtin then
-	    return builtin(table.unpack(args));
-	 end
-	 local val = basicenv["sa_"..name];
-	 if val then
-	    for _, v in ipairs(args) do
-	       if v < 0 or v > #val then
-		  error("Out of bounds array access");
-	       end
-	       val = val[v];
-	    end
-	    return val;
+      end
+      return val;
+   elseif expr[1] == "POWER" then
+      local val = eval(expr[#expr]);
+      for i=#expr-1,2,-1 do
+	 val = eval(expr[i]) ^ val;
+      end
+      return val;
+   elseif expr[1] == "SUM" then
+      local val = eval(expr[2])
+      for i=3,#expr,2 do
+	 if expr[i] == "+" then
+	    val = val + eval(expr[i+1]);
 	 else
-	    error("Array "..name.."$ not known");
+	    val = val - eval(expr[i+1]);
 	 end
-      elseif expr[1] == "OR" then
-	 local val = eval(expr[2]);
-	 if #expr > 2 then
-	    val = val ~= 0
-	    for i=3,#expr do
-	       val = val or (eval(expr[i]) ~= 0);
-	    end
-	    val = val and -1 or 0;
+      end
+      return val;
+   elseif expr[1] == "FLOATVAL" then
+      return tonumber(expr[2]);
+   elseif expr[1] == "FLOATVAR" then
+      if basicenv[expr[2]] == nil then
+	 return 0;
+      end
+      return basicenv[expr[2]];
+   elseif expr[1] == "STRINGVAR" then
+      return basicenv["s_"..expr[2]];
+   elseif expr[1] == "INDEX" then
+      local name = expr[2][2];
+      local exprtype = expr[2][1];
+      local arglist = expr[3];
+      local args = {};
+      for k,v in ipairs(expr[3]) do
+	 args[#args+1] = eval(v);
+      end
+      local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
+      if builtin then
+	 return builtin(table.unpack(args));
+      end
+      local val = basicenv["fa_"..name];
+      if val == nil then
+	 val = {};
+	 for j=0,10 do
+	    val[j] = 0.0;
 	 end
-	 return val
-      elseif expr[1] == "AND" then
-	 local val = eval(expr[2]);
-	 if #expr > 2 then
-	    val = val ~= 0
-	    for i=3,#expr do
-	       val = val and (eval(expr[i]) ~= 0);
+	 basicenv["fa_"..name] = val;
+      end
+      if val then
+	 for _, v in ipairs(args) do
+	    if v < 0 or v > #val then
+	       error("Out of bounds array access");
 	    end
-	    val = val and -1 or 0;
-	 end
-	 return val;
-      elseif expr[1] == "NOT" then
-	 local val = eval(expr[2]);
-	 return val and 0 or -1;
-      elseif expr[1] == "EQV" then
-	 local val = eval(expr[2]);
-	 return val;
-      elseif expr[1] == "COMPARE" then
-	 local val = eval(expr[2]);	 
-	 for i = 3, #expr, 2 do
-	    local op, val2 = expr[i], eval(expr[i+1]);
-	    if op == "=" then
-	       val = val == val2;
-	    elseif op == "<>" then
-	       val = val ~= val2;
-	    elseif op == ">=" then
-	       val = val >= val2;
-	    elseif op == "<=" then
-	       val = val <= val2;
-	    elseif op == ">" then
-	       val = val > val2;
-	    elseif op == "<" then
-	       val = val < val2;
-	    else
-	       error("Operator "..op.." not recognized");
-	    end
-	    val = val and -1 or 0;
+	    val = val[v];
 	 end
 	 return val;
       else
-	 error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
+	 error("Array "..name.." not known");
       end
+   elseif expr[1] == "FUNCALL" then
+      local name = "FN"..expr[2][2];
+      local exprtype = expr[2][1];	 
+      local arglist = expr[3];
+      local func = basicenv[name];
+      local args = {};
+      for i = 1,#arglist do
+	 args[i] = eval(arglist[i]);
+      end
+      for k,v in ipairs(func.args) do
+	 local t = basicenv[v]; 
+	 basicenv[v] = args[k];
+	 args[k] = t;
+      end
+      local val = eval(func.expr);
+      for k,v in ipairs(func.args) do
+	 basicenv[v] = args[k];
+      end
+      return val;
+   elseif expr[1] == "STRINGINDEX" then
+      local name = expr[2][2];
+      local exprtype = expr[2][1];
+      local arglist = expr[3];
+      local args = {};
+      for k,v in ipairs(expr[3]) do
+	 args[#args+1] = eval(v);
+      end
+      local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
+      if builtin then
+	 return builtin(table.unpack(args));
+      end
+      local val = basicenv["sa_"..name];
+      if val then
+	 for _, v in ipairs(args) do
+	    if v < 0 or v > #val then
+	       error("Out of bounds array access");
+	    end
+	    val = val[v];
+	 end
+	 return val;
+      else
+	 error("Array "..name.."$ not known");
+      end
+   elseif expr[1] == "OR" then
+      local val = eval(expr[2]);
+      if #expr > 2 then
+	 val = val ~= 0
+	 for i=3,#expr do
+	    val = val or (eval(expr[i]) ~= 0);
+	 end
+	 val = val and -1 or 0;
+      end
+      return val
+   elseif expr[1] == "AND" then
+      local val = eval(expr[2]);
+      if #expr > 2 then
+	 val = val ~= 0
+	 for i=3,#expr do
+	    val = val and (eval(expr[i]) ~= 0);
+	 end
+	 val = val and -1 or 0;
+      end
+      return val;
+   elseif expr[1] == "NOT" then
+      local val = eval(expr[2]);
+      return val and 0 or -1;
+   elseif expr[1] == "EQV" then
+      local val = eval(expr[2]);
+      return val;
+   elseif expr[1] == "COMPARE" then
+      local val = eval(expr[2]);	 
+      for i = 3, #expr, 2 do
+	 local op, val2 = expr[i], eval(expr[i+1]);
+	 if op == "=" then
+	    val = val == val2;
+	 elseif op == "<>" then
+	    val = val ~= val2;
+	 elseif op == ">=" then
+	    val = val >= val2;
+	 elseif op == "<=" then
+	    val = val <= val2;
+	 elseif op == ">" then
+	    val = val > val2;
+	 elseif op == "<" then
+	    val = val < val2;
+	 else
+	    error("Operator "..op.." not recognized");
+	 end
+	 val = val and -1 or 0;
+      end
+      return val;
    else
-      error("Parser failure at "..pc);
-   end
+      error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
+      end
    return tostring(expr);
 end
 
