@@ -102,6 +102,7 @@ local Statement = m.V"Statement";
 local ifstatement = m.V"ifstatement";
 local ifstart = m.V"ifstart";
 local expr = m.V"expr";
+local rawexpr = m.V"rawexpr";
 local numericassignment = m.V"numericassignment";
 local dimstatement = m.V"dimstatement";
 local dimlist = m.V"dimlist";
@@ -163,7 +164,8 @@ local linegrammar = {
    defstatement = m.C(m.P("DEF")) * m.S(" \t")^1 * m.P("FN") * space
       * m.C(varname) * space * m.P("(") * space * dummylist * space * m.P(")")
       * space * m.P("=") * space * expr,
-   expr = Or,
+   expr = rawexpr,
+   rawexpr = Or,
    Or = m.Ct(m.Cc("OR") * (And * space * m.P("OR") * space)^0 * And),
    And = m.Ct(m.Cc("AND") * (Not * space * m.P("AND") * space)^0 * Not),
    Not = m.Ct((m.C("NOT") * space+m.Cc("EQV")) * comparison),
@@ -204,21 +206,33 @@ local linegrammar = {
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
+-- Cache values for expr rule, to speed up run time
+local basicexpr;
+local cache = {};
+function matchexpr(s, p)
+   if cache[1] ~= s then
+      cache[1] = s;
+      cache[2] = {};
+   end
+   if cache[2][p] == nil then
+      local captures, pos = basicexpr:match(s,p-1);
+      if captures == nil then
+	 cache[2][p] = {nil};
+      else
+	 table.insert(captures,1,pos);
+	 cache[2][p] = captures;
+      end
+   end
+   return table.unpack(cache[2][p]);
+end
+linegrammar.expr = m.Cmt(any,matchexpr);
 local exprgrammar = {};
 for k,v in pairs(linegrammar) do
    exprgrammar[k] = v;
 end
 exprgrammar[1] = "exprtagged";
-exprgrammar.exprtagged = m.Ct(expr) * m.Cp();
-local basicexpr = m.P(exprgrammar);
-function matchexpr(s, p)
-   local captures = {basicexpr:match(s,p-1)};
-   if #captures == 0 then
-      return nil;
-   end
-   return captures[2], table.unpack(captures[1]);
-end
-linegrammar.expr = m.Cmt(any,matchexpr);
+exprgrammar.exprtagged = m.Ct(rawexpr) * m.Cp();
+basicexpr = m.P(exprgrammar);
 local basicline = m.P(linegrammar);
 
 local prog, data, datatarget = {}, {}, {};
