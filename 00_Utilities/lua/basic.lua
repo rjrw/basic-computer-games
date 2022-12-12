@@ -131,11 +131,11 @@ local linegrammar = {
    statement =
       m.Ct(
 	 gotostatement + gosubstatement + forstatement + nextstatement
-	    + endstatement + stopstatement + printstatement + numericassignment
-	    + returnstatement + stringassignment + dimstatement +
+	    + endstatement + stopstatement + printstatement 
+	    + returnstatement + dimstatement +
 	    inputstatement + endstatement + ifstatement + remstatement +
 	    onstatement + datastatement + randomizestatement + restorestatement +
-	    readstatement + defstatement ),
+	    readstatement + defstatement + numericassignment + stringassignment ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = m.Ct(m.Cc("STRINGELEMENT") * stringvar * space *
