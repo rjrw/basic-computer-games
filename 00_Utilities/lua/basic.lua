@@ -16,6 +16,9 @@ while narg < #arg do
       mode = 2;
    elseif arg[narg] == "-p" then
       mode = 1;
+   elseif arg[narg] == "-c" then
+      mode = 3;
+      error("Compilation not yet implemented");
    elseif arg[narg] == "-v" then
       verbose = true;
    else
