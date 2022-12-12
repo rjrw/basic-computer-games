@@ -323,11 +323,11 @@ local builtins =
      EXP = math.exp, INT = math.floor, LEN=len, LOG = math.log, SGN = sgn,
      SIN = math.sin, SPC = spc, SQR = math.sqrt,
      TAB = printtab, TAN = math.tan, VAL=tonumber };
-builtins["CHR$"] = string.char;
-builtins["LEFT$"] = function(s,j) return s:sub(1,j) end
-builtins["RIGHT$"] = function(s,j) return s:sub(-j) end
-builtins["STR$"] = tostring
-builtins["MID$"] = function(...)
+builtins["s_CHR"] = string.char;
+builtins["s_LEFT"] = function(s,j) return s:sub(1,j) end
+builtins["s_RIGHT"] = function(s,j) return s:sub(-j) end
+builtins["s_STR"] = tostring
+builtins["s_MID"] = function(...)
    local s, i, j = ...;
    if j then
       return s:sub(i,i+j-1)
@@ -421,7 +421,7 @@ function eval(expr)
 	 for k,v in ipairs(expr[3]) do
 	    args[#args+1] = eval(v);
 	 end
-	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins[name.."$"];
+	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
 	 if builtin then
 	    return builtin(table.unpack(args));
 	 end
