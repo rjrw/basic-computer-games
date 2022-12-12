@@ -125,7 +125,7 @@ local funcall = m.V"funcall";
 local stringcall = m.V"stringcall";
 local statement = m.V"statement";
 local statementlist = m.V"statementlist";
-local basicline = m.P {
+local linegrammar = {
    "line";
    statement =
       m.Ct(
@@ -204,6 +204,13 @@ local basicline = m.P {
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
+local basicline = m.P(linegrammar);
+local exprgrammar = {};
+for k,v in pairs(linegrammar) do
+   exprgrammar[k] = v;
+end
+exprgrammar[1] = "expr";
+local basicexpr = m.P(exprgrammar);
 
 local prog, data, datatarget = {}, {}, {};
 local datapc = 1;
