@@ -299,6 +299,7 @@ machine.substack, machine.forstack = {}, {};
 -- Outpur state
 machine.printstr = "";
 machine.printcol = 0;
+machine.prog = prog;
 
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
@@ -763,6 +764,7 @@ local exec;
 function doif(basicenv,stat)
    local test = stat[2];
    local statement = stat[3];
+   local prog = basicenv._m.prog;
    if eval(basicenv,test) ~= 0 then
       -- If true, run immediate statement and fall through to rest of line
       exec(basicenv,statement); 
@@ -943,6 +945,7 @@ end
 
 if nerr == 0 and mode == 2 then
    while true do
+      local prog = basicenv._m.prog;
       local status, err = pcall(
 	 function () exec(basicenv,prog[basicenv._m.pc]) end
       );
