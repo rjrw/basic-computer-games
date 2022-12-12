@@ -327,13 +327,13 @@ if nerr == 0 then
       local outfile = string.gsub(filename,baspat,".lua");
       local file = assert(io.open(outfile,"w"));
       file:write("local rtl = require\"basicrtl\";\n");
-      file:write("local prog =\n");
+      file:write("local prog = ");
       deepwrite(file,prog,0);
-      file:write(";\nlocal targets =\n");
+      file:write(";\nlocal targets = ");
       deepwrite(file,targets,0);
-      file:write(";\nlocal data =\n");
+      file:write(";\nlocal data = ");
       deepwrite(file,data,0);
-      file:write(";\nlocal datatargets =\n");
+      file:write(";\nlocal datatargets = ");
       deepwrite(file,datatargets,0);
       file:write(";\nrtl.run(prog, targets, data, datatargets);\n");
       file:close();
