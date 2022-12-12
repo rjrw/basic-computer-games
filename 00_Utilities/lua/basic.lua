@@ -296,6 +296,9 @@ machine.pc = 1;
 machine.basiclineno = 0;
 machine.quit = false;
 machine.substack, machine.forstack = {}, {};
+-- Outpur state
+machine.printstr = "";
+machine.printcol = 0;
 
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
@@ -303,13 +306,12 @@ machine.substack, machine.forstack = {}, {};
 -- Also need to consider builtins, machine tables
 local basicenv = {_m=machine};
 
-local printstr = "";
-local printcol = 0;
 function printtab(n)
    n = math.floor(n);
-   if n > printcol then
-      printstr = printstr..string.rep(" ",n-printcol);
-      printcol = n;
+   local m = basicenv._m;
+   if n > m.printcol then
+      m.printstr = m.printstr..string.rep(" ",n-m.printcol);
+      m.printcol = n;
    end
    return "";
 end
@@ -648,7 +650,8 @@ end
 
 function doprint(basicenv,stat)
    local printlist=stat[2];
-   printstr="";
+   local m = basicenv._m;
+   m.printstr="";
    local flush = true;
    local j = 1;
    for j=1,#printlist do
@@ -657,7 +660,7 @@ function doprint(basicenv,stat)
       if element == ";" then
 	 flush = false;
       elseif element == "," then
-	 local newcol = 14*(math.floor(printcol/14)+1);
+	 local newcol = 14*(math.floor(m.printcol/14)+1);
 	 printtab(newcol);
 	 flush = false;
       else
@@ -669,15 +672,15 @@ function doprint(basicenv,stat)
 	       val = tostring(val).." ";
 	    end
 	 end
-	 printstr = printstr..val;
-	 printcol = printcol + #val;
+	 m.printstr = m.printstr..val;
+	 m.printcol = m.printcol + #val;
       end
    end
    if flush then
-      printstr = printstr.."\n";
-      printcol = 0;
+      m.printstr = m.printstr.."\n";
+      m.printcol = 0;
    end
-   write(printstr);
+   write(m.printstr);
 end
 
 function assignf(lval,value)
