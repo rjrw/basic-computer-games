@@ -121,9 +121,9 @@ local arglist = m.V"arglist";
 local dummylist = m.V"dummylist";
 local exprlist = m.V"exprlist";
 local element = m.V"element";
-local call = m.V"call";
+local index = m.V"index";
 local funcall = m.V"funcall";
-local stringcall = m.V"stringcall";
+local stringindex = m.V"stringindex";
 local statement = m.V"statement";
 local statementlist = m.V"statementlist";
 local linegrammar = {
@@ -132,10 +132,13 @@ local linegrammar = {
       m.Ct(
 	 gotostatement + gosubstatement + forstatement + nextstatement
 	    + endstatement + stopstatement + printstatement 
-	    + returnstatement + dimstatement +
-	    inputstatement + endstatement + ifstatement + remstatement +
-	    onstatement + datastatement + randomizestatement + restorestatement +
-	    readstatement + defstatement + numericassignment + stringassignment ),
+	    + returnstatement + dimstatement
+	    + inputstatement + endstatement + ifstatement + remstatement
+	    + onstatement + datastatement + randomizestatement + restorestatement
+	    + readstatement + defstatement
+	 -- Assignments need to come late to avoid clashes with other statements
+	 -- e.g. IF ((Z+P)/2)= looking like an array assignment.
+	    + numericassignment + stringassignment ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
    stringlval = stringelement + stringvar,
    stringelement = m.Ct(m.Cc("STRINGELEMENT") * stringvar * space *
@@ -146,7 +149,7 @@ local linegrammar = {
    stringexpr = concat,
    concat = m.Ct(m.Cc("CONCAT") *
 		    (stringrval * space * m.P("+") * space)^0 * stringrval),
-   stringrval = stringval + stringcall + stringlval,
+   stringrval = stringval + stringindex + stringlval,
    printexpr = stringexpr + expr + m.C(m.S(";,"))*space,
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
@@ -161,7 +164,7 @@ local linegrammar = {
    dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
    dimstatement = m.C(m.P("DIM")) * space * dimlist,
    dummylist = m.Ct( (m.C(varname)*space*m.P(",")*space)^0*m.C(varname)),
-   defstatement = m.C(m.P("DEF")) * m.S(" \t")^1 * m.P("FN") * space
+   defstatement = m.C(m.P("DEF")) * m.S(" \t")^0 * m.P("FN") * space
       * m.C(varname) * space * m.P("(") * space * dummylist * space * m.P(")")
       * space * m.P("=") * space * expr,
    expr = rawexpr,
@@ -191,7 +194,7 @@ local linegrammar = {
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
    Value = floatval + floatrval + m.P("(") * space * expr * space * m.P(")"),
    floatlval = element + floatvar,
-   floatrval = funcall + call + floatvar,
+   floatrval = funcall + index + floatvar,
    -- Array access/function/builtin call
    arg = stringexpr + expr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
@@ -199,10 +202,10 @@ local linegrammar = {
    funcall = m.Ct(m.Cc("FUNCALL") *
 		     m.P("FN") * space *
 		     floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
-   call = m.Ct(m.Cc("INDEX") *
+   index = m.Ct(m.Cc("INDEX") *
 	       --m.Cmt(m.P"",function (s,p,c) print("Matching INDEX at",p); return true; end) *
 		  floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
-   stringcall = m.Ct(m.Cc("STRINGINDEX") * stringvar * space * m.P("(") * space * arglist * space * m.P(")")),
+   stringindex = m.Ct(m.Cc("STRINGINDEX") * stringvar * space * m.P("(") * space * arglist * space * m.P(")")),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
