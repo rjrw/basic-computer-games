@@ -288,9 +288,11 @@ local substack,forstack = {}, {};
 local basicenv = {};
 
 local printstr = "";
+local printcol = 0;
 function printtab(n)
-   if n > #printstr then
-      printstr = printstr..string.rep(" ",n-#printstr);
+   if n > printcol then
+      printstr = printstr..string.rep(" ",n-printcol);
+      printcol = n;
    end
    return "";
 end
@@ -531,6 +533,8 @@ function eval(expr)
    return tostring(expr);
 end
 
+local write = io.write;
+
 function doinput(inputlist)
    local i=2;
    local prompt = "? ";
@@ -540,7 +544,7 @@ function doinput(inputlist)
    end
    local input = "";
    while input == "" do
-      io.write(prompt);
+      write(prompt);
       input = io.read("*l");
    end
    for j=i,#inputlist do
@@ -556,6 +560,7 @@ function doinput(inputlist)
       --print(inputlist[j][1]);
    end
 end
+
 function doprint(printlist)
    printstr="";
    local flush = true;
@@ -566,7 +571,7 @@ function doprint(printlist)
       if element == ";" then
 	 flush = false;
       elseif element == "," then
-	 local newcol = 14*(#printstr/14+1);
+	 local newcol = 14*(printcol/14+1);
 	 printtab(newcol);
 	 flush = false;
       else
@@ -579,12 +584,14 @@ function doprint(printlist)
 	    end
 	 end
 	 printstr = printstr..val;
+	 printcol = printcol + #val;
       end
    end
    if flush then
       printstr = printstr.."\n";
+      printcol = 0;
    end
-   io.write(printstr);
+   write(printstr);
 end
 
 function assignf(lval,value)
