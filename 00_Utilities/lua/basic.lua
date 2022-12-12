@@ -616,6 +616,13 @@ function assignf(lval,value)
       end
       if #lval[3] == 1 then
 	 local index = eval(lval[3][1]);
+	 if basicenv["fa_"..target[2]] == nil then
+	    local store = {};
+	    for j = 0, 10 do
+	       store[j] = 0.0;
+	    end
+	    basicenv["fa_"..target[2]] = store;
+	 end
 	 basicenv["fa_"..target[2]][index] = value;
       else
 	 local i1, i2 = eval(lval[3][1]),eval(lval[3][2]);
