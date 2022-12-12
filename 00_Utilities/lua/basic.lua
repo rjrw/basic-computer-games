@@ -310,7 +310,7 @@ machine.targets = targets;
 -- Also need to consider builtins, machine tables
 local basicenv = {_m=machine};
 
-function printtab(n)
+function printtab(basicenv,n)
    n = math.floor(n);
    local m = basicenv._m;
    if n > m.printcol then
@@ -347,7 +347,7 @@ local builtins =
    { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos,
      EXP = math.exp, INT = math.floor, LEN=len, LOG = math.log, SGN = sgn,
      SIN = math.sin, SPC = spc, SQR = math.sqrt,
-     TAB = printtab, TAN = math.tan, VAL=tonumber };
+     TAN = math.tan, VAL=tonumber };
 builtins["s_CHR"] = string.char;
 builtins["s_LEFT"] = function(s,j) return s:sub(1,j) end
 builtins["s_RIGHT"] = function(s,j) return s:sub(-j) end
@@ -458,6 +458,10 @@ function doindex(basicenv,expr)
    local args = {};
    for k,v in ipairs(expr[3]) do
       args[#args+1] = eval(basicenv,v);
+   end
+   if name == "TAB" then
+      printtab(basicenv,args[1]);
+      return "";
    end
    local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
    if builtin then
@@ -665,7 +669,7 @@ function doprint(basicenv,stat)
 	 flush = false;
       elseif element == "," then
 	 local newcol = 14*(math.floor(m.printcol/14)+1);
-	 printtab(newcol);
+	 printtab(basicenv,newcol);
 	 flush = false;
       else
 	 local val = eval(basicenv,element);
