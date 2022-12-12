@@ -140,42 +140,15 @@ local linegrammar = {
 	 -- e.g. IF ((Z+P)/2)= looking like an array assignment.
 	    + numericassignment + stringassignment ),
    printstatement = m.C(m.P("PRINT")) * space * m.Ct(printlist),
-   stringlval = stringelement + stringvar,
-   stringelement = m.Ct(m.Cc("STRINGELEMENT") * stringvar * space *
-			   m.P("(") * space * exprlist * space * m.P(")")),
-   stringassignment =
-      m.Cc("LETS") * m.P("LET")^-1 * space *
-      stringlval * space * m.P("=") * space * stringexpr * space,
-   stringexpr = concat,
-   concat = m.Ct(m.Cc("CONCAT") *
-		    (stringrval * space * m.P("+") * space)^0 * stringrval),
-   stringrval = stringval + stringindex + stringlval,
-   printexpr = stringexpr + expr + m.C(m.S(";,"))*space,
-   printlist = (printexpr * space )^0,
-   inputitem = stringlval + floatlval,
-   inputlist = (inputitem * space * m.P(",") * space)^0 * inputitem * space,
    inputstatement = m.C(m.P("INPUT")) * space *
       (m.Cc("PROMPT") * stringexpr * space * m.P(";") * space)^-1 * inputlist,
    readstatement = m.C(m.P("READ")) * space * inputlist,
    ifstatement = m.C(m.P("IF")) * space * expr * space *
       m.P("THEN") * space * (m.Ct (m.Cc("GOTO") * lineno) * space + statement),
-   exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
-   dimdef = m.Ct(anyvar * space * m.P("(") * space * exprlist * space * m.P(")")),
-   dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
    dimstatement = m.C(m.P("DIM")) * space * dimlist,
-   dummylist = m.Ct( (m.C(varname)*space*m.P(",")*space)^0*m.C(varname)),
-   defstatement = m.C(m.P("DEF")) * m.S(" \t")^0 * m.P("FN") * space
+   defstatement = m.C(m.P("DEF")) * space * m.P("FN") * space
       * m.C(varname) * space * m.P("(") * space * dummylist * space * m.P(")")
       * space * m.P("=") * space * expr,
-   expr = rawexpr,
-   rawexpr = Or,
-   Or = m.Ct(m.Cc("OR") * (And * space * m.P("OR") * space)^0 * And),
-   And = m.Ct(m.Cc("AND") * (Not * space * m.P("AND") * space)^0 * Not),
-   Not = m.Ct((m.C("NOT") * space+m.Cc("EQV")) * comparison),
-   comparison = m.Ct(
-      m.Cc("COMPARE") *
-	 ( stringexpr * space * comparisonop * space * stringexpr
-	      + ( Sum * space * comparisonop * space)^0 * Sum ) ),
    forstatement =
       m.C(m.P("FOR")) * space * floatvar * space * m.P("=") * space * expr
       * space * m.P("TO") * space * expr * space *
@@ -186,6 +159,28 @@ local linegrammar = {
    numericassignment =
       m.Cc("LETN") * m.P("LET")^-1 * space *
       floatlval * space * m.P("=") * space * expr * space,
+   stringassignment =
+      m.Cc("LETS") * m.P("LET")^-1 * space *
+      stringlval * space * m.P("=") * space * stringexpr * space,
+   -- Argument lists
+   exprlist = m.Ct(( expr * space * m.P(",") * space)^0 * expr),
+   dimdef = m.Ct(anyvar * space * m.P("(") * space * exprlist * space * m.P(")")),
+   dimlist = ( dimdef * space * m.P(",") * space)^0 * dimdef,
+   printexpr = stringexpr + expr + m.C(m.S(";,"))*space,
+   printlist = (printexpr * space )^0,
+   inputitem = stringlval + floatlval,
+   inputlist = (inputitem * space * m.P(",") * space)^0 * inputitem * space,
+   dummylist = m.Ct( (m.C(varname)*space*m.P(",")*space)^0*m.C(varname)),
+   -- Expression hierarchy
+   expr = rawexpr,
+   rawexpr = Or,
+   Or = m.Ct(m.Cc("OR") * (And * space * m.P("OR") * space)^0 * And),
+   And = m.Ct(m.Cc("AND") * (Not * space * m.P("AND") * space)^0 * Not),
+   Not = m.Ct((m.C("NOT") * space+m.Cc("EQV")) * comparison),
+   comparison = m.Ct(
+      m.Cc("COMPARE") *
+	 ( stringexpr * space * comparisonop * space * stringexpr
+	      + ( Sum * space * comparisonop * space)^0 * Sum ) ),
    Sum =
       m.Ct(m.Cc("SUM") * ( Product * space * m.C(m.S("+-")) * space)^0 * Product) * space,
    Product = m.Ct(m.Cc("PRODUCT") * ( Power * space * m.C(m.S("*/")) * space)^0 * Power) * space,
@@ -193,9 +188,18 @@ local linegrammar = {
    -- TODO: address ambiguity about the handling of -1 -- is it "-" "1" or "-1"?
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
    Value = floatval + floatrval + m.P("(") * space * expr * space * m.P(")"),
+   -- String expression hierarchy
+   stringexpr = concat,
+   concat = m.Ct(m.Cc("CONCAT") *
+		    (stringrval * space * m.P("+") * space)^0 * stringrval),
+   -- Lowest-level groups
    floatlval = element + floatvar,
    floatrval = funcall + index + floatvar,
-   -- Array access/function/builtin call
+   stringlval = stringelement + stringvar,
+   stringelement = m.Ct(m.Cc("STRINGELEMENT") * stringvar * space *
+			   m.P("(") * space * exprlist * space * m.P(")")),
+   stringrval = stringval + stringindex + stringlval,
+  -- Array access/function/builtin call
    arg = stringexpr + expr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = m.Ct(m.Cc("ELEMENT") * floatvar * space * m.P("(") * space * exprlist * space * m.P(")")),
