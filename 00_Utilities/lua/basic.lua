@@ -292,7 +292,7 @@ file:close();
 
 -- Machine state
 local machine = {};
-local pc = 1;
+machine.pc = 1;
 machine.basiclineno = 0;
 local quit = false;
 local substack,forstack = {}, {};
@@ -609,7 +609,7 @@ ops.FUNCALL   = dofuncall;
 
 function eval(basicenv,expr)
    if type(expr) ~= "table" then
-      error("Parser failure at "..pc);
+      error("Parser failure at "..basicenv._m.pc);
    end
    local op = ops[expr[1]];
    if not op then
@@ -750,7 +750,7 @@ end
 function doon(basicenv,stat)
    local switch = math.floor(eval(basicenv,stat[2]));
    if switch > 0 and switch+2 <= #stat then
-      pc = targets[stat[2+switch]]-1;
+      basicenv._m.pc = targets[stat[2+switch]]-1;
    end
 end
 
@@ -765,12 +765,12 @@ function doif(basicenv,stat)
       exec(basicenv,statement); 
    else
       -- Walk forward to next line
-      while pc < #prog and prog[pc][1] ~= "TARGET" do
-	 pc = pc+1;
+      while basicenv._m.pc < #prog and prog[basicenv._m.pc][1] ~= "TARGET" do
+	 basicenv._m.pc = basicenv._m.pc+1;
       end
    end
-   if pc ~= #prog then
-      pc=pc-1;
+   if basicenv._m.pc ~= #prog then
+      basicenv._m.pc=basicenv._m.pc-1;
    end
 end
 
@@ -780,7 +780,7 @@ function dofor(basicenv,stat)
    local last = eval(basicenv,stat[4]);
    local step = #stat == 5 and eval(basicenv,stat[5]) or 1;
    basicenv[control] = init;
-   local frame = { pc, control, last, step};
+   local frame = { basicenv._m.pc, control, last, step};
    table.insert(forstack,frame);
 end
 
@@ -794,7 +794,7 @@ function donext(basicenv,stat)
       local newval = oldval + step;
       basicenv[control] = newval;
       if step*(newval-last) <= 0 then
-	 pc = frame[1];
+	 basicenv._m.pc = frame[1];
 	 return;
       else
 	 table.remove(forstack);
@@ -817,7 +817,7 @@ function donext(basicenv,stat)
 	 local newval = oldval + step;
 	 basicenv[control] = newval;
 	 if step*(newval-last) <= 0 then
-	    pc = frame[1];
+	    basicenv._m.pc = frame[1];
 	    return;
 	 else
 	    table.remove(forstack);
@@ -893,14 +893,14 @@ function doread(basicenv,stat)
 end
 
 function dogoto(basicenv,stat)
-   pc = targets[stat[2]]-1;
+   basicenv._m.pc = targets[stat[2]]-1;
 end
 function dogosub(basicenv,stat)
-   table.insert(substack,pc);
-   pc = targets[stat[2]]-1;
+   table.insert(substack,basicenv._m.pc);
+   basicenv._m.pc = targets[stat[2]]-1;
 end
 function doreturn(basicenv,stat)
-   pc = table.remove(substack);
+   basicenv._m.pc = table.remove(substack);
 end
 function dodef(basicenv,stat)
    basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
@@ -934,20 +934,20 @@ function exec(basicenv,stat)
       error("Unknown statement "..stat[1]);
    end
    op(basicenv,stat);
-   pc = pc + 1;
+   basicenv._m.pc = basicenv._m.pc + 1;
 end
 
 if nerr == 0 and mode == 2 then
    while true do
       local status, err = pcall(
-	 function () exec(basicenv,prog[pc]) end
+	 function () exec(basicenv,prog[basicenv._m.pc]) end
       );
       if not status then
 	 print("At BASIC line "..basicenv._m.basiclineno);
 	 print(err);
 	 quit = true;
       end
-      if quit or pc > #prog then
+      if quit or basicenv._m.pc > #prog then
 	 -- Run off end of program
 	 break;
       end
