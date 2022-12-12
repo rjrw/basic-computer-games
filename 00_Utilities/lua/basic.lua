@@ -581,7 +581,8 @@ function doinput(inputlist)
    end
 end
 
-function doprint(printlist)
+function doprint(stat)
+   local printlist=stat[2];
    printstr="";
    local flush = true;
    local j = 1;
@@ -795,15 +796,33 @@ function dodim(stat)
    end
 end
 
+local statements = {};
+
+statements.TARGET = function(stat) basiclineno = stat[2]; end;
+statements.END    = function(stat) quit = true; end;
+statements.REM    = function(stat) end; -- Do nothing
+statements.DIM    = dodim;
+statements.DATA   = function(stat) end; -- Do nothing at runtime
+-- statements.RESTORE
+-- statements.READ
+-- statements.DEF
+-- statements.LETN
+-- statements.LETS
+-- statements.IF
+-- statements.GOTO
+-- statements.GOSUB
+-- statements.RETURN
+statements.FOR    = dofor;
+statements.NEXT   = donext;
+statements.ON     = doon;
+statements.PRINT  = doprint;
+statements.INPUT  = doinput;
+-- statements.RANDOMIZE
+
 function exec(stat)
-   if stat[1] == "TARGET" then
-      basiclineno = stat[2];
-   elseif stat[1] == "REM" then
-      -- Do nothing
-   elseif stat[1] == "PRINT" then
-      doprint(stat[2]);
-   elseif stat[1] == "INPUT" then
-      doinput(stat);
+   local op = statements[stat[1]];
+   if op then
+      op(stat);
    elseif stat[1] == "LETN" then
       doletn(stat[2],stat[3]);
    elseif stat[1] == "LETS" then
@@ -812,23 +831,11 @@ function exec(stat)
       pc = targets[stat[2]]-1;
    elseif stat[1] == "IF" then
       doif(stat[2],stat[3]);
-   elseif stat[1] == "END" then
-      quit = true;
    elseif stat[1] == "GOSUB" then
       table.insert(substack,pc);
       pc = targets[stat[2]]-1;
    elseif stat[1] == "RETURN" then
       pc = table.remove(substack);
-   elseif stat[1] == "DIM" then
-      dodim(stat);
-   elseif stat[1] == "FOR" then
-      dofor(stat);
-   elseif stat[1] == "NEXT" then
-      donext(stat);
-   elseif stat[1] == "ON" then
-      doon(stat);
-   elseif stat[1] == "DATA" then
-      -- Do nothing at run time
    elseif stat[1] == "RESTORE" then
       if #stat then
 	 datapc = 1;
