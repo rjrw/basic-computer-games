@@ -121,6 +121,7 @@ local dummylist = m.V"dummylist";
 local exprlist = m.V"exprlist";
 local element = m.V"element";
 local call = m.V"call";
+local funcall = m.V"funcall";
 local stringcall = m.V"stringcall";
 local statement = m.V"statement";
 local statementlist = m.V"statementlist";
@@ -188,11 +189,14 @@ local basicline = m.P {
    Unary = m.Ct(m.Cc("UNARY") * m.C(m.S("+-"))^-1 * Value),
    Value = floatval + floatrval + m.P("(") * space * expr * space * m.P(")"),
    floatlval = element + floatvar,
-   floatrval = call + floatvar,
+   floatrval = funcall + call + floatvar,
    -- Array access/function/builtin call
    arg = stringexpr + expr,
    arglist = m.Ct(( arg * space * m.P(",") * space)^0 * arg),
    element = m.Ct(m.Cc("ELEMENT") * floatvar * space * m.P("(") * space * exprlist * space * m.P(")")),
+   funcall = m.Ct(m.Cc("FUNCALL") *
+		     m.P("FN") * space *
+		     floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
    call = m.Ct(m.Cc("CALL") *
 	       --m.Cmt(m.P"",function (s,p,c) print("Matching CALL at",p); return true; end) *
 		  floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
@@ -249,7 +253,7 @@ local substack,forstack = {}, {};
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
 -- sa_xxx is string array
--- Also need to consider builtins, DEF FN, machine tables
+-- Also need to consider builtins, machine tables
 local basicenv = {};
 
 local printstr = "";
@@ -399,6 +403,25 @@ function eval(expr)
 	 else
 	    error("Array "..name.." not known");
 	 end
+      elseif expr[1] == "FUNCALL" then
+	 local name = "FN"..expr[2][2];
+	 local exprtype = expr[2][1];	 
+	 local arglist = expr[3];
+	 local func = basicenv[name];
+	 local args = {};
+	 for i = 1,#arglist do
+	    args[i] = eval(arglist[i]);
+	 end
+	 for k,v in ipairs(func.args) do
+	    local t = basicenv[v]; 
+	    basicenv[v] = args[k];
+	    args[k] = t;
+	 end
+	 local val = eval(func.expr);
+	 for k,v in ipairs(func.args) do
+	    basicenv[v] = args[k];
+	 end
+	 return val;
       elseif expr[1] == "STRINGCALL" then
 	 local name = expr[2][2];
 	 local exprtype = expr[2][1];
@@ -764,7 +787,7 @@ function exec(stat)
    elseif stat[1] == "RANDOMIZE" then
       randomize();
    elseif stat[1] == "DEF" then
-      error("Not handled "..stat[1]);
+      basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
    else
       error("Unknown statement "..stat[1]);
    end
