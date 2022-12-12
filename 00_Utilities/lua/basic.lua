@@ -949,11 +949,11 @@ statements.INPUT     = doinput;
 statements.RANDOMIZE = dorandomize;
 
 function exec(basicenv,stat)
-   local op = statements[stat[1]];
-   if op == nil then
+   local cmd = statements[stat[1]];
+   if cmd == nil then
       error("Unknown statement "..stat[1]);
    end
-   op(basicenv,stat);
+   cmd(basicenv,stat);
    basicenv._m.pc = basicenv._m.pc + 1;
 end
 
