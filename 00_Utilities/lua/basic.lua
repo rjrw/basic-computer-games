@@ -210,20 +210,21 @@ local linegrammar = {
 local basicexpr;
 local cache = {};
 function matchexpr(s, p)
-   if cache[1] ~= s then
-      cache[1] = s;
-      cache[2] = {};
+   -- Clear cache if subject has changed
+   if cache.subject ~= s then
+      cache.subject = s;
+      cache.vals = {};
    end
-   if cache[2][p] == nil then
+   if cache.vals[p] == nil then
       local captures, pos = basicexpr:match(s,p-1);
       if captures == nil then
-	 cache[2][p] = {nil};
+	 cache.vals[p] = {nil};
       else
 	 table.insert(captures,1,pos);
-	 cache[2][p] = captures;
+	 cache.vals[p] = captures;
       end
    end
-   return table.unpack(cache[2][p]);
+   return table.unpack(cache.vals[p]);
 end
 linegrammar.expr = m.Cmt(any,matchexpr);
 local exprgrammar = {};
