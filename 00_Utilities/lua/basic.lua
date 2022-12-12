@@ -294,8 +294,8 @@ file:close();
 local machine = {};
 machine.pc = 1;
 machine.basiclineno = 0;
-local quit = false;
-local substack,forstack = {}, {};
+machine.quit = false;
+machine.substack, machine.forstack = {}, {};
 
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
@@ -781,10 +781,11 @@ function dofor(basicenv,stat)
    local step = #stat == 5 and eval(basicenv,stat[5]) or 1;
    basicenv[control] = init;
    local frame = { basicenv._m.pc, control, last, step};
-   table.insert(forstack,frame);
+   table.insert(basicenv._m.forstack,frame);
 end
 
 function donext(basicenv,stat)
+   local forstack = basicenv._m.forstack;
    if #stat == 1 then
       local frame = forstack[#forstack];
       local control = frame[2];
@@ -896,11 +897,11 @@ function dogoto(basicenv,stat)
    basicenv._m.pc = targets[stat[2]]-1;
 end
 function dogosub(basicenv,stat)
-   table.insert(substack,basicenv._m.pc);
+   table.insert(basicenv._m.substack,basicenv._m.pc);
    basicenv._m.pc = targets[stat[2]]-1;
 end
 function doreturn(basicenv,stat)
-   basicenv._m.pc = table.remove(substack);
+   basicenv._m.pc = table.remove(basicenv._m.substack);
 end
 function dodef(basicenv,stat)
    basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
@@ -908,7 +909,7 @@ end
 
 local statements = {};
 statements.TARGET    = function(basicenv,stat) basicenv._m.basiclineno = stat[2]; end;
-statements.END       = function(basicenv,stat) quit = true; end;
+statements.END       = function(basicenv,stat) basicenv._m.quit = true; end;
 statements.REM       = function(basicenv,stat) end; -- Do nothing
 statements.DIM       = dodim;
 statements.DATA      = function(basicenv,stat) end; -- Do nothing at runtime
@@ -945,9 +946,9 @@ if nerr == 0 and mode == 2 then
       if not status then
 	 print("At BASIC line "..basicenv._m.basiclineno);
 	 print(err);
-	 quit = true;
+	 basicenv._m.quit = true;
       end
-      if quit or basicenv._m.pc > #prog then
+      if basicenv._m.quit or basicenv._m.pc > #prog then
 	 -- Run off end of program
 	 break;
       end
