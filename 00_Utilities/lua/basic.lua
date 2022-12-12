@@ -366,7 +366,7 @@ function makernd()
    return RND, randomize;
 end
 local randomize;
-builtins.RND, randomize = makernd();
+builtins.RND, dorandomize = makernd();
 
 function eval(expr)
    if type(expr) ~= "table" then
@@ -647,7 +647,9 @@ function assignf(lval,value)
    end
 end
 
-function doletn(lval,expr)
+function doletn(stat)
+   local lval = stat[2];
+   local expr = stat[3];
    assignf(lval,eval(expr))
 end
 
@@ -674,7 +676,9 @@ function assigns(lval,value)
    end
 end
 
-function dolets(lval,expr)
+function dolets(stat)
+   local lval = stat[2];
+   local expr = stat[3];
    assigns(lval,eval(expr))
 end
 
@@ -688,7 +692,9 @@ end
 
 local exec;
 
-function doif(test,statement)
+function doif(stat)
+   local test = stat[2];
+   local statement = stat[3];
    if eval(test) ~= 0 then
       exec(statement); -- And fall through
    else
@@ -796,73 +802,72 @@ function dodim(stat)
    end
 end
 
-local statements = {};
+function dorestore(stat)
+   if #stat then
+      datapc = 1;
+   else
+      datapc = datatargets[stat[2]];
+   end
+end
 
-statements.TARGET = function(stat) basiclineno = stat[2]; end;
-statements.END    = function(stat) quit = true; end;
-statements.REM    = function(stat) end; -- Do nothing
-statements.DIM    = dodim;
-statements.DATA   = function(stat) end; -- Do nothing at runtime
--- statements.RESTORE
--- statements.READ
--- statements.DEF
--- statements.LETN
--- statements.LETS
--- statements.IF
--- statements.GOTO
--- statements.GOSUB
--- statements.RETURN
-statements.FOR    = dofor;
-statements.NEXT   = donext;
-statements.ON     = doon;
-statements.PRINT  = doprint;
-statements.INPUT  = doinput;
--- statements.RANDOMIZE
+function doread(stat)
+   for i=2,#stat do
+      local lval = stat[i];
+      local value = eval(data[datapc]);
+      local dtype = data[datapc][1];
+      if dtype == "FLOATVAL" then
+	 assignf(lval, value);
+      elseif dtype == "STRING" then
+	 assigns(lval, value);
+      else
+	 error("READ data type "..tostring(lval[1]).." not implemented");
+      end
+      datapc = datapc+1;
+   end
+end
+
+function dogoto(stat)
+   pc = targets[stat[2]]-1;
+end
+function dogosub(stat)
+   table.insert(substack,pc);
+   pc = targets[stat[2]]-1;
+end
+function doreturn(stat)
+   pc = table.remove(substack);
+end
+function dodef(stat)
+   basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
+end
+
+local statements = {};
+statements.TARGET    = function(stat) basiclineno = stat[2]; end;
+statements.END       = function(stat) quit = true; end;
+statements.REM       = function(stat) end; -- Do nothing
+statements.DIM       = dodim;
+statements.DATA      = function(stat) end; -- Do nothing at runtime
+statements.RESTORE   = dorestore;
+statements.READ      = doread;
+statements.DEF       = dodef;
+statements.LETN      = doletn;
+statements.LETS      = dolets;
+statements.IF        = doif;
+statements.GOTO      = dogoto;
+statements.GOSUB     = dogosub;
+statements.RETURN    = doreturn;
+statements.FOR       = dofor;
+statements.NEXT      = donext;
+statements.ON        = doon;
+statements.PRINT     = doprint;
+statements.INPUT     = doinput;
+statements.RANDOMIZE = dorandomize;
 
 function exec(stat)
    local op = statements[stat[1]];
-   if op then
-      op(stat);
-   elseif stat[1] == "LETN" then
-      doletn(stat[2],stat[3]);
-   elseif stat[1] == "LETS" then
-      dolets(stat[2],stat[3]);
-   elseif stat[1] == "GOTO" then
-      pc = targets[stat[2]]-1;
-   elseif stat[1] == "IF" then
-      doif(stat[2],stat[3]);
-   elseif stat[1] == "GOSUB" then
-      table.insert(substack,pc);
-      pc = targets[stat[2]]-1;
-   elseif stat[1] == "RETURN" then
-      pc = table.remove(substack);
-   elseif stat[1] == "RESTORE" then
-      if #stat then
-	 datapc = 1;
-      else
-	 datapc = datatargets[stat[2]];
-      end
-   elseif stat[1] == "READ" then
-      for i=2,#stat do
-	 local lval = stat[i];
-	 local value = eval(data[datapc]);
-	 local dtype = data[datapc][1];
-	 if dtype == "FLOATVAL" then
-	    assignf(lval, value);
-	 elseif dtype == "STRING" then
-	    assigns(lval, value);
-	 else
-	    error("READ data type "..tostring(lval[1]).." not implemented");
-	 end
-	 datapc = datapc+1;
-      end
-   elseif stat[1] == "RANDOMIZE" then
-      randomize();
-   elseif stat[1] == "DEF" then
-      basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
-   else
+   if op == nil then
       error("Unknown statement "..stat[1]);
    end
+   op(stat);
    pc = pc + 1;
 end
 
