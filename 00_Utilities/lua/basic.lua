@@ -429,6 +429,13 @@ function eval(expr)
 	    return builtin(table.unpack(args));
 	 end
 	 local val = basicenv["fa_"..name];
+	 if val == nil then
+	    val = {};
+	    for j=0,10 do
+	       val[j] = 0.0;
+	    end
+	    basicenv["fa_"..name] = val;
+	 end
 	 if val then
 	    for _, v in ipairs(args) do
 	       if v < 0 or v > #val then
