@@ -24,11 +24,14 @@ local function spc(x)
    return string.rep(" ",x);
 end
 
-m.builtins =
+local builtins =
    { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos,
      EXP = math.exp, INT = math.floor, LEN=len, LOG = math.log, SGN = sgn,
      SIN = math.sin, SPC = spc, SQR = math.sqrt,
      TAN = math.tan, VAL=tonumber };
+
+m.builtins = builtins;
+
 do
    local builtins = m.builtins;
    builtins["s_CHR"] = string.char;
@@ -327,6 +330,61 @@ ops.FUNCALL   = dofuncall;
 
 local write = io.write;
 
+local function assigns(basicenv,lval,value)
+   local ttype = lval[1];
+   local target = lval[2];
+   if ttype == "STRINGELEMENT" then
+      local eltype = target[1];
+      if #lval[3] > 2 then
+	 error("More than 2-dimensional access not yet implemented");
+      end
+      if eltype ~= "STRINGVAR" then
+	 error("Non-stringvar access not yet implemented");
+      end
+      if #lval[3] == 1 then
+	 local index = eval(basicenv,lval[3][1]);
+	 basicenv["sa_"..target[2]][index] = value;
+      else
+	 local i1, i2 = eval(basicenv,lval[3][1]),eval(basicenv,lval[3][2]);
+	 basicenv["sa_"..target[2]][i1][i2] = value;
+      end
+   else
+      basicenv["s_"..target] = value;
+   end
+end
+
+local function assignf(basicenv,lval,value)
+   local ttype = lval[1];
+   local target = lval[2];
+   if ttype == "FLOATVAR" then
+      basicenv[target] = value;
+   elseif ttype == "ELEMENT" then
+      local eltype = target[1];
+      if #lval[3] > 2 then
+	 error("More than 2-dimensional access not yet implemented");
+      end
+      if eltype ~= "FLOATVAR" then
+	 error("Non-floatvar access not yet implemented");
+      end
+      if #lval[3] == 1 then
+	 local index = eval(basicenv,lval[3][1]);
+	 if basicenv["fa_"..target[2]] == nil then
+	    local store = {};
+	    for j = 0, 10 do
+	       store[j] = 0.0;
+	    end
+	    basicenv["fa_"..target[2]] = store;
+	 end
+	 basicenv["fa_"..target[2]][index] = value;
+      else
+	 local i1, i2 = eval(basicenv,lval[3][1]),eval(basicenv,lval[3][2]);
+	 basicenv["fa_"..target[2]][i1][i2] = value;
+      end
+   else
+      error("Type mismatch in floating assignment");
+   end
+end
+
 local function doinput(basicenv,inputlist)
    local i=2;
    local prompt = "? ";
@@ -388,71 +446,16 @@ local function doprint(basicenv,stat)
    write(m.printstr);
 end
 
-local function assignf(basicenv,lval,value)
-   local ttype = lval[1];
-   local target = lval[2];
-   if ttype == "FLOATVAR" then
-      basicenv[target] = value;
-   elseif ttype == "ELEMENT" then
-      local eltype = target[1];
-      if #lval[3] > 2 then
-	 error("More than 2-dimensional access not yet implemented");
-      end
-      if eltype ~= "FLOATVAR" then
-	 error("Non-floatvar access not yet implemented");
-      end
-      if #lval[3] == 1 then
-	 local index = eval(basicenv,lval[3][1]);
-	 if basicenv["fa_"..target[2]] == nil then
-	    local store = {};
-	    for j = 0, 10 do
-	       store[j] = 0.0;
-	    end
-	    basicenv["fa_"..target[2]] = store;
-	 end
-	 basicenv["fa_"..target[2]][index] = value;
-      else
-	 local i1, i2 = eval(basicenv,lval[3][1]),eval(basicenv,lval[3][2]);
-	 basicenv["fa_"..target[2]][i1][i2] = value;
-      end
-   else
-      error("Type mismatch in floating assignment");
-   end
-end
-
 local function doletn(basicenv,stat)
    local lval = stat[2];
    local expr = stat[3];
    assignf(basicenv,lval,eval(basicenv,expr))
 end
 
-local function assigns(basicenv,lval,value)
-   local ttype = lval[1];
-   local target = lval[2];
-   if ttype == "STRINGELEMENT" then
-      local eltype = target[1];
-      if #lval[3] > 2 then
-	 error("More than 2-dimensional access not yet implemented");
-      end
-      if eltype ~= "STRINGVAR" then
-	 error("Non-stringvar access not yet implemented");
-      end
-      if #lval[3] == 1 then
-	 local index = eval(basicenv,lval[3][1]);
-	 basicenv["sa_"..target[2]][index] = value;
-      else
-	 local i1, i2 = eval(basicenv,lval[3][1]),eval(basicenv,lval[3][2]);
-	 basicenv["sa_"..target[2]][i1][i2] = value;
-      end
-   else
-      basicenv["s_"..target] = value;
-   end
-end
-
 local function dolets(basicenv,stat)
    local lval = stat[2];
    local expr = stat[3];
-   assigns(lval,eval(basicenv,expr))
+   assigns(basicenv,lval,eval(basicenv,expr))
 end
 
 local function doon(basicenv,stat)
@@ -481,13 +484,15 @@ local function doif(basicenv,stat)
       -- Walk forward to next line
       local prog = m.prog;
       local targetpc = m.pc;
-      while targetpc < #prog and prog[targetpc+1][1] ~= "TARGET" do
+      while targetpc < #prog and prog[targetpc+1][1] ~= "TARGET" do	 
 	 targetpc = targetpc+1;
       end
-      -- This is a no-op, but calculation of target can better be
+      -- m.pc = targetpc;
+      -- This should be a no-op, but calculation of target can better be
       -- moved to compile time, and this value appended to stat table
-      local target = prog[targetpc][2];
-      m.pc = m.targets[target];
+      --
+      local target = prog[targetpc+1][2];
+      m.pc = m.targets[target]-1;
    end
 end
 

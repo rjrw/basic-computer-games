@@ -19,7 +19,6 @@ while narg < #arg do
       mode = 1;
    elseif arg[narg] == "-c" then
       mode = 3;
-      error("Compilation not yet implemented");
    elseif arg[narg] == "-v" then
       verbose = true;
    else
@@ -27,11 +26,20 @@ while narg < #arg do
    end
    narg = narg+1;
 end
-if #arg ~= narg then
+function usage()
    print("Usage: basic.lua [opts] <file>.bas");
+end
+if #arg ~= narg then
+   usage();
    os.exit(1);
 end
-local file = assert(io.open(arg[narg]));
+local filename = arg[narg];
+local baspat = ".bas$";
+if not string.find(filename, baspat) then
+   usage();
+   os.exit(1);
+end
+local file = assert(io.open(filename));
 
 local any = lpeg.P(1);
 local space = lpeg.S" \t"^0;
@@ -290,6 +298,44 @@ for line in file:lines() do
 end
 file:close();
 
-if nerr == 0 and mode == 2 then
-   rtl.run(prog, targets, data, datatargets);
+function deepwrite(file,dat,level)
+   local indent = string.rep(" ",level);
+   if type(dat) == "table" then
+      file:write("{\n");
+      for k, v in pairs(dat) do
+	 if type(k) == "string" then
+	    file:write(indent.."[\""..k.."\"]=");
+	 else
+	    file:write(indent.."["..k.."]=");
+	 end
+	 deepwrite(file,v,level+1);
+	 file:write(",\n");
+      end
+      file:write(indent.."}");
+   elseif type(dat) == "string" then
+      file:write("\""..dat.."\"");
+   else
+      file:write(dat);
+   end      
+end
+
+if nerr == 0 then
+   if mode == 2 then
+      rtl.run(prog, targets, data, datatargets);
+   else
+      -- Save
+      local outfile = string.gsub(filename,baspat,".lua");
+      local file = assert(io.open(outfile,"w"));
+      file:write("local rtl = require\"basicrtl\";\n");
+      file:write("local prog =\n");
+      deepwrite(file,prog,0);
+      file:write(";\nlocal targets =\n");
+      deepwrite(file,targets,0);
+      file:write(";\nlocal data =\n");
+      deepwrite(file,data,0);
+      file:write(";\nlocal datatargets =\n");
+      deepwrite(file,datatargets,0);
+      file:write(";\nrtl.run(prog, targets, data, datatargets);\n");
+      file:close();
+   end
 end
