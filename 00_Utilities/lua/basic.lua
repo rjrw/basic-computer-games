@@ -44,9 +44,14 @@ local lineno = m.C(digit^1);
 local gotostatement = m.P {
    m.Cc("GOTO") * m.P("GO") * space * m.P("TO") * space * lineno * space
 };
-local literal = m.P { floatval + stringval + m.Ct(m.Cc("STRING")*m.C((any-m.S(", \t"))^1)) };
+local literal = m.P {
+   floatval + stringval + m.Ct(m.Cc("STRING")*m.C((any-m.S(", \t"))^1))
+};
+local datalist = m.P {
+   space * ( literal * space * m.P(",") * space ) ^0 * literal * space
+};
 local datastatement = m.P {
-   m.C(m.P("DATA")) * space * ( literal * space * m.P(",") * space ) ^0 * literal * space
+   m.C(m.P("DATA")) * datalist
 };
 local gosubstatement = m.P {
    m.Cc("GOSUB") * m.P("GO") * space * m.P("SUB") * space * lineno * space
