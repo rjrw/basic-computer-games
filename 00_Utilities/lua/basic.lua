@@ -298,7 +298,7 @@ machine.datatarget = datatarget;
 machine.basiclineno = 0;
 machine.quit = false;
 machine.substack, machine.forstack = {}, {};
--- Outpur state
+-- Output state
 machine.printstr = "";
 machine.printcol = 0;
 machine.prog = prog;
@@ -307,18 +307,7 @@ machine.targets = targets;
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
 -- sa_xxx is string array
--- Also need to consider builtins, machine tables
 local basicenv = {_m=machine};
-
-function printtab(basicenv,n)
-   n = math.floor(n);
-   local m = basicenv._m;
-   if n > m.printcol then
-      m.printstr = m.printstr..string.rep(" ",n-m.printcol);
-      m.printcol = n;
-   end
-   return "";
-end
 
 function abs(x)
    if x < 0 then
@@ -382,6 +371,16 @@ function makernd()
 end
 local randomize;
 builtins.RND, dorandomize = makernd();
+
+function printtab(basicenv,n)
+   n = math.floor(n);
+   local m = basicenv._m;
+   if n > m.printcol then
+      m.printstr = m.printstr..string.rep(" ",n-m.printcol);
+      m.printcol = n;
+   end
+   return "";
+end
 
 function doconcat(basicenv,expr)
    -- string concatenation
@@ -767,23 +766,24 @@ function doon(basicenv,stat)
 end
 
 
-local exec;
+local statements = {};
 
 function doif(basicenv,stat)
    local test = stat[2];
-   local statement = stat[3];
+   local substat = stat[3];
    local prog = basicenv._m.prog;
    if eval(basicenv,test) ~= 0 then
-      -- If true, run immediate statement and fall through to rest of line
-      exec(basicenv,statement); 
+      -- If true, run sub-statement and fall through to rest of line
+      local cmd = statements[substat[1]];
+      if cmd == nil then
+	 error("Unknown statement "..substat[1]);
+      end
+      cmd(basicenv,substat);
    else
       -- Walk forward to next line
-      while basicenv._m.pc < #prog and prog[basicenv._m.pc][1] ~= "TARGET" do
+      while basicenv._m.pc < #prog and prog[basicenv._m.pc+1][1] ~= "TARGET" do
 	 basicenv._m.pc = basicenv._m.pc+1;
       end
-   end
-   if basicenv._m.pc ~= #prog then
-      basicenv._m.pc=basicenv._m.pc-1;
    end
 end
 
@@ -926,7 +926,6 @@ function dodef(basicenv,stat)
    basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
 end
 
-local statements = {};
 statements.TARGET    = function(basicenv,stat) basicenv._m.basiclineno = stat[2]; end;
 statements.END       = function(basicenv,stat) basicenv._m.quit = true; end;
 statements.REM       = function(basicenv,stat) end; -- Do nothing
