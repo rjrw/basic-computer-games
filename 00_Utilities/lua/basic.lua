@@ -39,7 +39,18 @@ if not string.find(filename, baspat) then
    usage();
    os.exit(1);
 end
-local file = assert(io.open(filename));
+
+local function readfile(filename)
+   local file = assert(io.open(filename));
+   local lines = {}
+   for line in file:lines() do
+      lines[#lines+1] = line;
+   end
+   file:close();
+   return lines;
+end
+
+local lines = readfile(filename);
 
 local any = lpeg.P(1);
 local space = lpeg.S" \t"^0;
@@ -265,7 +276,7 @@ local nerr = 0;
 -- Read and parse input file
 local count = 1;
 local targets = {} -- Jump table
-for line in file:lines() do
+for _,line in ipairs(lines) do
    if verbose then print(line); end
    local m = basicline:match(line);
    if not m then
@@ -296,7 +307,6 @@ for line in file:lines() do
    end      
    count = count + 1;
 end
-file:close();
 
 function deepwrite(file,dat,level)
    local indent = string.rep(" ",level);
