@@ -204,13 +204,22 @@ local linegrammar = {
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
-local basicline = m.P(linegrammar);
 local exprgrammar = {};
 for k,v in pairs(linegrammar) do
    exprgrammar[k] = v;
 end
-exprgrammar[1] = "expr";
+exprgrammar[1] = "exprtagged";
+exprgrammar.exprtagged = m.Ct(expr) * m.Cp();
 local basicexpr = m.P(exprgrammar);
+function matchexpr(s, p)
+   local captures = {basicexpr:match(s,p-1)};
+   if #captures == 0 then
+      return nil;
+   end
+   return captures[2], table.unpack(captures[1]);
+end
+linegrammar.expr = m.Cmt(any,matchexpr);
+local basicline = m.P(linegrammar);
 
 local prog, data, datatarget = {}, {}, {};
 local datapc = 1;
