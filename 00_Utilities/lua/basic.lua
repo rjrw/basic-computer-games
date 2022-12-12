@@ -585,7 +585,7 @@ function doprint(printlist)
       if element == ";" then
 	 flush = false;
       elseif element == "," then
-	 local newcol = 14*(printcol/14+1);
+	 local newcol = 14*(math.floor(printcol/14)+1);
 	 printtab(newcol);
 	 flush = false;
       else
