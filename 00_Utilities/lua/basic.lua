@@ -199,10 +199,10 @@ local linegrammar = {
    funcall = m.Ct(m.Cc("FUNCALL") *
 		     m.P("FN") * space *
 		     floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
-   call = m.Ct(m.Cc("CALL") *
-	       --m.Cmt(m.P"",function (s,p,c) print("Matching CALL at",p); return true; end) *
+   call = m.Ct(m.Cc("INDEX") *
+	       --m.Cmt(m.P"",function (s,p,c) print("Matching INDEX at",p); return true; end) *
 		  floatvar * space * m.P("(") * space * arglist * space * m.P(")")),
-   stringcall = m.Ct(m.Cc("STRINGCALL") * stringvar * space * m.P("(") * space * arglist * space * m.P(")")),
+   stringcall = m.Ct(m.Cc("STRINGINDEX") * stringvar * space * m.P("(") * space * arglist * space * m.P(")")),
    statementlist = (statement * m.P(":") * space )^0 * statement,
    line = m.Ct(lineno * space * m.Ct(statementlist) * m.Cp()),
 };
@@ -290,6 +290,7 @@ local basicenv = {};
 local printstr = "";
 local printcol = 0;
 function printtab(n)
+   n = math.floor(n);
    if n > printcol then
       printstr = printstr..string.rep(" ",n-printcol);
       printcol = n;
@@ -415,7 +416,7 @@ function eval(expr)
 	 return basicenv[expr[2]];
       elseif expr[1] == "STRINGVAR" then
 	 return basicenv["s_"..expr[2]];
-      elseif expr[1] == "CALL" then
+      elseif expr[1] == "INDEX" then
 	 local name = expr[2][2];
 	 local exprtype = expr[2][1];
 	 local arglist = expr[3];
@@ -430,6 +431,9 @@ function eval(expr)
 	 local val = basicenv["fa_"..name];
 	 if val then
 	    for _, v in ipairs(args) do
+	       if v < 0 or v > #val then
+		  error("Out of bounds array access");
+	       end
 	       val = val[v];
 	    end
 	    return val;
@@ -455,7 +459,7 @@ function eval(expr)
 	    basicenv[v] = args[k];
 	 end
 	 return val;
-      elseif expr[1] == "STRINGCALL" then
+      elseif expr[1] == "STRINGINDEX" then
 	 local name = expr[2][2];
 	 local exprtype = expr[2][1];
 	 local arglist = expr[3];
@@ -463,13 +467,16 @@ function eval(expr)
 	 for k,v in ipairs(expr[3]) do
 	    args[#args+1] = eval(v);
 	 end
-	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins[name.."$"];
+	 local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
 	 if builtin then
 	    return builtin(table.unpack(args));
 	 end
 	 local val = basicenv["sa_"..name];
 	 if val then
 	    for _, v in ipairs(args) do
+	       if v < 0 or v > #val then
+		  error("Out of bounds array access");
+	       end
 	       val = val[v];
 	    end
 	    return val;
