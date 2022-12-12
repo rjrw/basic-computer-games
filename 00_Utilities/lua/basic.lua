@@ -645,7 +645,7 @@ function doinput(inputlist)
    end
 end
 
-function doprint(stat)
+function doprint(basicenv,stat)
    local printlist=stat[2];
    printstr="";
    local flush = true;
@@ -711,7 +711,7 @@ function assignf(lval,value)
    end
 end
 
-function doletn(stat)
+function doletn(basicenv,stat)
    local lval = stat[2];
    local expr = stat[3];
    assignf(lval,eval(basicenv,expr))
@@ -740,13 +740,13 @@ function assigns(lval,value)
    end
 end
 
-function dolets(stat)
+function dolets(basicenv,stat)
    local lval = stat[2];
    local expr = stat[3];
    assigns(lval,eval(basicenv,expr))
 end
 
-function doon(stat)
+function doon(basicenv,stat)
    local switch = math.floor(eval(basicenv,stat[2]));
    if switch > 0 and switch+2 <= #stat then
       pc = targets[stat[2+switch]]-1;
@@ -756,7 +756,7 @@ end
 
 local exec;
 
-function doif(stat)
+function doif(basicenv,stat)
    local test = stat[2];
    local statement = stat[3];
    if eval(basicenv,test) ~= 0 then
@@ -773,7 +773,7 @@ function doif(stat)
    end
 end
 
-function dofor(stat)
+function dofor(basicenv,stat)
    local control = stat[2][2];
    local init = eval(basicenv,stat[3]);
    local last = eval(basicenv,stat[4]);
@@ -783,7 +783,7 @@ function dofor(stat)
    table.insert(forstack,frame);
 end
 
-function donext(stat)
+function donext(basicenv,stat)
    if #stat == 1 then
       local frame = forstack[#forstack];
       local control = frame[2];
@@ -825,7 +825,7 @@ function donext(stat)
    end
 end
 
-function dodim(stat)
+function dodim(basicenv,stat)
    for i = 2,#stat do
       local dimvar = stat[i][1];
       local dimtype = dimvar[1];
@@ -867,7 +867,7 @@ function dodim(stat)
    end
 end
 
-function dorestore(stat)
+function dorestore(basicenv,stat)
    if #stat then
       datapc = 1;
    else
@@ -875,7 +875,7 @@ function dorestore(stat)
    end
 end
 
-function doread(stat)
+function doread(basicenv,stat)
    for i=2,#stat do
       local lval = stat[i];
       local value = eval(basicenv,data[datapc]);
@@ -891,26 +891,26 @@ function doread(stat)
    end
 end
 
-function dogoto(stat)
+function dogoto(basicenv,stat)
    pc = targets[stat[2]]-1;
 end
-function dogosub(stat)
+function dogosub(basicenv,stat)
    table.insert(substack,pc);
    pc = targets[stat[2]]-1;
 end
-function doreturn(stat)
+function doreturn(basicenv,stat)
    pc = table.remove(substack);
 end
-function dodef(stat)
+function dodef(basicenv,stat)
    basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
 end
 
 local statements = {};
-statements.TARGET    = function(stat) basiclineno = stat[2]; end;
-statements.END       = function(stat) quit = true; end;
-statements.REM       = function(stat) end; -- Do nothing
+statements.TARGET    = function(basicenv,stat) basiclineno = stat[2]; end;
+statements.END       = function(basicenv,stat) quit = true; end;
+statements.REM       = function(basicenv,stat) end; -- Do nothing
 statements.DIM       = dodim;
-statements.DATA      = function(stat) end; -- Do nothing at runtime
+statements.DATA      = function(basicenv,stat) end; -- Do nothing at runtime
 statements.RESTORE   = dorestore;
 statements.READ      = doread;
 statements.DEF       = dodef;
@@ -927,18 +927,20 @@ statements.PRINT     = doprint;
 statements.INPUT     = doinput;
 statements.RANDOMIZE = dorandomize;
 
-function exec(stat)
+function exec(basicenv,stat)
    local op = statements[stat[1]];
    if op == nil then
       error("Unknown statement "..stat[1]);
    end
-   op(stat);
+   op(basicenv,stat);
    pc = pc + 1;
 end
 
 if nerr == 0 and mode == 2 then
    while true do
-      local status, err = pcall(function () exec(prog[pc]) end);
+      local status, err = pcall(
+	 function () exec(basicenv,prog[pc]) end
+      );
       if not status then
 	 print("At BASIC line "..basiclineno);
 	 print(err);
