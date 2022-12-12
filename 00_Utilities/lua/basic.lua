@@ -376,81 +376,81 @@ end
 local randomize;
 builtins.RND, dorandomize = makernd();
 
-function doconcat(expr)
+function doconcat(basicenv,expr)
    -- string concatenation
-   local val = eval(expr[2]);
+   local val = eval(basicenv,expr[2]);
    for i=3,#expr do
-      val = val..eval(expr[i]);
+      val = val..eval(basicenv,expr[i]);
    end
    return val;
 end
 
-function dounary(expr)
+function dounary(basicenv,expr)
    if #expr == 3 then
       if expr[2] == "-" then
-	 return -eval(expr[3]);
+	 return -eval(basicenv,expr[3]);
       else
-	 return eval(expr[3]);
+	 return eval(basicenv,expr[3]);
       end
    else
-      return eval(expr[2]);
+      return eval(basicenv,expr[2]);
    end
 end
 
-function dopower(expr) 
-   local val = eval(expr[#expr]);
+function dopower(basicenv,expr) 
+   local val = eval(basicenv,expr[#expr]);
    for i=#expr-1,2,-1 do
-      val = eval(expr[i]) ^ val;
+      val = eval(basicenv,expr[i]) ^ val;
    end
    return val;
 end
 
-function doproduct(expr)
-   local val = eval(expr[2]);
+function doproduct(basicenv,expr)
+   local val = eval(basicenv,expr[2]);
    for i=3,#expr,2 do
       if expr[i] == "*" then
-	 val = val * eval(expr[i+1]);
+	 val = val * eval(basicenv,expr[i+1]);
       else
-	 val = val / eval(expr[i+1]);
+	 val = val / eval(basicenv,expr[i+1]);
       end
    end
    return val;
 end
 
-function dosum(expr)
-   local val = eval(expr[2]);
+function dosum(basicenv,expr)
+   local val = eval(basicenv,expr[2]);
    for i=3,#expr,2 do
       if expr[i] == "+" then
-	 val = val + eval(expr[i+1]);
+	 val = val + eval(basicenv,expr[i+1]);
       else
-	 val = val - eval(expr[i+1]);
+	 val = val - eval(basicenv,expr[i+1]);
       end
    end
    return val;
 end
 
-function dofloatval(expr)
+function dofloatval(basicenv,expr)
    return tonumber(expr[2]);
 end
 
-function dofloatvar(expr)
+function dofloatvar(basicenv,expr)
    if basicenv[expr[2]] == nil then
       return 0;
    end
    return basicenv[expr[2]];
 end
 
-function dostringvar(expr)
+function dostringvar(basicenv,expr)
    return basicenv["s_"..expr[2]];
 end
 
-function doindex(expr)
+function doindex(basicenv,expr)
    local name = expr[2][2];
    local exprtype = expr[2][1];
    local arglist = expr[3];
    local args = {};
    for k,v in ipairs(expr[3]) do
-      args[#args+1] = eval(v);
+      args[#args+1] = eval(basicenv,v);
    end
    local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
    if builtin then
@@ -477,13 +477,13 @@ function doindex(expr)
    end
 end
 
-function dostringindex(expr)
+function dostringindex(basicenv,expr)
    local name = expr[2][2];
    local exprtype = expr[2][1];
    local arglist = expr[3];
    local args = {};
    for k,v in ipairs(expr[3]) do
-      args[#args+1] = eval(v);
+      args[#args+1] = eval(basicenv,v);
    end
    local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
    if builtin then
@@ -503,44 +503,44 @@ function dostringindex(expr)
    end
 end
 
-function door(expr)
-   local val = eval(expr[2]);
+function door(basicenv,expr)
+   local val = eval(basicenv,expr[2]);
    if #expr > 2 then
       val = val ~= 0
       for i=3,#expr do
-	 val = val or (eval(expr[i]) ~= 0);
+	 val = val or (eval(basicenv,expr[i]) ~= 0);
       end
       val = val and -1 or 0;
    end
    return val
 end
 
-function doand(expr)
-   local val = eval(expr[2]);
+function doand(basicenv,expr)
+   local val = eval(basicenv,expr[2]);
    if #expr > 2 then
       val = val ~= 0
       for i=3,#expr do
-	 val = val and (eval(expr[i]) ~= 0);
+	 val = val and (eval(basicenv,expr[i]) ~= 0);
       end
       val = val and -1 or 0;
    end
    return val
 end
 
-function donot(expr)
-   local val = eval(expr[2]);
+function donot(basicenv,expr)
+   local val = eval(basicenv,expr[2]);
    return val and 0 or -1;
 end
 
-function doeqv(expr)
-   local val = eval(expr[2]);
+function doeqv(basicenv,expr)
+   local val = eval(basicenv,expr[2]);
    return val;
 end
 
-function docompare(expr)
-   local val = eval(expr[2]);	 
+function docompare(basicenv,expr)
+   local val = eval(basicenv,expr[2]);	 
    for i = 3, #expr, 2 do
-      local op, val2 = expr[i], eval(expr[i+1]);
+      local op, val2 = expr[i], eval(basicenv,expr[i+1]);
       if op == "=" then
 	 val = val == val2;
       elseif op == "<>" then
@@ -561,21 +561,25 @@ function docompare(expr)
    return val;
 end
 
-function dofuncall(expr)
+function dofuncall(basicenv,expr)
    local name = "FN"..expr[2][2];
    local exprtype = expr[2][1];	 
    local arglist = expr[3];
    local func = basicenv[name];
    local args = {};
+   -- Evaluate real arguments
    for i = 1,#arglist do
-      args[i] = eval(arglist[i]);
+      args[i] = eval(basicenv,arglist[i]);
    end
+   -- Replace dummy arguments in symbol table,
+   -- keeping originals if present
    for k,v in ipairs(func.args) do
       local t = basicenv[v]; 
       basicenv[v] = args[k];
       args[k] = t;
    end
-   local val = eval(func.expr);
+   local val = eval(basicenv,func.expr);
+   -- Put original values back into dummy slots
    for k,v in ipairs(func.args) do
       basicenv[v] = args[k];
    end
@@ -584,7 +588,7 @@ end
 
 -- Operator dispatch table
 local ops     = {};
-ops.STRING    = function(expr) return expr[2]; end;
+ops.STRING    = function(basicenv,expr) return expr[2]; end;
 ops.CONCAT    = doconcat;
 ops.UNARY     = dounary;
 ops.PRODUCT   = doproduct;
@@ -593,7 +597,7 @@ ops.SUM       = dosum;
 ops.OR        = door;
 ops.AND       = doand;
 ops.NOT       = donot;
-ops.EQV       = doeqv;
+ops.EQV       = doeqv; 
 ops.COMPARE   = docompare;
 ops.FLOATVAL  = dofloatval;
 ops.FLOATVAR  = dofloatvar;
@@ -602,7 +606,7 @@ ops.INDEX     = doindex;
 ops.STRINGINDEX = dostringindex;
 ops.FUNCALL   = dofuncall;
 
-function eval(expr)
+function eval(basicenv,expr)
    if type(expr) ~= "table" then
       error("Parser failure at "..pc);
    end
@@ -610,7 +614,7 @@ function eval(expr)
    if not op then
       error("Bad expr "..tostring(expr[1]).." at "..basiclineno);
    end      
-   return op(expr);
+   return op(basicenv, expr);
 end
 
 local write = io.write;
@@ -619,7 +623,7 @@ function doinput(inputlist)
    local i=2;
    local prompt = "? ";
    if inputlist[i] == "PROMPT" then
-      prompt = eval(inputlist[i+1])..prompt;
+      prompt = eval(basicenv,inputlist[i+1])..prompt;
       i=i+2;
    end
    local input = "";
@@ -656,7 +660,7 @@ function doprint(stat)
 	 printtab(newcol);
 	 flush = false;
       else
-	 local val = eval(element);
+	 local val = eval(basicenv,element);
 	 if type(val) == "number" then
 	    if val>=0 then
 	       val = " "..tostring(val).." ";
@@ -689,7 +693,7 @@ function assignf(lval,value)
 	 error("Non-floatvar access not yet implemented");
       end
       if #lval[3] == 1 then
-	 local index = eval(lval[3][1]);
+	 local index = eval(basicenv,lval[3][1]);
 	 if basicenv["fa_"..target[2]] == nil then
 	    local store = {};
 	    for j = 0, 10 do
@@ -699,7 +703,7 @@ function assignf(lval,value)
 	 end
 	 basicenv["fa_"..target[2]][index] = value;
       else
-	 local i1, i2 = eval(lval[3][1]),eval(lval[3][2]);
+	 local i1, i2 = eval(basicenv,lval[3][1]),eval(basicenv,lval[3][2]);
 	 basicenv["fa_"..target[2]][i1][i2] = value;
       end
    else
@@ -710,7 +714,7 @@ end
 function doletn(stat)
    local lval = stat[2];
    local expr = stat[3];
-   assignf(lval,eval(expr))
+   assignf(lval,eval(basicenv,expr))
 end
 
 function assigns(lval,value)
@@ -725,10 +729,10 @@ function assigns(lval,value)
 	 error("Non-stringvar access not yet implemented");
       end
       if #lval[3] == 1 then
-	 local index = eval(lval[3][1]);
+	 local index = eval(basicenv,lval[3][1]);
 	 basicenv["sa_"..target[2]][index] = value;
       else
-	 local i1, i2 = eval(lval[3][1]),eval(lval[3][2]);
+	 local i1, i2 = eval(basicenv,lval[3][1]),eval(basicenv,lval[3][2]);
 	 basicenv["sa_"..target[2]][i1][i2] = value;
       end
    else
@@ -739,11 +743,11 @@ end
 function dolets(stat)
    local lval = stat[2];
    local expr = stat[3];
-   assigns(lval,eval(expr))
+   assigns(lval,eval(basicenv,expr))
 end
 
 function doon(stat)
-   local switch = math.floor(eval(stat[2]));
+   local switch = math.floor(eval(basicenv,stat[2]));
    if switch > 0 and switch+2 <= #stat then
       pc = targets[stat[2+switch]]-1;
    end
@@ -755,7 +759,7 @@ local exec;
 function doif(stat)
    local test = stat[2];
    local statement = stat[3];
-   if eval(test) ~= 0 then
+   if eval(basicenv,test) ~= 0 then
       -- If true, run immediate statement and fall through to rest of line
       exec(statement); 
    else
@@ -771,9 +775,9 @@ end
 
 function dofor(stat)
    local control = stat[2][2];
-   local init = eval(stat[3]);
-   local last = eval(stat[4]);
-   local step = #stat == 5 and eval(stat[5]) or 1;
+   local init = eval(basicenv,stat[3]);
+   local last = eval(basicenv,stat[4]);
+   local step = #stat == 5 and eval(basicenv,stat[5]) or 1;
    basicenv[control] = init;
    local frame = { pc, control, last, step};
    table.insert(forstack,frame);
@@ -833,13 +837,13 @@ function dodim(stat)
       local store = {};
       if dimtype == "FLOATVAR" then
 	 if #shape == 1 then
-	    for j = 0, eval(shape[1]) do
+	    for j = 0, eval(basicenv,shape[1]) do
 	       store[j] = 0.0;
 	    end
 	 else
-	    for j = 0, eval(shape[1]) do
+	    for j = 0, eval(basicenv,shape[1]) do
 	       store[j] = {};
-	       for k = 0, eval(shape[2]) do
+	       for k = 0, eval(basicenv,shape[2]) do
 		  store[j][k] = 0.0;
 	       end
 	    end
@@ -847,13 +851,13 @@ function dodim(stat)
 	 basicenv["fa_"..name] = store;
       else
 	 if #shape == 1 then
-	    for j = 0, eval(shape[1]) do
+	    for j = 0, eval(basicenv,shape[1]) do
 	       store[j] = "";
 	    end
 	 else
-	    for j = 0, eval(shape[1]) do
+	    for j = 0, eval(basicenv,shape[1]) do
 	       store[j] = {};
-	       for k = 0, eval(shape[2]) do
+	       for k = 0, eval(basicenv,shape[2]) do
 		  store[j][k] = "";
 	       end
 	    end
@@ -874,7 +878,7 @@ end
 function doread(stat)
    for i=2,#stat do
       local lval = stat[i];
-      local value = eval(data[datapc]);
+      local value = eval(basicenv,data[datapc]);
       local dtype = data[datapc][1];
       if dtype == "FLOATVAL" then
 	 assignf(lval, value);
