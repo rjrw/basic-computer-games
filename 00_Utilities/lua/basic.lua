@@ -2,9 +2,10 @@
 
 -- $Id: test.lua $
 
--- require"strict"    -- just to be pedantic
+--require"strict"    -- just to be pedantic
 
 local m = require"lpeg";
+local rtl = require"basicrtl";
 
 -- Parse = 1, interpret = 2, compile = 3, compile & optimize = 4
 local mode = 2;
@@ -309,68 +310,7 @@ machine.targets = targets;
 -- sa_xxx is string array
 local basicenv = {_m=machine};
 
-function abs(x)
-   if x < 0 then
-      return -x;
-   end
-   return x;
-end
 
-function len(x)
-   return #x;
-end
-
-function sgn(x)
-   if x < 0 then
-      return -1;
-   end
-   return 1;
-end
-
-function spc(x)
-   return string.rep(" ",x);
-end
-
--- Builtin function table
-local builtins =
-   { ABS = abs, ASC = string.byte, ATN = math.atan, COS = math.cos,
-     EXP = math.exp, INT = math.floor, LEN=len, LOG = math.log, SGN = sgn,
-     SIN = math.sin, SPC = spc, SQR = math.sqrt,
-     TAN = math.tan, VAL=tonumber };
-builtins["s_CHR"] = string.char;
-builtins["s_LEFT"] = function(s,j) return s:sub(1,j) end
-builtins["s_RIGHT"] = function(s,j) return s:sub(-j) end
-builtins["s_STR"] = tostring
-builtins["s_MID"] = function(...)
-   local s, i, j = ...;
-   if j then
-      return s:sub(i,i+j-1)
-   end
-   return s:sub(i);
-end
-
-function makernd()
-   local rndval=0.1;
-   function RND(arg)
-      if arg <= 0 then
-	 math.randomseed(math.floor(-arg));
-      end
-      if arg ~= 0 then
-	 rndval = math.random();
-      end
-      return rndval;
-   end
-   function randomize()
-      local now = os.time();
-      local date = os.date("*t",now);
-      local midnight = os.time{year=date.year, month=date.month,
-			       day=date.day, hour=0};
-      rndval = math.randomseed(math.floor(midnight-now));
-   end
-   return RND, randomize;
-end
-local randomize;
-builtins.RND, dorandomize = makernd();
 
 function printtab(basicenv,n)
    n = math.floor(n);
@@ -462,6 +402,7 @@ function doindex(basicenv,expr)
       printtab(basicenv,args[1]);
       return "";
    end
+   local builtins = rtl.builtins;
    local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
    if builtin then
       return builtin(table.unpack(args));
@@ -495,6 +436,7 @@ function dostringindex(basicenv,expr)
    for k,v in ipairs(expr[3]) do
       args[#args+1] = eval(basicenv,v);
    end
+   local builtins = rtl.builtins;
    local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
    if builtin then
       return builtin(table.unpack(args));
@@ -945,7 +887,7 @@ statements.NEXT      = donext;
 statements.ON        = doon;
 statements.PRINT     = doprint;
 statements.INPUT     = doinput;
-statements.RANDOMIZE = dorandomize;
+statements.RANDOMIZE = rtl.dorandomize;
 
 function exec(basicenv,stat)
    local cmd = statements[stat[1]];
