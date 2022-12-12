@@ -225,7 +225,7 @@ local linegrammar = {
 -- Cache values for expr rule, to speed up run time
 local basicexpr;
 local cache = {};
-function matchexpr(s, p)
+local function matchexpr(s, p)
    -- Clear cache if subject has changed
    if cache.subject ~= s then
       cache.subject = s;
@@ -252,7 +252,7 @@ exprgrammar.exprtagged = m.Ct(rawexpr) * m.Cp();
 basicexpr = m.P(exprgrammar);
 local basicline = m.P(linegrammar);
 
-local prog, data, datatarget = {}, {}, {};
+local prog, data, datatargets = {}, {}, {};
 local nerr = 0;
 -- Read and parse input file
 local count = 1;
@@ -278,7 +278,7 @@ for line in file:lines() do
 	    --print(">>",k,v[1]); --Confirm first-level commands are captured
 	    prog[#prog+1] = v;
 	    if v[1] == "DATA" then
-	       datatarget[m[1]] = #data+1;
+	       datatargets[m[1]] = #data+1;
 	       for i = 2, #v do
 		  table.insert(data,v[i]);
 	       end
@@ -291,28 +291,30 @@ end
 file:close();
 
 -- Machine state
-local machine = {};
-machine.pc = 1;
-machine.datapc = 1;
-machine.data = data;
-machine.datatarget = datatarget;
-machine.basiclineno = 0;
-machine.quit = false;
-machine.substack, machine.forstack = {}, {};
--- Output state
-machine.printstr = "";
-machine.printcol = 0;
-machine.prog = prog;
-machine.targets = targets;
+local function makemachine(prog, targets, data, datatargets)
+   return {
+      prog = prog,
+      targets = targets,
+      data = data,
+      datatargets = datatargets,
+      pc = 1,
+      datapc = 1,
+      basiclineno = 0,
+      quit = false,
+      substack = {},
+      forstack = {},
+      -- Output state
+      printstr = "",
+      printcol = 0
+   };
+end
 
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
 -- sa_xxx is string array
-local basicenv = {_m=machine};
+local basicenv = {_m=makemachine(prog, targets, data, datatargets)};
 
-
-
-function printtab(basicenv,n)
+local function printtab(basicenv,n)
    n = math.floor(n);
    local m = basicenv._m;
    if n > m.printcol then
@@ -322,7 +324,20 @@ function printtab(basicenv,n)
    return "";
 end
 
-function doconcat(basicenv,expr)
+local ops = {};
+
+local function eval(basicenv,expr)
+   if type(expr) ~= "table" then
+      error("Parser failure at "..basicenv._m.pc);
+   end
+   local op = ops[expr[1]];
+   if not op then
+      error("Bad expr "..tostring(expr[1]).." at "..basicenv._m.basiclineno);
+   end      
+   return op(basicenv, expr);
+end
+
+local function doconcat(basicenv,expr)
    -- string concatenation
    local val = eval(basicenv,expr[2]);
    for i=3,#expr do
@@ -331,7 +346,7 @@ function doconcat(basicenv,expr)
    return val;
 end
 
-function dounary(basicenv,expr)
+local function dounary(basicenv,expr)
    if #expr == 3 then
       if expr[2] == "-" then
 	 return -eval(basicenv,expr[3]);
@@ -343,7 +358,7 @@ function dounary(basicenv,expr)
    end
 end
 
-function dopower(basicenv,expr) 
+local function dopower(basicenv,expr) 
    local val = eval(basicenv,expr[#expr]);
    for i=#expr-1,2,-1 do
       val = eval(basicenv,expr[i]) ^ val;
@@ -351,7 +366,7 @@ function dopower(basicenv,expr)
    return val;
 end
 
-function doproduct(basicenv,expr)
+local function doproduct(basicenv,expr)
    local val = eval(basicenv,expr[2]);
    for i=3,#expr,2 do
       if expr[i] == "*" then
@@ -363,7 +378,7 @@ function doproduct(basicenv,expr)
    return val;
 end
 
-function dosum(basicenv,expr)
+local function dosum(basicenv,expr)
    local val = eval(basicenv,expr[2]);
    for i=3,#expr,2 do
       if expr[i] == "+" then
@@ -375,22 +390,22 @@ function dosum(basicenv,expr)
    return val;
 end
 
-function dofloatval(basicenv,expr)
+local function dofloatval(basicenv,expr)
    return tonumber(expr[2]);
 end
 
-function dofloatvar(basicenv,expr)
+local function dofloatvar(basicenv,expr)
    if basicenv[expr[2]] == nil then
       return 0;
    end
    return basicenv[expr[2]];
 end
 
-function dostringvar(basicenv,expr)
+local function dostringvar(basicenv,expr)
    return basicenv["s_"..expr[2]];
 end
 
-function doindex(basicenv,expr)
+local function doindex(basicenv,expr)
    local name = expr[2][2];
    local exprtype = expr[2][1];
    local arglist = expr[3];
@@ -428,7 +443,7 @@ function doindex(basicenv,expr)
    end
 end
 
-function dostringindex(basicenv,expr)
+local function dostringindex(basicenv,expr)
    local name = expr[2][2];
    local exprtype = expr[2][1];
    local arglist = expr[3];
@@ -455,7 +470,7 @@ function dostringindex(basicenv,expr)
    end
 end
 
-function door(basicenv,expr)
+local function door(basicenv,expr)
    local val = eval(basicenv,expr[2]);
    if #expr > 2 then
       val = val ~= 0
@@ -467,7 +482,7 @@ function door(basicenv,expr)
    return val
 end
 
-function doand(basicenv,expr)
+local function doand(basicenv,expr)
    local val = eval(basicenv,expr[2]);
    if #expr > 2 then
       val = val ~= 0
@@ -479,17 +494,17 @@ function doand(basicenv,expr)
    return val
 end
 
-function donot(basicenv,expr)
+local function donot(basicenv,expr)
    local val = eval(basicenv,expr[2]);
    return val and 0 or -1;
 end
 
-function doeqv(basicenv,expr)
+local function doeqv(basicenv,expr)
    local val = eval(basicenv,expr[2]);
    return val;
 end
 
-function docompare(basicenv,expr)
+local function docompare(basicenv,expr)
    local val = eval(basicenv,expr[2]);	 
    for i = 3, #expr, 2 do
       local op, val2 = expr[i], eval(basicenv,expr[i+1]);
@@ -513,7 +528,7 @@ function docompare(basicenv,expr)
    return val;
 end
 
-function dofuncall(basicenv,expr)
+local function dofuncall(basicenv,expr)
    local name = "FN"..expr[2][2];
    local exprtype = expr[2][1];	 
    local arglist = expr[3];
@@ -539,7 +554,6 @@ function dofuncall(basicenv,expr)
 end
 
 -- Operator dispatch table
-local ops     = {};
 ops.STRING    = function(basicenv,expr) return expr[2]; end;
 ops.CONCAT    = doconcat;
 ops.UNARY     = dounary;
@@ -558,20 +572,9 @@ ops.INDEX     = doindex;
 ops.STRINGINDEX = dostringindex;
 ops.FUNCALL   = dofuncall;
 
-function eval(basicenv,expr)
-   if type(expr) ~= "table" then
-      error("Parser failure at "..basicenv._m.pc);
-   end
-   local op = ops[expr[1]];
-   if not op then
-      error("Bad expr "..tostring(expr[1]).." at "..basicenv._m.basiclineno);
-   end      
-   return op(basicenv, expr);
-end
-
 local write = io.write;
 
-function doinput(inputlist)
+local function doinput(inputlist)
    local i=2;
    local prompt = "? ";
    if inputlist[i] == "PROMPT" then
@@ -597,7 +600,7 @@ function doinput(inputlist)
    end
 end
 
-function doprint(basicenv,stat)
+local function doprint(basicenv,stat)
    local printlist=stat[2];
    local m = basicenv._m;
    m.printstr="";
@@ -632,7 +635,7 @@ function doprint(basicenv,stat)
    write(m.printstr);
 end
 
-function assignf(lval,value)
+local function assignf(lval,value)
    local ttype = lval[1];
    local target = lval[2];
    if ttype == "FLOATVAR" then
@@ -664,13 +667,13 @@ function assignf(lval,value)
    end
 end
 
-function doletn(basicenv,stat)
+local function doletn(basicenv,stat)
    local lval = stat[2];
    local expr = stat[3];
    assignf(lval,eval(basicenv,expr))
 end
 
-function assigns(lval,value)
+local function assigns(lval,value)
    local ttype = lval[1];
    local target = lval[2];
    if ttype == "STRINGELEMENT" then
@@ -693,13 +696,13 @@ function assigns(lval,value)
    end
 end
 
-function dolets(basicenv,stat)
+local function dolets(basicenv,stat)
    local lval = stat[2];
    local expr = stat[3];
    assigns(lval,eval(basicenv,expr))
 end
 
-function doon(basicenv,stat)
+local function doon(basicenv,stat)
    local switch = math.floor(eval(basicenv,stat[2]));
    local m = basicenv._m;
    if switch > 0 and switch+2 <= #stat then
@@ -710,10 +713,10 @@ end
 
 local statements = {};
 
-function doif(basicenv,stat)
+local function doif(basicenv,stat)
    local test = stat[2];
    local substat = stat[3];
-   local prog = basicenv._m.prog;
+   local m = basicenv._m;
    if eval(basicenv,test) ~= 0 then
       -- If true, run sub-statement and fall through to rest of line
       local cmd = statements[substat[1]];
@@ -723,13 +726,19 @@ function doif(basicenv,stat)
       cmd(basicenv,substat);
    else
       -- Walk forward to next line
-      while basicenv._m.pc < #prog and prog[basicenv._m.pc+1][1] ~= "TARGET" do
-	 basicenv._m.pc = basicenv._m.pc+1;
+      local prog = m.prog;
+      local targetpc = m.pc;
+      while targetpc < #prog and prog[targetpc+1][1] ~= "TARGET" do
+	 targetpc = targetpc+1;
       end
+      -- This is a no-op, but calculation of target can better be
+      -- moved to compile time, and this value appended to stat table
+      local target = prog[targetpc][2];
+      m.pc = m.targets[target];
    end
 end
 
-function dofor(basicenv,stat)
+local function dofor(basicenv,stat)
    local control = stat[2][2];
    local init = eval(basicenv,stat[3]);
    local last = eval(basicenv,stat[4]);
@@ -739,7 +748,7 @@ function dofor(basicenv,stat)
    table.insert(basicenv._m.forstack,frame);
 end
 
-function donext(basicenv,stat)
+local function donext(basicenv,stat)
    local forstack = basicenv._m.forstack;
    if #stat == 1 then
       local frame = forstack[#forstack];
@@ -782,7 +791,7 @@ function donext(basicenv,stat)
    end
 end
 
-function dodim(basicenv,stat)
+local function dodim(basicenv,stat)
    for i = 2,#stat do
       local dimvar = stat[i][1];
       local dimtype = dimvar[1];
@@ -824,16 +833,16 @@ function dodim(basicenv,stat)
    end
 end
 
-function dorestore(basicenv,stat)
+local function dorestore(basicenv,stat)
    local m = basicenv._m;
    if #stat then
       m.datapc = 1;
    else
-      m.datapc = m.datatarget[stat[2]];
+      m.datapc = m.datatargets[stat[2]];
    end
 end
 
-function doread(basicenv,stat)
+local function doread(basicenv,stat)
    local m = basicenv._m;
    for i=2,#stat do
       local lval = stat[i];
@@ -851,20 +860,20 @@ function doread(basicenv,stat)
    end
 end
 
-function dogoto(basicenv,stat)
+local function dogoto(basicenv,stat)
    local m = basicenv._m;
    m.pc = m.targets[stat[2]]-1;
 end
-function dogosub(basicenv,stat)
+local function dogosub(basicenv,stat)
    local m = basicenv._m;
    table.insert(m.substack,m.pc);
    m.pc = m.targets[stat[2]]-1;
 end
-function doreturn(basicenv,stat)
+local function doreturn(basicenv,stat)
    local m = basicenv._m;
    m.pc = table.remove(m.substack);
 end
-function dodef(basicenv,stat)
+local function dodef(basicenv,stat)
    basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
 end
 
@@ -889,7 +898,7 @@ statements.PRINT     = doprint;
 statements.INPUT     = doinput;
 statements.RANDOMIZE = rtl.dorandomize;
 
-function exec(basicenv,stat)
+local function exec(basicenv,stat)
    local cmd = statements[stat[1]];
    if cmd == nil then
       error("Unknown statement "..stat[1]);
