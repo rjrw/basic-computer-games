@@ -663,7 +663,7 @@ end
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
 -- sa_xxx is string array
-local function makemachine(prog, targets, data, datatargets)
+local function makemachine(prog, data, datatargets)
    local statements = {
       TARGET    = donothing,
       END       = doend,
@@ -686,6 +686,13 @@ local function makemachine(prog, targets, data, datatargets)
       RANDOMIZE = dorandomize,
       IF        = doif
    };
+   -- Create jump table
+   local targets = {};
+   for k,v in ipairs(prog) do
+      if v[1] == "TARGET" then
+	 targets[v[2]] = k;
+      end
+   end
 
    return {
       prog = prog,
@@ -706,15 +713,7 @@ local function makemachine(prog, targets, data, datatargets)
 end
 
 local function run(prog, data, datatargets)
-   -- Create jump table
-   local targets = {};
-   for k,v in ipairs(prog) do
-      if v[1] == "TARGET" then
-	 targets[v[2]] = k;
-      end
-   end
-
-   local basicenv = {_m=makemachine(prog, targets, data, datatargets)};
+   local basicenv = {_m=makemachine(prog, data, datatargets)};
    while true do
       local m = basicenv._m;
       local lineno = prog[m.pc].line;
