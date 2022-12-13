@@ -253,15 +253,25 @@ function parse(lines)
 	 else	 
 	    prog[#prog+1] = {"TARGET",m[1]};
 	    targets[m[1]] = #prog;
+	    local hasif = false;
 	    for k,v in ipairs(m[2]) do
 	       --print(">>",k,v[1]); --Confirm first-level commands are captured
-	       prog[#prog+1] = v;
 	       if v[1] == "DATA" then
 		  datatargets[m[1]] = #data+1;
 		  for i = 2, #v do
 		     table.insert(data,v[i]);
 		  end
 	       end
+	       if v[1] == "IF" then
+		  hasif = true;
+		  v[#v+1] = "_"..m[1];
+	       end
+	       prog[#prog+1] = v;
+	    end
+	    if hasif then
+	       local lab = "_"..m[1];
+	       prog[#prog+1] = {"TARGET",lab};
+	       targets[lab] = #prog;
 	    end
 	 end
       end      

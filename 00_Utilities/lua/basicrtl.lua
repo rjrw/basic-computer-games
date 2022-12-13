@@ -489,7 +489,7 @@ local function doif(basicenv,stat)
    local test = stat[2];
    local substat = stat[3];
    local m = basicenv._m;
-   if eval(basicenv,test) ~= 0 then
+   if f2l(eval(basicenv,test)) then
       -- If true, run sub-statement and fall through to rest of line
       local cmd = statements[substat[1]];
       if cmd == nil then
@@ -497,18 +497,7 @@ local function doif(basicenv,stat)
       end
       cmd(basicenv,substat);
    else
-      -- Walk forward to next line
-      local prog = m.prog;
-      local targetpc = m.pc;
-      while targetpc < #prog and prog[targetpc+1][1] ~= "TARGET" do	 
-	 targetpc = targetpc+1;
-      end
-      -- m.pc = targetpc;
-      -- This should be a no-op, but calculation of target can better be
-      -- moved to compile time, and this value appended to stat table
-      --
-      local target = prog[targetpc+1][2];
-      m.pc = m.targets[target]-1;
+      m.pc = m.targets[stat[4]]-1;
    end
 end
 
