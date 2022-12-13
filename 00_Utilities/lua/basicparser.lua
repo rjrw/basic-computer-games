@@ -17,7 +17,9 @@ local lineno = lpeg.C(digit^1);
 local gotostatement = lpeg.P {
    lpeg.Cc("GOTO") * lpeg.P("GO") * space * lpeg.P("TO") * space * lineno * space
 };
-local unquoted = lpeg.Ct(lpeg.Cc("STRING")*lpeg.C((any-lpeg.S(", \t"))^0));
+local word = (any-lpeg.S(", \t"))^1;
+local wordlist = (word * lpeg.S" \t"^1 * #word)^0*word;
+local unquoted = lpeg.Ct(lpeg.Cc("STRING")*lpeg.C(wordlist));
 local dataliteral = lpeg.P {
    floatval + stringval + unquoted;
 };
