@@ -233,7 +233,7 @@ basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
 
 function parse(lines)
-   local prog, targets, data, datatargets = {}, {}, {}, {};
+   local prog, data, datatargets = {}, {}, {};
    local nerr = 0;
    -- Read and parse input file
    for count,line in ipairs(lines) do
@@ -252,7 +252,6 @@ function parse(lines)
 	    nerr = nerr + 1;
 	 else	 
 	    prog[#prog+1] = {"TARGET",m[1]};
-	    targets[m[1]] = #prog;
 	    local hasif = false;
 	    for k,v in ipairs(m[2]) do
 	       --print(">>",k,v[1]); --Confirm first-level commands are captured
@@ -271,13 +270,19 @@ function parse(lines)
 	    if hasif then
 	       local lab = "_"..m[1];
 	       prog[#prog+1] = {"TARGET",lab};
-	       targets[lab] = #prog;
 	    end
 	 end
       end      
    end
    if nerr ~= 0 then
       error("Parser failure");
+   end
+   -- Create jump table
+   local targets = {};
+   for k,v in ipairs(prog) do
+      if v[1] == "TARGET" then
+	 targets[v[2]] = k;
+      end
    end
    return prog, data, datatargets, targets;
 end
