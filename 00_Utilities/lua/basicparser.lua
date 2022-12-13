@@ -165,7 +165,7 @@ local linegrammar = {
    comparison = lpeg.Ct(
       lpeg.Cc("COMPARE") *
 	 ( stringexpr * space * comparisonop * space * stringexpr
-	      + ( Sum * space * comparisonop * space)^1 * Sum + Sum) ),
+	      + ( Sum * space * comparisonop * space)^1 * Sum) ) + Sum,
    Sum =
       lpeg.Ct(lpeg.Cc("SUM") * ( Product * space * lpeg.C(lpeg.S("+-")) * space)^1 * Product) * space
       + Product * space,
@@ -179,7 +179,8 @@ local linegrammar = {
    -- String expression hierarchy
    stringexpr = concat,
    concat = lpeg.Ct(lpeg.Cc("CONCAT") *
-		    (stringrval * space * lpeg.P("+") * space)^0 * stringrval),
+		       (stringrval * space * lpeg.P("+") * space)^1 * stringrval)
+      + stringrval,
    -- Lowest-level groups
    floatlval = element + floatvar,
    floatrval = funcall + index + floatvar,
