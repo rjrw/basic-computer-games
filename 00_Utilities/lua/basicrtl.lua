@@ -187,13 +187,13 @@ local function doindex(basicenv,expr)
    if val then
       for _, v in ipairs(args) do
 	 if v < 0 or v > #val then
-	    error("Out of bounds array access");
+	    error("Out of bounds array access at "..basicenv._m.errorlocation);
 	 end
 	 val = val[v];
       end
       return val;
    else
-      error("Array "..name.." not known");
+      error("Array "..name.." not known at "..basicenv._m.errorlocation);
    end
 end
 
@@ -214,13 +214,13 @@ local function dostringindex(basicenv,expr)
    if val then
       for _, v in ipairs(args) do
 	 if v < 0 or v > #val then
-	    error("Out of bounds array access");
+	    error("Out of bounds array access at "..basicenv._m.errorlocation);
 	 end
 	 val = val[v];
       end
       return val;
    else
-      error("Array "..name.."$ not known");
+      error("Array "..name.."$ not known at "..basicenv._m.errorlocation);
    end
 end
 
@@ -269,7 +269,7 @@ local function docompare(basicenv,expr)
       elseif op == "<" then
 	 val = val < val2;
       else
-	 error("Operator "..op.." not recognized");
+	 error("Operator "..op.." not recognized at "..basicenv._m.errorlocation);
       end
       val = val and -1 or 0;
    end
@@ -327,10 +327,12 @@ local function assigns(basicenv,lval,value)
    if ttype == "STRINGELEMENT" then
       local eltype = target[1];
       if #lval[3] > 2 then
-	 error("More than 2-dimensional access not yet implemented");
+	 error("More than 2-dimensional access not yet implemented at "
+		  ..basicenv._m.errorlocation);
       end
       if eltype ~= "STRINGVAR" then
-	 error("Non-stringvar access not yet implemented");
+	 error("Non-stringvar access not yet implemented at "
+		  ..basicenv._m.errorlocation);
       end
       if #lval[3] == 1 then
 	 local index = eval(basicenv,lval[3][1]);
@@ -352,10 +354,12 @@ local function assignf(basicenv,lval,value)
    elseif ttype == "ELEMENT" then
       local eltype = target[1];
       if #lval[3] > 2 then
-	 error("More than 2-dimensional access not yet implemented");
+	 error("More than 2-dimensional access not yet implemented at "
+		  ..basicenv._m.errorlocation);
       end
       if eltype ~= "FLOATVAR" then
-	 error("Non-floatvar access not yet implemented");
+	 error("Non-floatvar access not yet implemented at "
+		  ..basicenv._m.errorlocation);
       end
       if #lval[3] == 1 then
 	 local index = eval(basicenv,lval[3][1]);
@@ -372,7 +376,8 @@ local function assignf(basicenv,lval,value)
 	 basicenv["fa_"..target[2]][i1][i2] = value;
       end
    else
-      error("Type mismatch in floating assignment");
+      error("Type mismatch in floating assignment at "
+	       ..basicenv._m.errorlocation);
    end
 end
 
@@ -512,7 +517,8 @@ local function donext(basicenv,stat)
    else
       for i=2,#stat do
 	 if stat[i][1] ~= "FLOATVAR" then
-	    error("NEXT tag must be floating variable");
+	    error("NEXT tag must be floating variable at "
+		     ..basicenv._m.errorlocation);
 	 end
 	 local frame = forstack[#forstack];
 	 local control = frame[2];
@@ -543,7 +549,8 @@ local function dodim(basicenv,stat)
       local name = dimvar[2];
       local shape = stat[i][2];
       if #shape > 2 then
-	 error("Don't yet handle more than 2-dimensional arrays");
+	 error("Don't yet handle more than 2-dimensional arrays at "
+		  ..basicenv._m.errorlocation);
       end
       local store = {};
       if dimtype == "FLOATVAR" then
@@ -599,7 +606,8 @@ local function doread(basicenv,stat)
       elseif dtype == "STRING" then
 	 assigns(basicenv,lval, value);
       else
-	 error("READ data type "..tostring(lval[1]).." not implemented");
+	 error("READ data type "..tostring(lval[1]).." not implemented at "
+		  ..basicenv._m.errorlocation);
       end
       m.datapc = m.datapc+1;
    end
@@ -627,38 +635,16 @@ end
 local function donothing(basicenv,stat)
 end
 
-local statements = {
-   TARGET    = donothing,
-   END       = doend,
-   REM       = donothing,
-   DIM       = dodim,
-   DATA      = donothing,
-   RESTORE   = dorestore,
-   READ      = doread,
-   DEF       = dodef,
-   LETN      = doletn,
-   LETS      = dolets,
-   GOTO      = dogoto,
-   GOSUB     = dogosub,
-   RETURN    = doreturn,
-   FOR       = dofor,
-   NEXT      = donext,
-   ON        = doon,
-   PRINT     = doprint,
-   INPUT     = doinput,
-   RANDOMIZE = dorandomize,
-   IF        = donothing   -- recursive, so requires updating
-};
-
 local function doif(basicenv,stat)
    local test = stat[2];
    local substat = stat[3];
    local m = basicenv._m;
    if f2l(eval(basicenv,test)) then
       -- If true, run sub-statement and fall through to rest of line
-      local cmd = statements[substat[1]];
+      local cmd = m.statements[substat[1]];
       if cmd == nil then
-	 error("Unknown statement "..substat[1]);
+	 error("Unknown statement "..substat[1].." at "
+		  ..basicenv._m.errorlocation);
       end
       cmd(basicenv,substat);
    else
@@ -666,15 +652,15 @@ local function doif(basicenv,stat)
    end
 end
 
-statements.IF        = doif;
-
 local function exec(basicenv,stat)
-   local cmd = statements[stat[1]];
+   local m = basicenv._m;
+   local cmd = m.statements[stat[1]];
    if cmd == nil then
-      error("Unknown statement "..stat[1]);
+      error("Unknown statement "..stat[1].." at "
+	       ..basicenv._m.errorlocation);
    end
    cmd(basicenv,stat);
-   basicenv._m.pc = basicenv._m.pc + 1;
+   m.pc = m.pc + 1;
 end
 
 -- Machine state
@@ -682,11 +668,35 @@ end
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
 -- sa_xxx is string array
 local function makemachine(prog, targets, data, datatargets)
+   local statements = {
+      TARGET    = donothing,
+      END       = doend,
+      REM       = donothing,
+      DIM       = dodim,
+      DATA      = donothing,
+      RESTORE   = dorestore,
+      READ      = doread,
+      DEF       = dodef,
+      LETN      = doletn,
+      LETS      = dolets,
+      GOTO      = dogoto,
+      GOSUB     = dogosub,
+      RETURN    = doreturn,
+      FOR       = dofor,
+      NEXT      = donext,
+      ON        = doon,
+      PRINT     = doprint,
+      INPUT     = doinput,
+      RANDOMIZE = dorandomize,
+      IF        = doif
+   };
+
    return {
       prog = prog,
       targets = targets,
       data = data,
       datatargets = datatargets,
+      statements = statements,
       pc = 1,
       datapc = 1,
       quit = false,
