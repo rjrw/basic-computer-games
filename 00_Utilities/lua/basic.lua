@@ -73,24 +73,22 @@ if not string.find(filename, baspat) then
 end
 
 local lines = readfile(filename);
-local prog, data, datatargets, targets = parser.parse(lines);
+local prog, data, datatargets = parser.parse(lines);
 
 if mode == 2 then
    local rtl = require"basicrtl";
-   rtl.run(prog, targets, data, datatargets);
+   rtl.run(prog, data, datatargets);
 else
    -- Save
    local outfile = string.gsub(filename,baspat,".lua");
    local file = assert(io.open(outfile,"w"));
    file:write("local rtl = require\"basicrtl\";\n");
-   file:write("local prog = ");
-   deepwrite(file,prog,0);
-   file:write(";\nlocal targets = ");
-   deepwrite(file,targets,0);
    file:write(";\nlocal data = ");
    deepwrite(file,data,0);
    file:write(";\nlocal datatargets = ");
    deepwrite(file,datatargets,0);
-   file:write(";\nrtl.run(prog, targets, data, datatargets);\n");
+   file:write("local prog = ");
+   deepwrite(file,prog,0);
+   file:write(";\nrtl.run(prog, data, datatargets);\n");
    file:close();
 end

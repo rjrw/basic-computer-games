@@ -277,14 +277,7 @@ function parse(lines)
    if nerr ~= 0 then
       error("Parser failure");
    end
-   -- Create jump table
-   local targets = {};
-   for k,v in ipairs(prog) do
-      if v[1] == "TARGET" then
-	 targets[v[2]] = k;
-      end
-   end
-   return prog, data, datatargets, targets;
+   return prog, data, datatargets;
 end
 
 m.parse = parse;

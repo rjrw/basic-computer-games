@@ -692,7 +692,15 @@ local function makemachine(prog, targets, data, datatargets)
    };
 end
 
-local function run(prog, targets, data, datatargets)
+local function run(prog, data, datatargets)
+   -- Create jump table
+   local targets = {};
+   for k,v in ipairs(prog) do
+      if v[1] == "TARGET" then
+	 targets[v[2]] = k;
+      end
+   end
+
    local basicenv = {_m=makemachine(prog, targets, data, datatargets)};
    while true do
       local status, err = pcall(
