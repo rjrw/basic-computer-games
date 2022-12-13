@@ -158,9 +158,10 @@ local linegrammar = {
    -- Expression hierarchy
    expr = rawexpr,
    rawexpr = Or,
-   Or = lpeg.Ct(lpeg.Cc("OR") * (And * space * lpeg.P("OR") * space)^0 * And),
+   Or = lpeg.Ct(lpeg.Cc("OR") * (And * space * lpeg.P("OR") * space)^1 * And)
+      + And,
    And = lpeg.Ct(lpeg.Cc("AND") * (Not * space * lpeg.P("AND") * space)^0 * Not),
-   Not = lpeg.Ct((lpeg.C("NOT") * space+lpeg.Cc("EQV")) * comparison),
+   Not = lpeg.Ct(lpeg.C("NOT") * space * comparison) + comparison,
    comparison = lpeg.Ct(
       lpeg.Cc("COMPARE") *
 	 ( stringexpr * space * comparisonop * space * stringexpr
