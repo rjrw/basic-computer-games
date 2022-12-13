@@ -2,80 +2,47 @@ local m = {};
 
 local lpeg = require"lpeg";
 
+-- Literals
 local any = lpeg.P(1);
 local space = lpeg.S" \t"^0;
 local digit = lpeg.R("09");
-local stringval =
-   lpeg.Ct(lpeg.Cc("STRING")*lpeg.P("\"") * lpeg.C((any-lpeg.P("\""))^0) * lpeg.P("\""));
-local float = lpeg.P( lpeg.P("-")^0 * (digit^0 * lpeg.P(".") * digit^1 + digit^1 * lpeg.P(".")^-1) *(lpeg.P("E")*lpeg.S("+-")^-1*digit^1)^-1);
-local floatval = lpeg.Ct(lpeg.Cc("FLOATVAL")*lpeg.C(float));
+local float = lpeg.P("-")^0 *
+   (digit^0 * lpeg.P(".") * digit^1 + digit^1 * lpeg.P(".")^-1) *
+   (lpeg.P("E")*lpeg.S("+-")^-1*digit^1)^-1;
+local lineno = lpeg.C(digit^1);
 local varname = lpeg.R("AZ")^1 * lpeg.R("09")^0;
+local comparisonop = lpeg.C(lpeg.P("=") + lpeg.P("<>") + lpeg.P("<=") +
+			       lpeg.P(">=") + lpeg.P("<") + lpeg.P(">"));
+
+-- Labelled literals
+local stringval = lpeg.Ct(
+   lpeg.Cc("STRING")*lpeg.P("\"") * lpeg.C((any-lpeg.P("\""))^0) *
+      lpeg.P("\""));
+local floatval = lpeg.Ct(lpeg.Cc("FLOATVAL")*lpeg.C(float));
+
 local floatvar = lpeg.Ct(lpeg.Cc("FLOATVAR")*lpeg.C(varname));
 local stringvar = lpeg.Ct(lpeg.Cc("STRINGVAR")*lpeg.C(varname) * lpeg.P("$"));
-local anyvar = lpeg.P { stringvar + floatvar };
-local lineno = lpeg.C(digit^1);
-local gotostatement = lpeg.P {
-   lpeg.Cc("GOTO") * lpeg.P("GO") * space * lpeg.P("TO") * space * lineno * space
-};
+local anyvar = stringvar + floatvar;
+
+
 local word = (any-lpeg.S(", \t"))^1;
 local wordlist = (word * lpeg.S" \t"^1 * #word)^0*word;
-local unquoted = lpeg.Ct(lpeg.Cc("STRING")*lpeg.C(wordlist));
-local dataliteral = lpeg.P {
-   floatval + stringval + unquoted;
-};
-local datalist = lpeg.P {
-   space * ( dataliteral * space * lpeg.P(",") * space ) ^0 *
-      dataliteral * space
-};
-local input = lpeg.P{
-   "input";
-   input = lpeg.Ct(datalist)
-};
-local datastatement = lpeg.P {
-   lpeg.C(lpeg.P("DATA")) * datalist
-};
-local gosubstatement = lpeg.P {
-   lpeg.Cc("GOSUB") * lpeg.P("GO") * space * lpeg.P("SUB") * space * lineno * space
-};
-local nextlist = lpeg.P {
-   ( floatvar * space * lpeg.P"," * space)^0 * floatvar * space
-};
-local nextstatement = lpeg.P {
-   lpeg.C(lpeg.P("NEXT")) * space * nextlist * space +
-   lpeg.C(lpeg.P("NEXT"))
-};
-local endstatement = lpeg.P {
-   lpeg.C(lpeg.P("END")) * space
-};
-local stopstatement = lpeg.P {
-   lpeg.Cc"END" * lpeg.P("STOP") * space
-};
-local remstatement = lpeg.P {
-   lpeg.C(lpeg.P("REM")) * lpeg.C(any^0)
-};
-local returnstatement = lpeg.P {
-   lpeg.C(lpeg.P("RETURN")) * space
-};
-local randomizestatement = lpeg.P {
-   lpeg.C(lpeg.P("RANDOMIZE")) * space
-};
-local restorestatement = lpeg.P {
-   lpeg.C(lpeg.P("RESTORE")) * space * (lineno * space)^-1
-};
+local unquotedstringval = lpeg.Ct(lpeg.Cc("STRING")*lpeg.C(wordlist));
+local dataliteral = floatval + stringval + unquotedstringval;
+local datalist = space * ( dataliteral * space * lpeg.P(",") * space ) ^0 *
+   dataliteral * space;
+local nextlist = ( floatvar * space * lpeg.P"," * space)^0 * floatvar * space;
+
 local stringexpr = lpeg.V"stringexpr";
 local concat = lpeg.V"concat";
-local stringassignment = lpeg.V"stringassignment";
 local printexpr = lpeg.V"printexpr";
 local printlist = lpeg.V"printlist";
-local printstatement = lpeg.V"printstatement";
-local inputstatement = lpeg.V"inputstatement";
-local readstatement = lpeg.V"readstatement";
-local inputlist = lpeg.V"inputlist";
 local inputitem = lpeg.V"inputitem";
+local inputlist = lpeg.V"inputlist";
+local dimlist = lpeg.V"dimlist";
+local dimitem = lpeg.V"dimitem";
 
-local comparisonop = lpeg.P {
-   lpeg.C(lpeg.P("=") + lpeg.P("<>") + lpeg.P("<=") + lpeg.P(">=") + lpeg.P("<") + lpeg.P(">"))
-};
+-- Expression terms
 local Sum = lpeg.V"Sum";
 local Product = lpeg.V"Product"
 local Power = lpeg.V"Power"
@@ -84,18 +51,10 @@ local Value = lpeg.V"Value";
 local Or = lpeg.V"Or";
 local And = lpeg.V"And";
 local Not = lpeg.V"Not";
-local Statement = lpeg.V"Statement";
 local ifstatement = lpeg.V"ifstatement";
 local ifstart = lpeg.V"ifstart";
 local expr = lpeg.V"expr";
 local rawexpr = lpeg.V"rawexpr";
-local numericassignment = lpeg.V"numericassignment";
-local dimstatement = lpeg.V"dimstatement";
-local dimlist = lpeg.V"dimlist";
-local dimdef = lpeg.V"dimdef";
-local forstatement = lpeg.V"forstatement"
-local onstatement = lpeg.V"onstatement"
-local defstatement = lpeg.V"defstatement";
 local comparison = lpeg.V"comparison";
 local floatlval = lpeg.V"floatlval";
 local floatrval = lpeg.V"floatrval";
@@ -110,8 +69,36 @@ local element = lpeg.V"element";
 local index = lpeg.V"index";
 local funcall = lpeg.V"funcall";
 local stringindex = lpeg.V"stringindex";
+
+-- Statements
+local datastatement   = lpeg.C(lpeg.P("DATA")) * datalist;
+local gotostatement   = lpeg.Cc("GOTO") * lpeg.P("GO") * space *
+   lpeg.P("TO") * space * lineno * space;
+local gosubstatement  = lpeg.Cc("GOSUB") * lpeg.P("GO") * space *
+   lpeg.P("SUB") * space * lineno * space;
+local nextstatement   = lpeg.C(lpeg.P("NEXT")) * space * nextlist * space +
+   lpeg.C(lpeg.P("NEXT"));
+local endstatement    = lpeg.C(lpeg.P("END")) * space;
+local stopstatement   = lpeg.Cc"END" * lpeg.P("STOP") * space;
+local remstatement    = lpeg.C(lpeg.P("REM")) * lpeg.C(any^0);
+local returnstatement = lpeg.C(lpeg.P("RETURN")) * space;
+local randomizestatement = lpeg.C(lpeg.P("RANDOMIZE")) * space;
+local restorestatement = lpeg.C(lpeg.P("RESTORE")) * space *
+   (lineno * space)^-1;
+local printstatement = lpeg.V"printstatement";
+local inputstatement = lpeg.V"inputstatement";
+local readstatement = lpeg.V"readstatement";
+local numericassignment = lpeg.V"numericassignment";
+local stringassignment = lpeg.V"stringassignment";
+local dimstatement = lpeg.V"dimstatement";
+
+local forstatement = lpeg.V"forstatement"
+local onstatement = lpeg.V"onstatement"
+local defstatement = lpeg.V"defstatement";
+
 local statement = lpeg.V"statement";
 local statementlist = lpeg.V"statementlist";
+
 local linegrammar = {
    "line";
    statement =
@@ -150,9 +137,10 @@ local linegrammar = {
       stringlval * space * lpeg.P("=") * space * stringexpr * space,
    -- Argument lists
    exprlist = lpeg.Ct(( expr * space * lpeg.P(",") * space)^0 * expr),
-   dimdef = lpeg.Ct(anyvar * space * lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
-   dimlist = ( dimdef * space * lpeg.P(",") * space)^0 * dimdef,
-   printexpr = stringexpr + expr + lpeg.C(lpeg.S(";,"))*space,
+   dimitem = lpeg.Ct(anyvar * space * lpeg.P("(") * space * exprlist *
+			space * lpeg.P(")")),
+   dimlist = ( dimitem * space * lpeg.P(",") * space)^0 * dimitem,
+   printexpr = stringexpr + expr + lpeg.C(lpeg.S(";,")),
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * lpeg.P(",") * space)^0 * inputitem * space,
@@ -358,6 +346,12 @@ local function parse(lines)
    end
    return prog, data, datatargets;
 end
+
+-- Cut-down grammar just for reading user input
+local input = lpeg.P{
+   "input";
+   input = lpeg.Ct(datalist)
+};
 
 m.parse = parse;
 m.input = input;
