@@ -229,12 +229,19 @@ local function matchexpr(s, p)
    return table.unpack(cache.vals[p]);
 end
 linegrammar.expr = lpeg.Cmt(any,matchexpr);
-local exprgrammar = {};
+local exprgrammar =
+   {
+      "exprtagged";
+      exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
+   };
+
 for k,v in pairs(linegrammar) do
-   exprgrammar[k] = v;
+   if k ~= 1 then
+      exprgrammar[k] = v;
+   end
 end
-exprgrammar[1] = "exprtagged";
-exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
+
+
 basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
 
