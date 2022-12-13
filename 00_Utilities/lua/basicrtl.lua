@@ -387,26 +387,42 @@ local function doinput(basicenv,inputlist)
    while j <= #inputlist do
       local input = "";
       while input == "" do
-	 write(prompt);
+	 if j == i then
+	    write(prompt);
+	 else
+	    write("?? ");
+	 end
 	 input = io.read("*l");
       end
       local fields = parser.input:match(input);
-      for _,v in ipairs(fields) do
-	 local input = v[2];
-	 local vartype = inputlist[j][1];
-	 local varname = inputlist[j][2];
-	 if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
-	    assigns(basicenv,inputlist[j],input);
-	 elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
-	    assignf(basicenv,inputlist[j],tonumber(input));
-	 else
-	    error("Vartype "..vartype.." not yet supported");
+      if not fields then
+	 write("Error, input format not recognized\n");
+      else
+	 for iv,v in ipairs(fields) do
+	    local input = v[2];
+	    local vartype = inputlist[j][1];
+	    local varname = inputlist[j][2];
+	    if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
+	       assigns(basicenv,inputlist[j],input);
+	    elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
+	       if v[1] == "STRING" then
+		  write("Error, expected numeric input -- retry input line\n");
+		  j = i;
+		  break;
+	       end
+	       assignf(basicenv,inputlist[j],tonumber(input));
+	    else
+	       error("Vartype "..vartype.." not yet supported");
+	    end
+	    j = j+1;
+	    if j > #inputlist then
+	       if iv ~= #fields then
+		  write("Extra input text ignored\n");
+	       end
+	       return
+	    end
+	    --print(inputlist[j][1]);
 	 end
-	 j = j+1;
-	 if j > #inputlist then
-	    return
-	 end
-	 --print(inputlist[j][1]);
       end
    end
 end

@@ -19,7 +19,7 @@ local gotostatement = lpeg.P {
 };
 local dataliteral = lpeg.P {
    floatval + stringval
-      + lpeg.Ct(lpeg.Cc("STRING")*lpeg.C((any-lpeg.S(", \t"))^1))
+      + lpeg.Ct(lpeg.Cc("STRING")*lpeg.C((any-lpeg.S(", \t"))^0))
 };
 local datalist = lpeg.P {
    space * ( dataliteral * space * lpeg.P(",") * space ) ^0 *
