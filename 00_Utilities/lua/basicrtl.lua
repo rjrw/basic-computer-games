@@ -483,24 +483,6 @@ local function doon(basicenv,stat)
 end
 
 
-local statements = {};
-
-local function doif(basicenv,stat)
-   local test = stat[2];
-   local substat = stat[3];
-   local m = basicenv._m;
-   if f2l(eval(basicenv,test)) then
-      -- If true, run sub-statement and fall through to rest of line
-      local cmd = statements[substat[1]];
-      if cmd == nil then
-	 error("Unknown statement "..substat[1]);
-      end
-      cmd(basicenv,substat);
-   else
-      m.pc = m.targets[stat[4]]-1;
-   end
-end
-
 local function dofor(basicenv,stat)
    local control = stat[2][2];
    local init = eval(basicenv,stat[3]);
@@ -639,27 +621,52 @@ end
 local function dodef(basicenv,stat)
    basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
 end
+local function doend(basicenv,stat)
+   basicenv._m.quit = true;
+end
+local function donothing(basicenv,stat)
+end
 
-statements.TARGET    = function(basicenv,stat) end; -- Do nothing
-statements.END       = function(basicenv,stat) basicenv._m.quit = true; end;
-statements.REM       = function(basicenv,stat) end; -- Do nothing
-statements.DIM       = dodim;
-statements.DATA      = function(basicenv,stat) end; -- Do nothing at runtime
-statements.RESTORE   = dorestore;
-statements.READ      = doread;
-statements.DEF       = dodef;
-statements.LETN      = doletn;
-statements.LETS      = dolets;
+local statements = {
+   TARGET    = donothing,
+   END       = doend,
+   REM       = donothing,
+   DIM       = dodim,
+   DATA      = donothing,
+   RESTORE   = dorestore,
+   READ      = doread,
+   DEF       = dodef,
+   LETN      = doletn,
+   LETS      = dolets,
+   GOTO      = dogoto,
+   GOSUB     = dogosub,
+   RETURN    = doreturn,
+   FOR       = dofor,
+   NEXT      = donext,
+   ON        = doon,
+   PRINT     = doprint,
+   INPUT     = doinput,
+   RANDOMIZE = dorandomize,
+   IF        = donothing   -- recursive, so requires updating
+};
+
+local function doif(basicenv,stat)
+   local test = stat[2];
+   local substat = stat[3];
+   local m = basicenv._m;
+   if f2l(eval(basicenv,test)) then
+      -- If true, run sub-statement and fall through to rest of line
+      local cmd = statements[substat[1]];
+      if cmd == nil then
+	 error("Unknown statement "..substat[1]);
+      end
+      cmd(basicenv,substat);
+   else
+      m.pc = m.targets[stat[4]]-1;
+   end
+end
+
 statements.IF        = doif;
-statements.GOTO      = dogoto;
-statements.GOSUB     = dogosub;
-statements.RETURN    = doreturn;
-statements.FOR       = dofor;
-statements.NEXT      = donext;
-statements.ON        = doon;
-statements.PRINT     = doprint;
-statements.INPUT     = doinput;
-statements.RANDOMIZE = dorandomize;
 
 local function exec(basicenv,stat)
    local cmd = statements[stat[1]];
