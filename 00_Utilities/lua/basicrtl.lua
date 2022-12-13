@@ -86,11 +86,11 @@ local ops = {};
 
 local function eval(basicenv,expr)
    if type(expr) ~= "table" then
-      error("Parser failure at "..basicenv._m.errorlocation);
+      error("Parser failure");
    end
    local op = ops[expr[1]];
    if not op then
-      error("Bad expr "..tostring(expr[1]).." at "..basicenv._m.errorlocation);
+      error("Bad expr "..tostring(expr[1]));
    end      
    return op(basicenv, expr);
 end
@@ -187,13 +187,13 @@ local function doindex(basicenv,expr)
    if val then
       for _, v in ipairs(args) do
 	 if v < 0 or v > #val then
-	    error("Out of bounds array access at "..basicenv._m.errorlocation);
+	    error("Out of bounds array access");
 	 end
 	 val = val[v];
       end
       return val;
    else
-      error("Array "..name.." not known at "..basicenv._m.errorlocation);
+      error("Array "..name.." not known");
    end
 end
 
@@ -214,13 +214,13 @@ local function dostringindex(basicenv,expr)
    if val then
       for _, v in ipairs(args) do
 	 if v < 0 or v > #val then
-	    error("Out of bounds array access at "..basicenv._m.errorlocation);
+	    error("Out of bounds array access");
 	 end
 	 val = val[v];
       end
       return val;
    else
-      error("Array "..name.."$ not known at "..basicenv._m.errorlocation);
+      error("Array "..name.."$ not known");
    end
 end
 
@@ -269,7 +269,7 @@ local function docompare(basicenv,expr)
       elseif op == "<" then
 	 val = val < val2;
       else
-	 error("Operator "..op.." not recognized at "..basicenv._m.errorlocation);
+	 error("Operator "..op.." not recognized");
       end
       val = val and -1 or 0;
    end
@@ -327,12 +327,10 @@ local function assigns(basicenv,lval,value)
    if ttype == "STRINGELEMENT" then
       local eltype = target[1];
       if #lval[3] > 2 then
-	 error("More than 2-dimensional access not yet implemented at "
-		  ..basicenv._m.errorlocation);
+	 error("More than 2-dimensional access not yet implemented");
       end
       if eltype ~= "STRINGVAR" then
-	 error("Non-stringvar access not yet implemented at "
-		  ..basicenv._m.errorlocation);
+	 error("Non-stringvar access not yet implemented");
       end
       if #lval[3] == 1 then
 	 local index = eval(basicenv,lval[3][1]);
@@ -354,12 +352,10 @@ local function assignf(basicenv,lval,value)
    elseif ttype == "ELEMENT" then
       local eltype = target[1];
       if #lval[3] > 2 then
-	 error("More than 2-dimensional access not yet implemented at "
-		  ..basicenv._m.errorlocation);
+	 error("More than 2-dimensional access not yet implemented");
       end
       if eltype ~= "FLOATVAR" then
-	 error("Non-floatvar access not yet implemented at "
-		  ..basicenv._m.errorlocation);
+	 error("Non-floatvar access not yet implemented");
       end
       if #lval[3] == 1 then
 	 local index = eval(basicenv,lval[3][1]);
@@ -376,8 +372,7 @@ local function assignf(basicenv,lval,value)
 	 basicenv["fa_"..target[2]][i1][i2] = value;
       end
    else
-      error("Type mismatch in floating assignment at "
-	       ..basicenv._m.errorlocation);
+      error("Type mismatch in floating assignment");
    end
 end
 
@@ -517,8 +512,7 @@ local function donext(basicenv,stat)
    else
       for i=2,#stat do
 	 if stat[i][1] ~= "FLOATVAR" then
-	    error("NEXT tag must be floating variable at "
-		     ..basicenv._m.errorlocation);
+	    error("NEXT tag must be floating variable");
 	 end
 	 local frame = forstack[#forstack];
 	 local control = frame[2];
@@ -549,8 +543,7 @@ local function dodim(basicenv,stat)
       local name = dimvar[2];
       local shape = stat[i][2];
       if #shape > 2 then
-	 error("Don't yet handle more than 2-dimensional arrays at "
-		  ..basicenv._m.errorlocation);
+	 error("Don't yet handle more than 2-dimensional arrays");
       end
       local store = {};
       if dimtype == "FLOATVAR" then
@@ -606,8 +599,7 @@ local function doread(basicenv,stat)
       elseif dtype == "STRING" then
 	 assigns(basicenv,lval, value);
       else
-	 error("READ data type "..tostring(lval[1]).." not implemented at "
-		  ..basicenv._m.errorlocation);
+	 error("READ data type "..tostring(lval[1]).." not implemented");
       end
       m.datapc = m.datapc+1;
    end
@@ -639,8 +631,7 @@ local function exec(basicenv,stat)
    local m = basicenv._m;
    local cmd = m.statements[stat[1]];
    if cmd == nil then
-      error("Unknown statement "..stat[1].." at "
-	       ..basicenv._m.errorlocation);
+      error("Unknown statement "..stat[1]);
    end
    cmd(basicenv,stat);
 end
@@ -707,8 +698,7 @@ local function makemachine(prog, data, datatargets)
       forstack = {},
       -- Output state
       printstr = "",
-      printcol = 0,
-      errorlocation = ""
+      printcol = 0
    };
 end
 
@@ -717,13 +707,13 @@ local function run(prog, data, datatargets)
    while true do
       local m = basicenv._m;
       local lineno = prog[m.pc].line;
-      m.errorlocation = "BASIC line "..tostring(lineno);
       local status, err = pcall(
 	 function () exec(basicenv,prog[m.pc]) end
       );
       m.pc = m.pc + 1;
       if not status then
-	 print("At "..m.errorlocation);
+	 local errorlocation = "BASIC line "..tostring(lineno);
+	 print("At "..errorlocation);
 	 print(err);
 	 m.quit = true;
       end
