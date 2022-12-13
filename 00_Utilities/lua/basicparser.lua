@@ -232,7 +232,14 @@ exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
 basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
 
-function parse(lines)
+local function ifconnect(v,endlab)
+   v[#v+1] = endlab;
+   if v[3][1] == "IF" then
+      ifconnect(v[3],endlab);
+   end
+end
+
+local function parse(lines)
    local prog, data, datatargets = {}, {}, {};
    local nerr = 0;
    -- Read and parse input file
@@ -253,6 +260,7 @@ function parse(lines)
 	 else	 
 	    prog[#prog+1] = {"TARGET",m[1]};
 	    local hasif = false;
+	    local endlab = "_"..m[1];
 	    for k,v in ipairs(m[2]) do
 	       --print(">>",k,v[1]); --Confirm first-level commands are captured
 	       if v[1] == "DATA" then
@@ -263,13 +271,12 @@ function parse(lines)
 	       end
 	       if v[1] == "IF" then
 		  hasif = true;
-		  v[#v+1] = "_"..m[1];
+		  ifconnect(v,endlab);
 	       end
 	       prog[#prog+1] = v;
 	    end
 	    if hasif then
-	       local lab = "_"..m[1];
-	       prog[#prog+1] = {"TARGET",lab};
+	       prog[#prog+1] = {"TARGET",endlab};
 	    end
 	 end
       end      
