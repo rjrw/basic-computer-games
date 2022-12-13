@@ -13,11 +13,11 @@ local function makematchexpr()
 	 cache.vals = {};
       end
       if cache.vals[p] == nil then
-	 local captures, pos = basicexpr:match(s,p-1);
+	 local captures, endpoint = basicexpr:match(s,p-1);
 	 if captures == nil then
 	    cache.vals[p] = {nil};
 	 else
-	    table.insert(captures,1,pos);
+	    table.insert(captures,1,endpoint);
 	    cache.vals[p] = captures;
 	 end
       end
@@ -124,52 +124,13 @@ local defstatement = lpeg.V"defstatement";
 local statement = lpeg.V"statement";
 local statementlist = lpeg.V"statementlist";
 
+-- Subset grammar for use in caching
 local exprgrammar = {
-   "exprtagged";
-   statement =
-      lpeg.Ct(
-	 gotostatement + gosubstatement + forstatement + nextstatement
-	    + endstatement + stopstatement + printstatement 
-	    + returnstatement + dimstatement
-	    + inputstatement + endstatement + ifstatement + remstatement
-	    + onstatement + datastatement + randomizestatement + restorestatement
-	    + readstatement + defstatement
-	 -- Assignments need to come late to avoid clashes with other statements
-	 -- e.g. IF ((Z+P)/2)= looking like an array assignment.
-	    + numericassignment + stringassignment ),
-   printstatement = lpeg.C(lpeg.P("PRINT")) * space * lpeg.Ct(printlist),
-   inputstatement = lpeg.C(lpeg.P("INPUT")) * space *
-      (lpeg.Cc("PROMPT") * stringexpr * space * lpeg.P(";") * space)^-1 * inputlist,
-   readstatement = lpeg.C(lpeg.P("READ")) * space * inputlist,
-   ifstatement = lpeg.C(lpeg.P("IF")) * space * expr * space *
-      lpeg.P("THEN") * space * (lpeg.Ct (lpeg.Cc("GOTO") * lineno) * space + statement),
-   dimstatement = lpeg.C(lpeg.P("DIM")) * space * dimlist,
-   defstatement = lpeg.C(lpeg.P("DEF")) * space * lpeg.P("FN") * space
-      * lpeg.C(varname) * space * lpeg.P("(") * space * dummylist * space * lpeg.P(")")
-      * space * lpeg.P("=") * space * expr,
-   forstatement =
-      lpeg.C(lpeg.P("FOR")) * space * floatvar * space * lpeg.P("=") * space * expr
-      * space * lpeg.P("TO") * space * expr * space *
-      ( lpeg.P("STEP") * space * expr * space )^-1,
-   onstatement =
-      lpeg.C(lpeg.P("ON")) * space * expr * space * lpeg.P("GO") * space * lpeg.P("TO") * space *
-      (lineno * space * lpeg.P(",") * space)^0 * lineno * space,
-   numericassignment =
-      lpeg.Cc("LETN") * lpeg.P("LET")^-1 * space *
-      floatlval * space * lpeg.P("=") * space * expr * space,
-   stringassignment =
-      lpeg.Cc("LETS") * lpeg.P("LET")^-1 * space *
-      stringlval * space * lpeg.P("=") * space * stringexpr * space,
+   "expr";
    -- Argument lists
    exprlist = lpeg.Ct(( expr * space * lpeg.P(",") * space)^0 * expr),
-   dimitem = lpeg.Ct(anyvar * space * lpeg.P("(") * space * exprlist *
-			space * lpeg.P(")")),
-   dimlist = ( dimitem * space * lpeg.P(",") * space)^0 * dimitem,
-   printexpr = stringexpr + expr + lpeg.C(lpeg.S(";,")),
-   printlist = (printexpr * space )^0,
-   inputitem = stringlval + floatlval,
-   inputlist = (inputitem * space * lpeg.P(",") * space)^0 * inputitem * space,
-   dummylist = lpeg.Ct( (lpeg.C(varname)*space*lpeg.P(",")*space)^0*lpeg.C(varname)),
+   dummylist = lpeg.Ct( (lpeg.C(varname)*space*lpeg.P(",")*space)^0*
+	 lpeg.C(varname)),
    -- Expression hierarchy
    expr = rawexpr,
    rawexpr = Or,
@@ -196,8 +157,7 @@ local exprgrammar = {
       + Unary * space,
    -- TODO: address ambiguity about the handling of -1 -- is it "-" "1" or "-1"?
    Unary = lpeg.Ct(lpeg.Cc("UNARY") * lpeg.C(lpeg.S("+-")) * Value) + Value,
-   Value = floatval + floatrval + lpeg.P("(") * space * expr *
-      space * lpeg.P(")"),
+   Value = floatrval + lpeg.P("(") * space * expr * space * lpeg.P(")"),
    -- String expression hierarchy
    stringexpr = concat,
    concat = lpeg.Ct(
@@ -205,18 +165,11 @@ local exprgrammar = {
 	 (stringrval * space * lpeg.P("+") * space)^1 * stringrval)
       + stringrval,
    -- Lowest-level groups
-   floatlval = element + floatvar,
-   floatrval = funcall + index + floatvar,
-   stringlval = stringelement + stringvar,
-   stringelement = lpeg.Ct(
-      lpeg.Cc("STRINGELEMENT") * stringvar * space *
-	 lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
-   stringrval = stringval + stringindex + stringlval,
-  -- Array access/function/builtin call
+   floatrval = floatval + funcall + index + floatvar,
+   stringrval = stringval + stringindex + stringvar,
+   -- Array access/function/builtin call
    arg = stringexpr + expr,
    arglist = lpeg.Ct(( arg * space * lpeg.P(",") * space)^0 * arg),
-   element = lpeg.Ct(lpeg.Cc("ELEMENT") * floatvar * space *
-			lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
    funcall = lpeg.Ct(
       lpeg.Cc("FUNCALL") * lpeg.P("FN") * space * floatvar * space *
 	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
@@ -229,23 +182,86 @@ local exprgrammar = {
    stringindex = lpeg.Ct(
       lpeg.Cc("STRINGINDEX") * stringvar * space *
 	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
-   statementlist = (statement * lpeg.P(":") * space )^0 * statement,
-   line = lpeg.Ct(lineno * space * lpeg.Ct(statementlist) * lpeg.Cp()),
-   exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp()
 };
 
--- Enable caching in both grammars
-exprgrammar.expr = lpeg.Cmt(any,matchexpr);
-local linegrammar =
-   {
-      "line";
-   };
+-- Additional grammar for full line parsing
+local linegrammar = {
+   "line";
+   statement =
+      lpeg.Ct(
+	 gotostatement + gosubstatement + forstatement + nextstatement
+	    + endstatement + stopstatement + printstatement 
+	    + returnstatement + dimstatement
+	    + inputstatement + endstatement + ifstatement + remstatement
+	    + onstatement + datastatement + randomizestatement
+	    + restorestatement + readstatement + defstatement
+	 -- Assignments need to come late to avoid clashes with other
+	 -- statements e.g. IF ((Z+P)/2)= looking like an array
+	 -- assignment.
+	    + numericassignment + stringassignment ),
+   printstatement = lpeg.C(lpeg.P("PRINT")) * space * lpeg.Ct(printlist),
+   inputstatement = lpeg.C(lpeg.P("INPUT")) * space *
+      (lpeg.Cc("PROMPT") * stringexpr * space * lpeg.P(";") * space)^-1 *
+      inputlist,
+   readstatement = lpeg.C(lpeg.P("READ")) * space * inputlist,
+   ifstatement = lpeg.C(lpeg.P("IF")) * space * expr * space *
+      lpeg.P("THEN") * space *
+      (lpeg.Ct (lpeg.Cc("GOTO") * lineno) * space + statement),
+   dimstatement = lpeg.C(lpeg.P("DIM")) * space * dimlist,
+   defstatement = lpeg.C(lpeg.P("DEF")) * space * lpeg.P("FN") * space
+      * lpeg.C(varname) * space *
+      lpeg.P("(") * space * dummylist * space * lpeg.P(")")
+      * space * lpeg.P("=") * space * expr,
+   forstatement =
+      lpeg.C(lpeg.P("FOR")) * space * floatvar * space * lpeg.P("=") * space *
+      expr * space * lpeg.P("TO") * space * expr * space *
+      ( lpeg.P("STEP") * space * expr * space )^-1,
+   onstatement =
+      lpeg.C(lpeg.P("ON")) * space * expr * space * lpeg.P("GO") * space *
+      lpeg.P("TO") * space * (lineno * space * lpeg.P(",") * space)^0 *
+      lineno * space,
+   numericassignment =
+      lpeg.Cc("LETN") * lpeg.P("LET")^-1 * space *
+      floatlval * space * lpeg.P("=") * space * expr * space,
+   stringassignment =
+      lpeg.Cc("LETS") * lpeg.P("LET")^-1 * space *
+      stringlval * space * lpeg.P("=") * space * stringexpr * space,
+   statementlist = (statement * lpeg.P(":") * space )^0 * statement,
+   line = lpeg.Ct(lineno * space * lpeg.Ct(statementlist) * lpeg.Cp()),
+   -- lists
+   dimitem = lpeg.Ct(anyvar * space * lpeg.P("(") * space * exprlist *
+			space * lpeg.P(")")),
+   dimlist = ( dimitem * space * lpeg.P(",") * space)^0 * dimitem,
+   printexpr = stringexpr + expr + lpeg.C(lpeg.S(";,")),
+   printlist = (printexpr * space )^0,
+   inputitem = stringlval + floatlval,
+   inputlist = (inputitem * space * lpeg.P(",") * space)^0 * inputitem * space,
+   -- Element and stringelement are for rvalue array access on
+   -- l.h.s. of assignment, distinct from lvalue access in expressions
+   element = lpeg.Ct(lpeg.Cc("ELEMENT") * floatvar * space *
+			lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
+   stringelement = lpeg.Ct(
+      lpeg.Cc("STRINGELEMENT") * stringvar * space *
+	 lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
+   -- Lowest-level groups
+   floatlval = element + floatvar,
+   stringlval = stringelement + stringvar, 
+};
 
+
+-- Merge in expression grammar, as there are routes in other
+-- than "expr"
 for k,v in pairs(exprgrammar) do
    if k ~= 1 then
       linegrammar[k] = v;
    end
 end
+
+-- Enable caching in both grammars, and provide raw (uncached) access
+-- Tag is required to provide endpoint to pass on to lpeg.Cmt
+exprgrammar.expr = lpeg.Cmt(any,matchexpr);
+linegrammar.expr = lpeg.Cmt(any,matchexpr);
+exprgrammar[1] = "exprtagged";
 exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
 
 basicexpr = lpeg.P(exprgrammar);
