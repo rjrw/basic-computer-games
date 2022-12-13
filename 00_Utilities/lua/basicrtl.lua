@@ -152,11 +152,19 @@ local function dofloatval(basicenv,expr)
    return tonumber(expr[2]);
 end
 
+local function dochunk(basicenv,expr)
+   local chunk = "_ENV=...; return "..expr[2];
+   return load(chunk)(basicenv);
+end
+
 local function dofloatvar(basicenv,expr)
-   if basicenv[expr[2]] == nil then
-      return 0;
+   if true then
+      return expr[2] and expr[2] or 0;
+   else
+      local chunk = 
+	 "("..expr[2].." and "..expr[2].." or 0);";
+      return dochunk(basicenv, { "CHUNK", chunk });
    end
-   return basicenv[expr[2]];
 end
 
 local function dostringvar(basicenv,expr)
@@ -322,6 +330,7 @@ ops.STRINGVAR = dostringvar;
 ops.INDEX     = doindex;
 ops.STRINGINDEX = dostringindex;
 ops.FUNCALL   = dofuncall;
+ops.CHUNK     = dochunk;
 
 local write = io.write;
 
