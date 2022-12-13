@@ -165,11 +165,14 @@ local linegrammar = {
    comparison = lpeg.Ct(
       lpeg.Cc("COMPARE") *
 	 ( stringexpr * space * comparisonop * space * stringexpr
-	      + ( Sum * space * comparisonop * space)^0 * Sum ) ),
+	      + ( Sum * space * comparisonop * space)^1 * Sum + Sum) ),
    Sum =
-      lpeg.Ct(lpeg.Cc("SUM") * ( Product * space * lpeg.C(lpeg.S("+-")) * space)^1 * Product) * space + Product * space,
-   Product = lpeg.Ct(lpeg.Cc("PRODUCT") * ( Power * space * lpeg.C(lpeg.S("*/")) * space)^0 * Power) * space,
-   Power = lpeg.Ct(lpeg.Cc("POWER") * ( Unary * space * lpeg.S("^") * space)^1 * Unary) * space + Unary * space,
+      lpeg.Ct(lpeg.Cc("SUM") * ( Product * space * lpeg.C(lpeg.S("+-")) * space)^1 * Product) * space
+      + Product * space,
+   Product = lpeg.Ct(lpeg.Cc("PRODUCT") * ( Power * space * lpeg.C(lpeg.S("*/")) * space)^1 * Power) * space
+      + Power * space,
+   Power = lpeg.Ct(lpeg.Cc("POWER") * ( Unary * space * lpeg.S("^") * space)^1 * Unary) * space
+      + Unary * space,
    -- TODO: address ambiguity about the handling of -1 -- is it "-" "1" or "-1"?
    Unary = lpeg.Ct(lpeg.Cc("UNARY") * lpeg.C(lpeg.S("+-")) * Value) + Value,
    Value = floatval + floatrval + lpeg.P("(") * space * expr * space * lpeg.P(")"),
