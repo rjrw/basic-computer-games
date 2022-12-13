@@ -228,38 +228,36 @@ local function dostringindex(basicenv,expr)
    end
 end
 
+local function f2l(val)
+   return val ~= 0;
+end
+local function l2f(val)
+   return val and -1 or 0;
+end
+
 local function door(basicenv,expr)
-   local val = eval(basicenv,expr[2]);
-   if #expr > 2 then
-      val = val ~= 0
-      for i=3,#expr do
-	 val = val or (eval(basicenv,expr[i]) ~= 0);
-      end
-      val = val and -1 or 0;
+   local val = f2l(eval(basicenv,expr[2]));
+   for i=3,#expr do
+      val = val or f2l(eval(basicenv,expr[i]));
    end
-   return val
+   return l2f(val);
 end
 
 local function doand(basicenv,expr)
    local val = eval(basicenv,expr[2]);
    if #expr > 2 then
-      val = val ~= 0
+      val = f2l(val);
       for i=3,#expr do
-	 val = val and (eval(basicenv,expr[i]) ~= 0);
+	 val = val and f2l(eval(basicenv,expr[i]));
       end
-      val = val and -1 or 0;
+      val = l2f(val);
    end
-   return val
+   return val;
 end
 
 local function donot(basicenv,expr)
    local val = eval(basicenv,expr[2]);
-   return val and 0 or -1;
-end
-
-local function doeqv(basicenv,expr)
-   local val = eval(basicenv,expr[2]);
-   return val;
+   return l2f(~f2l(val));
 end
 
 local function docompare(basicenv,expr)
@@ -321,7 +319,6 @@ ops.SUM       = dosum;
 ops.OR        = door;
 ops.AND       = doand;
 ops.NOT       = donot;
-ops.EQV       = doeqv; 
 ops.COMPARE   = docompare;
 ops.FLOATVAL  = dofloatval;
 ops.FLOATVAR  = dofloatvar;

@@ -160,18 +160,18 @@ local linegrammar = {
    rawexpr = Or,
    Or = lpeg.Ct(lpeg.Cc("OR") * (And * space * lpeg.P("OR") * space)^1 * And)
       + And,
-   And = lpeg.Ct(lpeg.Cc("AND") * (Not * space * lpeg.P("AND") * space)^0 * Not),
+   And = lpeg.Ct(lpeg.Cc("AND") * (Not * space * lpeg.P("AND") * space)^1 * Not) + Not,
    Not = lpeg.Ct(lpeg.C("NOT") * space * comparison) + comparison,
    comparison = lpeg.Ct(
       lpeg.Cc("COMPARE") *
 	 ( stringexpr * space * comparisonop * space * stringexpr
 	      + ( Sum * space * comparisonop * space)^0 * Sum ) ),
    Sum =
-      lpeg.Ct(lpeg.Cc("SUM") * ( Product * space * lpeg.C(lpeg.S("+-")) * space)^0 * Product) * space,
+      lpeg.Ct(lpeg.Cc("SUM") * ( Product * space * lpeg.C(lpeg.S("+-")) * space)^1 * Product) * space + Product * space,
    Product = lpeg.Ct(lpeg.Cc("PRODUCT") * ( Power * space * lpeg.C(lpeg.S("*/")) * space)^0 * Power) * space,
-   Power = lpeg.Ct(lpeg.Cc("POWER") * ( Unary * space * lpeg.S("^") * space)^0 * Unary) * space,
+   Power = lpeg.Ct(lpeg.Cc("POWER") * ( Unary * space * lpeg.S("^") * space)^1 * Unary) * space + Unary * space,
    -- TODO: address ambiguity about the handling of -1 -- is it "-" "1" or "-1"?
-   Unary = lpeg.Ct(lpeg.Cc("UNARY") * lpeg.C(lpeg.S("+-"))^-1 * Value),
+   Unary = lpeg.Ct(lpeg.Cc("UNARY") * lpeg.C(lpeg.S("+-")) * Value) + Value,
    Value = floatval + floatrval + lpeg.P("(") * space * expr * space * lpeg.P(")"),
    -- String expression hierarchy
    stringexpr = concat,
