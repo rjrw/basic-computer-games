@@ -49,7 +49,7 @@ local stopstatement = lpeg.P {
    lpeg.Cc"END" * lpeg.P("STOP") * space
 };
 local remstatement = lpeg.P {
-   lpeg.C(lpeg.P("REM")) * any^0
+   lpeg.C(lpeg.P("REM")) * lpeg.C(any^0)
 };
 local returnstatement = lpeg.P {
    lpeg.C(lpeg.P("RETURN")) * space
