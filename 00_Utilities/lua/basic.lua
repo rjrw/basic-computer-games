@@ -35,7 +35,8 @@ local function deepwrite(file,dat,level)
       end
       file:write(indent.."}");
    elseif type(dat) == "string" then
-      file:write("\""..dat.."\"");
+      local enc = string.gsub(dat,"\"","\\\"");
+      file:write("\""..enc.."\"");
    else
       file:write(dat);
    end      
