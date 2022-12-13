@@ -158,13 +158,7 @@ local function dochunk(basicenv,expr)
 end
 
 local function dofloatvar(basicenv,expr)
-   if true then
-      return expr[2] and expr[2] or 0;
-   else
-      local chunk = 
-	 "("..expr[2].." and "..expr[2].." or 0);";
-      return dochunk(basicenv, { "CHUNK", chunk });
-   end
+   return basicenv[expr[2]] and basicenv[expr[2]] or 0;
 end
 
 local function dostringvar(basicenv,expr)

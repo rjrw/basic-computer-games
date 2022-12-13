@@ -379,7 +379,7 @@ local function parse(lines)
    end
    applyprog(prog,retarget);
    
-   function apply(prog, op)
+   local function apply(prog, op)
       for k,v in ipairs(prog) do
 	 local r, v1 = op(v);
 	 if r then
@@ -389,7 +389,7 @@ local function parse(lines)
 	 end
       end
    end
-   function oplit(v)
+   local function oplit(v)
       if v[1] == "FLOATVAL" then
 	 return true, tonumber(v[2]);
       elseif v[1] == "STRING" then
@@ -398,6 +398,24 @@ local function parse(lines)
       return false;
    end
    apply(prog, oplit);
+
+   --[[
+   local function makechunk(v)
+      return "("..v.." and "..v.." or 0);";
+   end
+   local function opfloatvar(v)
+      if type(v)~="table" then
+	 return false;
+      elseif v[1] == "FLOATVAR" then
+	 print (makechunk(v[2]));
+	 return true, { "CHUNK", makechunk(v[2]) };
+      end
+      return false;
+   end
+   --Start on compilation, need to distinguish array and variable
+   --access, and probably control via flag
+   --apply(prog, opfloatvar);
+   --]]
    
    -- Remove unused targets to highlight basic blocks
    local usedtargets = findusedtargets(prog);
