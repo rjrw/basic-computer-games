@@ -182,6 +182,13 @@ local exprgrammar = {
 	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
 };
 
+-- Enable caching in expression grammar, and provide raw (uncached) access
+-- Tag is required to provide endpoint to pass on to lpeg.Cmt
+exprgrammar.expr = lpeg.Cmt(any,matchexpr);
+exprgrammar[1] = "exprtagged";
+exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
+basicexpr = lpeg.P(exprgrammar);
+
 -- Additional grammar for full line parsing
 local linegrammar = {
    "line";
@@ -257,14 +264,8 @@ for k,v in pairs(exprgrammar) do
    end
 end
 
--- Enable caching in both grammars, and provide raw (uncached) access
--- Tag is required to provide endpoint to pass on to lpeg.Cmt
-exprgrammar.expr = lpeg.Cmt(any,matchexpr);
+-- Enable caching in line grammar as well
 linegrammar.expr = lpeg.Cmt(any,matchexpr);
-exprgrammar[1] = "exprtagged";
-exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
-
-basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
 
 -- Functions for walking and refactoring parser output
