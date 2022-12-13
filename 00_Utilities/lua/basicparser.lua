@@ -150,48 +150,64 @@ local linegrammar = {
    rawexpr = Or,
    Or = lpeg.Ct(lpeg.Cc("OR") * (And * space * lpeg.P("OR") * space)^1 * And)
       + And,
-   And = lpeg.Ct(lpeg.Cc("AND") * (Not * space * lpeg.P("AND") * space)^1 * Not) + Not,
+   And = lpeg.Ct(lpeg.Cc("AND") * (Not * space * lpeg.P("AND") * space)^1 * Not)
+      + Not,
    Not = lpeg.Ct(lpeg.C("NOT") * space * comparison) + comparison,
    comparison = lpeg.Ct(
       lpeg.Cc("COMPARE") *
 	 ( stringexpr * space * comparisonop * space * stringexpr
 	      + ( Sum * space * comparisonop * space)^1 * Sum) ) + Sum,
-   Sum =
-      lpeg.Ct(lpeg.Cc("SUM") * ( Product * space * lpeg.C(lpeg.S("+-")) * space)^1 * Product) * space
+   Sum = lpeg.Ct(
+      lpeg.Cc("SUM") *
+	 ( Product * space * lpeg.C(lpeg.S("+-")) * space)^1 * Product) * space
       + Product * space,
-   Product = lpeg.Ct(lpeg.Cc("PRODUCT") * ( Power * space * lpeg.C(lpeg.S("*/")) * space)^1 * Power) * space
+   Product = lpeg.Ct(
+      lpeg.Cc("PRODUCT") * ( Power * space * lpeg.C(lpeg.S("*/")) * space)^1
+	 * Power) * space
       + Power * space,
-   Power = lpeg.Ct(lpeg.Cc("POWER") * ( Unary * space * lpeg.S("^") * space)^1 * Unary) * space
+   Power = lpeg.Ct(
+      lpeg.Cc("POWER") * ( Unary * space * lpeg.S("^") * space)^1 * Unary) *
+      space
       + Unary * space,
    -- TODO: address ambiguity about the handling of -1 -- is it "-" "1" or "-1"?
    Unary = lpeg.Ct(lpeg.Cc("UNARY") * lpeg.C(lpeg.S("+-")) * Value) + Value,
-   Value = floatval + floatrval + lpeg.P("(") * space * expr * space * lpeg.P(")"),
+   Value = floatval + floatrval + lpeg.P("(") * space * expr *
+      space * lpeg.P(")"),
    -- String expression hierarchy
    stringexpr = concat,
-   concat = lpeg.Ct(lpeg.Cc("CONCAT") *
-		       (stringrval * space * lpeg.P("+") * space)^1 * stringrval)
+   concat = lpeg.Ct(
+      lpeg.Cc("CONCAT") *
+	 (stringrval * space * lpeg.P("+") * space)^1 * stringrval)
       + stringrval,
    -- Lowest-level groups
    floatlval = element + floatvar,
    floatrval = funcall + index + floatvar,
    stringlval = stringelement + stringvar,
-   stringelement = lpeg.Ct(lpeg.Cc("STRINGELEMENT") * stringvar * space *
-			   lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
+   stringelement = lpeg.Ct(
+      lpeg.Cc("STRINGELEMENT") * stringvar * space *
+	 lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
    stringrval = stringval + stringindex + stringlval,
   -- Array access/function/builtin call
    arg = stringexpr + expr,
    arglist = lpeg.Ct(( arg * space * lpeg.P(",") * space)^0 * arg),
-   element = lpeg.Ct(lpeg.Cc("ELEMENT") * floatvar * space * lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
-   funcall = lpeg.Ct(lpeg.Cc("FUNCALL") *
-		     lpeg.P("FN") * space *
-		     floatvar * space * lpeg.P("(") * space * arglist * space * lpeg.P(")")),
-   index = lpeg.Ct(lpeg.Cc("INDEX") *
-	       --lpeg.Cmt(lpeg.P"",function (s,p,c) print("Matching INDEX at",p); return true; end) *
-		  floatvar * space * lpeg.P("(") * space * arglist * space * lpeg.P(")")),
-   stringindex = lpeg.Ct(lpeg.Cc("STRINGINDEX") * stringvar * space * lpeg.P("(") * space * arglist * space * lpeg.P(")")),
+   element = lpeg.Ct(lpeg.Cc("ELEMENT") * floatvar * space *
+			lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
+   funcall = lpeg.Ct(
+      lpeg.Cc("FUNCALL") * lpeg.P("FN") * space * floatvar * space *
+	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
+   index = lpeg.Ct(
+      lpeg.Cc("INDEX") *
+	 --lpeg.Cmt(lpeg.P"",
+      --function (s,p,c) print("Matching INDEX at",p); return true; end) *
+	 floatvar * space *
+	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
+   stringindex = lpeg.Ct(
+      lpeg.Cc("STRINGINDEX") * stringvar * space *
+	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
    statementlist = (statement * lpeg.P(":") * space )^0 * statement,
    line = lpeg.Ct(lineno * space * lpeg.Ct(statementlist) * lpeg.Cp()),
 };
+
 -- Cache values for expr rule, to speed up run time
 local basicexpr;
 local cache = {};
@@ -222,6 +238,7 @@ exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
 basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
 
+-- Functions for walking and refactoring parser output
 local function applystat(v,op)
    op(v);
    if v[1] == "IF" then
