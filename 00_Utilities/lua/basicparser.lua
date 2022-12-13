@@ -379,6 +379,26 @@ local function parse(lines)
    end
    applyprog(prog,retarget);
    
+   function apply(prog, op)
+      for k,v in ipairs(prog) do
+	 local r, v1 = op(v);
+	 if r then
+	    prog[k] = v1;
+	 elseif type(v) == "table" then
+	    apply(v, op);
+	 end
+      end
+   end
+   function oplit(v)
+      if v[1] == "FLOATVAL" then
+	 return true, tonumber(v[2]);
+      elseif v[1] == "STRING" then
+	 return true, v[2];
+      end
+      return false;
+   end
+   apply(prog, oplit);
+   
    -- Remove unused targets to highlight basic blocks
    local usedtargets = findusedtargets(prog);
    local prog1 = {}; 

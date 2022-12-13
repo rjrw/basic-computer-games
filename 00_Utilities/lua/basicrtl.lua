@@ -85,6 +85,10 @@ end
 local ops = {};
 
 local function eval(basicenv,expr)
+   local t = type(expr);
+   if t == "number" or t == "string" then
+      return expr;
+   end
    if type(expr) ~= "table" then
       error("Parser failure");
    end
