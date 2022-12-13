@@ -635,23 +635,6 @@ end
 local function donothing(basicenv,stat)
 end
 
-local function doif(basicenv,stat)
-   local test = stat[2];
-   local substat = stat[3];
-   local m = basicenv._m;
-   if f2l(eval(basicenv,test)) then
-      -- If true, run sub-statement and fall through to rest of line
-      local cmd = m.statements[substat[1]];
-      if cmd == nil then
-	 error("Unknown statement "..substat[1].." at "
-		  ..basicenv._m.errorlocation);
-      end
-      cmd(basicenv,substat);
-   else
-      m.pc = m.targets[stat[4]]-1;
-   end
-end
-
 local function exec(basicenv,stat)
    local m = basicenv._m;
    local cmd = m.statements[stat[1]];
@@ -660,8 +643,21 @@ local function exec(basicenv,stat)
 	       ..basicenv._m.errorlocation);
    end
    cmd(basicenv,stat);
-   m.pc = m.pc + 1;
 end
+
+local function doif(basicenv,stat)
+   local test = stat[2];
+   if f2l(eval(basicenv,test)) then
+      -- If true, run sub-statement and fall through to rest of line
+      local substat = stat[3];
+      exec(basicenv,substat);
+   else
+      -- Jump over rest of line
+      local m = basicenv._m;
+      m.pc = m.targets[stat[4]]-1;
+   end
+end
+
 
 -- Machine state
 -- Symbol table -> environment
@@ -726,12 +722,13 @@ local function run(prog, data, datatargets)
       local status, err = pcall(
 	 function () exec(basicenv,prog[m.pc]) end
       );
+      m.pc = m.pc + 1;
       if not status then
 	 print("At "..m.errorlocation);
 	 print(err);
-	 basicenv._m.quit = true;
+	 m.quit = true;
       end
-      if basicenv._m.quit or basicenv._m.pc > #prog then
+      if m.quit or m.pc > #prog then
 	 -- Run off end of program
 	 return;
       end
