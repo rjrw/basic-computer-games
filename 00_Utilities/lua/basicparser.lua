@@ -2,6 +2,31 @@ local m = {};
 
 local lpeg = require"lpeg";
 
+-- Cache values for expr rule, to speed up run time
+local basicexpr;
+local function makematchexpr()
+   local cache = {};
+   local function matchexpr(s, p)
+      -- Clear cache if subject has changed
+      if cache.subject ~= s then
+	 cache.subject = s;
+	 cache.vals = {};
+      end
+      if cache.vals[p] == nil then
+	 local captures, pos = basicexpr:match(s,p-1);
+	 if captures == nil then
+	    cache.vals[p] = {nil};
+	 else
+	    table.insert(captures,1,pos);
+	    cache.vals[p] = captures;
+	 end
+      end
+      return table.unpack(cache.vals[p]);
+   end
+   return matchexpr;
+end
+local matchexpr = makematchexpr();
+
 -- Literals
 local any = lpeg.P(1);
 local space = lpeg.S" \t"^0;
@@ -208,26 +233,6 @@ local linegrammar = {
    line = lpeg.Ct(lineno * space * lpeg.Ct(statementlist) * lpeg.Cp()),
 };
 
--- Cache values for expr rule, to speed up run time
-local basicexpr;
-local cache = {};
-local function matchexpr(s, p)
-   -- Clear cache if subject has changed
-   if cache.subject ~= s then
-      cache.subject = s;
-      cache.vals = {};
-   end
-   if cache.vals[p] == nil then
-      local captures, pos = basicexpr:match(s,p-1);
-      if captures == nil then
-	 cache.vals[p] = {nil};
-      else
-	 table.insert(captures,1,pos);
-	 cache.vals[p] = captures;
-      end
-   end
-   return table.unpack(cache.vals[p]);
-end
 linegrammar.expr = lpeg.Cmt(any,matchexpr);
 local exprgrammar =
    {
@@ -240,7 +245,6 @@ for k,v in pairs(linegrammar) do
       exprgrammar[k] = v;
    end
 end
-
 
 basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
