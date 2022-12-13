@@ -129,8 +129,6 @@ local exprgrammar = {
    "expr";
    -- Argument lists
    exprlist = lpeg.Ct(( expr * space * lpeg.P(",") * space)^0 * expr),
-   dummylist = lpeg.Ct( (lpeg.C(varname)*space*lpeg.P(",")*space)^0*
-	 lpeg.C(varname)),
    -- Expression hierarchy
    expr = rawexpr,
    rawexpr = Or,
@@ -236,6 +234,8 @@ local linegrammar = {
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * lpeg.P(",") * space)^0 * inputitem * space,
+   dummylist = lpeg.Ct( (lpeg.C(varname)*space*lpeg.P(",")*space)^0*
+	 lpeg.C(varname)),
    -- Element and stringelement are for rvalue array access on
    -- l.h.s. of assignment, distinct from lvalue access in expressions
    element = lpeg.Ct(lpeg.Cc("ELEMENT") * floatvar * space *
@@ -250,7 +250,7 @@ local linegrammar = {
 
 
 -- Merge in expression grammar, as there are routes in other
--- than "expr"
+-- than "expr" (i.e. exprlist and stringexpr)
 for k,v in pairs(exprgrammar) do
    if k ~= 1 then
       linegrammar[k] = v;
