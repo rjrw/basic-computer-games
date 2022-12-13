@@ -232,24 +232,49 @@ exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
 basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
 
-local function ifconnect(v,endlab,usedtargets)
-   if v[1] == "GOTO" or v[1] == "GOSUB" then
-      usedtargets[v[2]] = true;
-   elseif v[1] == "ON" then
-      for i = 3,#v do
-	 usedtargets[v[i]] = true;
-      end
-   elseif v[1] == "IF" then
-      v[#v+1] = endlab;
-      ifconnect(v[3],endlab,usedtargets);
+local function applystat(v,op)
+   op(v);
+   if v[1] == "IF" then
+      applystat(v[3],op);
    end
+end
+
+local function applyprog(prog,op)
+   for _,v in ipairs(prog) do
+      applystat(v,op);
+   end
+end
+
+local function ifconnect(v,endlab)
+   function op(v)
+      if v[1] == "IF" then
+	 v[#v+1] = endlab;
+      end
+   end
+   applystat(v,op);
+end
+
+local function findusedtargets(prog)
+   local usedtargets = {};
+   function op(v)
+      if v[1] == "GOTO" or v[1] == "GOSUB" then
+	 usedtargets[v[2]] = true;
+      elseif v[1] == "ON" then
+	 for i = 3,#v do
+	    usedtargets[v[i]] = true;
+	 end
+      elseif v[1] == "IF" then
+	 usedtargets[v[#v]] = true;
+      end
+   end
+   applyprog(prog,op);
+   return usedtargets;
 end
 
 local function parse(lines)
    local prog, data, datatargets = {}, {}, {};
    local nerr = 0;
    -- Read and parse input file
-   local usedtargets = {};
    for count,line in ipairs(lines) do
       if verbose then print(line); end
       local m = basicline:match(line);
@@ -280,18 +305,20 @@ local function parse(lines)
 	       if v[1] == "IF" then
 		  hasif = true;
 	       end
-	       ifconnect(v,endlab,usedtargets);
+	       ifconnect(v,endlab);
 	       v.line = lineno;
 	       prog[#prog+1] = v;
 	    end
 	    if hasif then
 	       prog[#prog+1] = {"TARGET",endlab};
-	       usedtargets[endlab] = true;
 	    end
 	 end
       end      
    end
-   local prog1 = {};
+
+   local usedtargets = findusedtargets(prog);
+
+   local prog1 = {}; 
    for _,v in ipairs(prog) do
       if v[1] ~= "TARGET" or usedtargets[v[2]] then
 	 prog1[#prog1+1] = v;
