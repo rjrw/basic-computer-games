@@ -105,15 +105,11 @@ local function doconcat(basicenv,expr)
 end
 
 local function dounary(basicenv,expr)
-   if #expr == 3 then
-      if expr[2] == "-" then
-	 return -eval(basicenv,expr[3]);
-      else
-	 return eval(basicenv,expr[3]);
-      end
-   else
-      return eval(basicenv,expr[2]);
+   local val = eval(basicenv,expr[3]);
+   if expr[2] == "-" then
+	 return -val;
    end
+   return val;
 end
 
 local function dopower(basicenv,expr) 
@@ -244,15 +240,11 @@ local function door(basicenv,expr)
 end
 
 local function doand(basicenv,expr)
-   local val = eval(basicenv,expr[2]);
-   if #expr > 2 then
-      val = f2l(val);
-      for i=3,#expr do
-	 val = val and f2l(eval(basicenv,expr[i]));
-      end
-      val = l2f(val);
+   local val = f2l(eval(basicenv,expr[2]));
+   for i=3,#expr do
+      val = val and f2l(eval(basicenv,expr[i]));
    end
-   return val;
+   return l2f(val);
 end
 
 local function donot(basicenv,expr)
