@@ -124,8 +124,8 @@ local defstatement = lpeg.V"defstatement";
 local statement = lpeg.V"statement";
 local statementlist = lpeg.V"statementlist";
 
-local linegrammar = {
-   "line";
+local exprgrammar = {
+   "exprtagged";
    statement =
       lpeg.Ct(
 	 gotostatement + gosubstatement + forstatement + nextstatement
@@ -231,20 +231,22 @@ local linegrammar = {
 	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
    statementlist = (statement * lpeg.P(":") * space )^0 * statement,
    line = lpeg.Ct(lineno * space * lpeg.Ct(statementlist) * lpeg.Cp()),
+   exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp()
 };
 
-linegrammar.expr = lpeg.Cmt(any,matchexpr);
-local exprgrammar =
+-- Enable caching in both grammars
+exprgrammar.expr = lpeg.Cmt(any,matchexpr);
+local linegrammar =
    {
-      "exprtagged";
-      exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
+      "line";
    };
 
-for k,v in pairs(linegrammar) do
+for k,v in pairs(exprgrammar) do
    if k ~= 1 then
-      exprgrammar[k] = v;
+      linegrammar[k] = v;
    end
 end
+exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
 
 basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
