@@ -316,8 +316,34 @@ local function parse(lines)
       end      
    end
 
+   -- Merge adjacent targets
+   local targetuniq, targ = {}, "";
+   for i=#prog,1,-1 do
+      local v = prog[i];
+      if v[1] ~= "TARGET" then
+	 targ = "";
+      else
+	 if targ == "" then
+	    targ = v[2];
+	 end
+	 targetuniq[v[2]]=targ;
+      end
+   end
+   function retarget(v)
+      if v[1] == "GOTO" or v[1] == "GOSUB" then
+	 v[2] = targetuniq[v[2]];
+      elseif v[1] == "ON" then
+	 for i = 3,#v do
+	    v[i] = targetuniq[v[i]];
+	 end
+      elseif v[1] == "IF" then
+	 v[#v] = targetuniq[v[#v]];	 
+      end
+   end
+   applyprog(prog,retarget);
+   
+   -- Remove unused targets to highlight basic blocks
    local usedtargets = findusedtargets(prog);
-
    local prog1 = {}; 
    for _,v in ipairs(prog) do
       if v[1] ~= "TARGET" or usedtargets[v[2]] then
