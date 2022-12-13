@@ -83,11 +83,11 @@ else
    local outfile = string.gsub(filename,baspat,".lua");
    local file = assert(io.open(outfile,"w"));
    file:write("local rtl = require\"basicrtl\";\n");
-   file:write(";\nlocal data = ");
+   file:write("local data = ");
    deepwrite(file,data,0);
    file:write(";\nlocal datatargets = ");
    deepwrite(file,datatargets,0);
-   file:write("local prog = ");
+   file:write(";\nlocal prog = ");
    deepwrite(file,prog,0);
    file:write(";\nrtl.run(prog, data, datatargets);\n");
    file:close();

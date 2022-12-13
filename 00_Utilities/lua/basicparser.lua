@@ -232,10 +232,16 @@ exprgrammar.exprtagged = lpeg.Ct(rawexpr) * lpeg.Cp();
 basicexpr = lpeg.P(exprgrammar);
 local basicline = lpeg.P(linegrammar);
 
-local function ifconnect(v,endlab)
-   v[#v+1] = endlab;
-   if v[3][1] == "IF" then
-      ifconnect(v[3],endlab);
+local function ifconnect(v,endlab,usedtargets)
+   if v[1] == "GOTO" or v[1] == "GOSUB" then
+      usedtargets[v[2]] = true;
+   elseif v[1] == "ON" then
+      for i = 3,#v do
+	 usedtargets[v[i]] = true;
+      end
+   elseif v[1] == "IF" then
+      v[#v+1] = endlab;
+      ifconnect(v[3],endlab,usedtargets);
    end
 end
 
@@ -243,6 +249,7 @@ local function parse(lines)
    local prog, data, datatargets = {}, {}, {};
    local nerr = 0;
    -- Read and parse input file
+   local usedtargets = {};
    for count,line in ipairs(lines) do
       if verbose then print(line); end
       local m = basicline:match(line);
@@ -258,9 +265,10 @@ local function parse(lines)
 	    io.write(string.rep(" ",mend-1).."^\n");
 	    nerr = nerr + 1;
 	 else	 
-	    prog[#prog+1] = {"TARGET",m[1]};
+	    local lineno = m[1];
+	    prog[#prog+1] = {"TARGET",lineno};
 	    local hasif = false;
-	    local endlab = "_"..m[1];
+	    local endlab = "_"..lineno;
 	    for k,v in ipairs(m[2]) do
 	       --print(">>",k,v[1]); --Confirm first-level commands are captured
 	       if v[1] == "DATA" then
@@ -271,16 +279,25 @@ local function parse(lines)
 	       end
 	       if v[1] == "IF" then
 		  hasif = true;
-		  ifconnect(v,endlab);
 	       end
+	       ifconnect(v,endlab,usedtargets);
+	       v.line = lineno;
 	       prog[#prog+1] = v;
 	    end
 	    if hasif then
 	       prog[#prog+1] = {"TARGET",endlab};
+	       usedtargets[endlab] = true;
 	    end
 	 end
       end      
    end
+   local prog1 = {};
+   for _,v in ipairs(prog) do
+      if v[1] ~= "TARGET" or usedtargets[v[2]] then
+	 prog1[#prog1+1] = v;
+      end
+   end
+   prog = prog1;
    if nerr ~= 0 then
       error("Parser failure");
    end

@@ -86,11 +86,11 @@ local ops = {};
 
 local function eval(basicenv,expr)
    if type(expr) ~= "table" then
-      error("Parser failure at "..basicenv._m.pc);
+      error("Parser failure at "..basicenv._m.errorlocation);
    end
    local op = ops[expr[1]];
    if not op then
-      error("Bad expr "..tostring(expr[1]).." at "..basicenv._m.basiclineno);
+      error("Bad expr "..tostring(expr[1]).." at "..basicenv._m.errorlocation);
    end      
    return op(basicenv, expr);
 end
@@ -640,7 +640,7 @@ local function dodef(basicenv,stat)
    basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
 end
 
-statements.TARGET    = function(basicenv,stat) basicenv._m.basiclineno = stat[2]; end;
+statements.TARGET    = function(basicenv,stat) end; -- Do nothing
 statements.END       = function(basicenv,stat) basicenv._m.quit = true; end;
 statements.REM       = function(basicenv,stat) end; -- Do nothing
 statements.DIM       = dodim;
@@ -682,13 +682,13 @@ local function makemachine(prog, targets, data, datatargets)
       datatargets = datatargets,
       pc = 1,
       datapc = 1,
-      basiclineno = 0,
       quit = false,
       substack = {},
       forstack = {},
       -- Output state
       printstr = "",
-      printcol = 0
+      printcol = 0,
+      errorlocation = ""
    };
 end
 
@@ -703,11 +703,14 @@ local function run(prog, data, datatargets)
 
    local basicenv = {_m=makemachine(prog, targets, data, datatargets)};
    while true do
+      local m = basicenv._m;
+      local lineno = prog[m.pc].line;
+      m.errorlocation = "BASIC line "..tostring(lineno);
       local status, err = pcall(
-	 function () exec(basicenv,prog[basicenv._m.pc]) end
+	 function () exec(basicenv,prog[m.pc]) end
       );
       if not status then
-	 print("At BASIC line "..basicenv._m.basiclineno);
+	 print("At "..m.errorlocation);
 	 print(err);
 	 basicenv._m.quit = true;
       end
