@@ -164,7 +164,7 @@ local function dofloatvar(basicenv,expr)
    return basicenv[expr[2]];
 end
 
-local function dofloatlval(basicenv,expr)
+local function dofloatlvar(basicenv,expr)
    return expr[2];
 end
 
@@ -329,7 +329,7 @@ ops.NOT       = donot;
 ops.COMPARE   = docompare;
 ops.FLOATVAL  = dofloatval;
 ops.FLOATVAR  = dofloatvar;
-ops.FLOATLVAL = dofloatlval;
+ops.FLOATLVAR = dofloatlvar;
 ops.STRINGVAR = dostringvar;
 ops.INDEX     = doindex;
 ops.STRINGINDEX = dostringindex;
@@ -512,7 +512,7 @@ local function dostring(basicenv, stat)
 end
 
 local function dofor(basicenv,stat)
-   local control = stat[2][2];
+   local control = stat[2][2][2];
    local init = eval(basicenv,stat[3]);
    local last = eval(basicenv,stat[4]);
    local step = #stat == 5 and eval(basicenv,stat[5]) or 1;

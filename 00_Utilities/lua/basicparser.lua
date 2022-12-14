@@ -46,7 +46,7 @@ local stringval = lpeg.Ct(
 local floatval = lpeg.Ct(lpeg.Cc("FLOATVAL")*lpeg.C(float));
 
 local floatvar  = lpeg.Ct(lpeg.Cc("FLOATVAR") * varname);
-local floatlval = lpeg.Ct(lpeg.Cc("FLOATLVAL") * floatvar);
+local floatlvar = lpeg.Ct(lpeg.Cc("FLOATLVAR") * floatvar);
 local floatarr  = lpeg.Ct(lpeg.Cc("FLOATARR") * varname);
 local stringname = varname * lpeg.P("$");
 local stringvar = lpeg.Ct(lpeg.Cc("STRINGVAR")*stringname);
@@ -59,7 +59,7 @@ local unquotedstringval = lpeg.Ct(lpeg.Cc("STRING")*lpeg.C(wordlist));
 local dataliteral = floatval + stringval + unquotedstringval;
 local datalist = space * ( dataliteral * space * lpeg.P(",") * space ) ^0 *
    dataliteral * space;
-local nextlist = ( floatlval * space * lpeg.P"," * space)^0 * floatlval * space;
+local nextlist = ( floatlvar * space * lpeg.P"," * space)^0 * floatlvar * space;
 
 local stringexpr = lpeg.V"stringexpr";
 local concat = lpeg.V"concat";
@@ -221,7 +221,7 @@ local linegrammar = {
       lpeg.P("(") * space * dummylist * space * lpeg.P(")")
       * space * lpeg.P("=") * space * expr,
    forstatement =
-      lpeg.C(lpeg.P("FOR")) * space * floatvar * space * lpeg.P("=") * space *
+      lpeg.C(lpeg.P("FOR")) * space * floatlvar * space * lpeg.P("=") * space *
       expr * space * lpeg.P("TO") * space * expr * space *
       ( lpeg.P("STEP") * space * expr * space )^-1,
    onstatement =
