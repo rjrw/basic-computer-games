@@ -35,7 +35,7 @@ local float = lpeg.P("-")^0 *
    (digit^0 * lpeg.P(".") * digit^1 + digit^1 * lpeg.P(".")^-1) *
    (lpeg.P("E")*lpeg.S("+-")^-1*digit^1)^-1;
 local lineno = lpeg.C(digit^1);
-local varname = lpeg.R("AZ")^1 * lpeg.R("09")^0;
+local varname = lpeg.C(lpeg.R("AZ")^1 * lpeg.R("09")^0);
 local comparisonop = lpeg.C(lpeg.P("=") + lpeg.P("<>") + lpeg.P("<=") +
 			       lpeg.P(">=") + lpeg.P("<") + lpeg.P(">"));
 
@@ -45,8 +45,9 @@ local stringval = lpeg.Ct(
       lpeg.P("\""));
 local floatval = lpeg.Ct(lpeg.Cc("FLOATVAL")*lpeg.C(float));
 
-local floatvar = lpeg.Ct(lpeg.Cc("FLOATVAR")*lpeg.C(varname));
-local stringvar = lpeg.Ct(lpeg.Cc("STRINGVAR")*lpeg.C(varname) * lpeg.P("$"));
+local floatvar = lpeg.Ct(lpeg.Cc("FLOATVAR") * varname);
+local stringname = varname * lpeg.P("$");
+local stringvar = lpeg.Ct(lpeg.Cc("STRINGVAR")*stringname);
 local anyvar = stringvar + floatvar;
 
 
@@ -214,7 +215,7 @@ local linegrammar = {
       (lpeg.Ct (lpeg.Cc("GOTO") * lineno) * space + statement),
    dimstatement = lpeg.C(lpeg.P("DIM")) * space * dimlist,
    defstatement = lpeg.C(lpeg.P("DEF")) * space * lpeg.P("FN") * space
-      * lpeg.C(varname) * space *
+      * varname * space *
       lpeg.P("(") * space * dummylist * space * lpeg.P(")")
       * space * lpeg.P("=") * space * expr,
    forstatement =
@@ -242,8 +243,7 @@ local linegrammar = {
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * lpeg.P(",") * space)^0 * inputitem * space,
-   dummylist = lpeg.Ct( (lpeg.C(varname)*space*lpeg.P(",")*space)^0*
-	 lpeg.C(varname)),
+   dummylist = lpeg.Ct( (varname*space*lpeg.P(",")*space)^0 * varname),
    -- Element and stringelement are for rvalue array access on
    -- l.h.s. of assignment, distinct from lvalue access in expressions
    element = lpeg.Ct(lpeg.Cc("ELEMENT") * floatvar * space *
