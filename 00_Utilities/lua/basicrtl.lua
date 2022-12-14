@@ -93,10 +93,8 @@ local function eval(basicenv,expr)
    if t ~= "table" then
       error("Parser failure, found expression of type "..t);
    end
-   local op = ops[expr[1]];
-   if not op then
+   local op = ops[expr[1]] or
       error("Bad expr "..tostring(expr[1]));
-   end      
    return op(basicenv, expr);
 end
 
@@ -199,17 +197,16 @@ local function doindex(basicenv,expr)
       end
       basicenv["fa_"..name] = val;
    end
-   if val then
-      for _, v in ipairs(args) do
-	 if v < 0 or v > #val then
-	    error("Out of bounds array access");
-	 end
-	 val = val[v];
-      end
-      return val;
-   else
+   if not val then
       error("Array "..name.." not known");
    end
+   for _, v in ipairs(args) do
+      if v < 0 or v > #val then
+	 error("Out of bounds array access");
+      end
+      val = val[v];
+   end
+   return val;
 end
 
 local function dostringindex(basicenv,expr)
@@ -226,18 +223,15 @@ local function dostringindex(basicenv,expr)
    if builtin then
       return builtin(table.unpack(args));
    end
-   local val = basicenv["sa_"..name];
-   if val then
-      for _, v in ipairs(args) do
-	 if v < 0 or v > #val then
-	    error("Out of bounds array access");
-	 end
-	 val = val[v];
-      end
-      return val;
-   else
+   local val = basicenv["sa_"..name] or
       error("Array "..name.."$ not known");
+   for _, v in ipairs(args) do
+      if v < 0 or v > #val then
+	 error("Out of bounds array access");
+      end
+      val = val[v];
    end
+   return val;
 end
 
 local function f2l(val)
@@ -343,10 +337,10 @@ local function assigns(basicenv,lval,value)
    local ttype = lval[1];
    local target = lval[2];
    if ttype == "STRINGELEMENT" then
-      local eltype = target[1];
       if #lval[3] > 2 then
 	 error("More than 2-dimensional access not yet implemented");
       end
+      local eltype = target[1];
       if eltype ~= "STRINGARR" then
 	 error("Non-string access not yet implemented");
       end
@@ -371,10 +365,10 @@ local function assignf(basicenv,lval,value)
    if ttype == "FLOATVAR" then
       basicenv[target] = value;
    elseif ttype == "ELEMENT" then
-      local eltype = target[1];
       if #lval[3] > 2 then
 	 error("More than 2-dimensional access not yet implemented");
       end
+      local eltype = target[1];
       if eltype ~= "FLOATARR" then
 	 error("Non-floating access not yet implemented");
       end
@@ -631,13 +625,13 @@ end
 local function doread(basicenv,stat)
    local m = basicenv._m;
    for i=2,#stat do
-      local lval = stat[i];
       if m.datapc > #m.data then
 	 error("Error: out of data"); 
       end
       local dat = m.data[m.datapc];
-      local dtype = type(dat)
       local value = eval(basicenv,dat);
+      local dtype = type(dat)
+      local lval = stat[i];
       if dtype == "number" then
 	 assignf(basicenv,lval, value);
       elseif dtype == "string" then
@@ -673,10 +667,8 @@ end
 
 local function exec(basicenv,stat)
    local m = basicenv._m;
-   local cmd = m.statements[stat[1]];
-   if cmd == nil then
+   local cmd = m.statements[stat[1]] or
       error("Unknown statement "..stat[1]);
-   end
    cmd(basicenv,stat);
 end
 
