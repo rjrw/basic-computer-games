@@ -20,18 +20,21 @@ local function readfile(filename)
    return lines;
 end
 
+-- Write out all of nested structure, EXCEPT fields with key "__cache"
 local function deepwrite(file,dat,level)
    local indent = string.rep(" ",level);
    if type(dat) == "table" then
       file:write("{\n");
       for k, v in pairs(dat) do
-	 if type(k) == "string" then
-	    file:write(indent.."[\""..k.."\"]=");
-	 else
-	    file:write(indent.."["..k.."]=");
+	 if k ~= "__cache" then
+	    if type(k) == "string" then
+	       file:write(indent.."[\""..k.."\"]=");
+	    else
+	       file:write(indent.."["..k.."]=");
+	    end
+	    deepwrite(file,v,level+1);
+	    file:write(",\n");
 	 end
-	 deepwrite(file,v,level+1);
-	 file:write(",\n");
       end
       file:write(indent.."}");
    elseif type(dat) == "string" then
