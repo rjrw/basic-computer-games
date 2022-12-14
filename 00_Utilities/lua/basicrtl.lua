@@ -158,7 +158,7 @@ local function dochunk(basicenv,expr)
 end
 
 local function dofloatvar(basicenv,expr)
-   return basicenv[expr[2]] and basicenv[expr[2]] or 0;
+   return basicenv[expr[2]];
 end
 
 local function dostringvar(basicenv,expr)
