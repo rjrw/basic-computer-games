@@ -153,8 +153,11 @@ local function dofloatval(basicenv,expr)
 end
 
 local function dochunk(basicenv,expr)
-   local chunk = "_ENV=...; return "..expr[2];
-   return load(chunk)(basicenv);
+   if not expr.__cache then
+      local chunk = "_ENV=...; return "..expr[2];
+      expr.__cache = load(chunk);
+   end
+   return expr.__cache(basicenv);
 end
 
 local function dofloatvar(basicenv,expr)

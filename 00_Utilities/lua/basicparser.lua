@@ -464,7 +464,7 @@ local function parse(lines, optimize)
       -- Not correct yet, would be enabled by apply(prog, opfloatvar)
       -- below
       local function makechunk(v)
-	 return "("..v..");";
+	 return "("..v..")";
       end
       -- Need to only apply this to rvalues at present
       local function opfloatvar(v)
