@@ -46,6 +46,7 @@ local stringval = lpeg.Ct(
 local floatval = lpeg.Ct(lpeg.Cc("FLOATVAL")*lpeg.C(float));
 
 local floatvar  = lpeg.Ct(lpeg.Cc("FLOATVAR") * varname);
+local funname  = lpeg.Ct(lpeg.Cc("FLOATFN") * varname);
 local floatlvar = lpeg.Ct(lpeg.Cc("FLOATLVAR") * floatvar);
 local floatarr  = lpeg.Ct(lpeg.Cc("FLOATARR") * varname);
 local stringname = varname * lpeg.P("$");
@@ -172,7 +173,7 @@ local exprgrammar = {
    arg = stringexpr + expr,
    arglist = lpeg.Ct(( arg * space * lpeg.P(",") * space)^0 * arg),
    funcall = lpeg.Ct(
-      lpeg.Cc("FUNCALL") * lpeg.P("FN") * space * floatvar * space *
+      lpeg.Cc("FUNCALL") * lpeg.P("FN") * space * funname * space *
 	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
    index = lpeg.Ct(
       lpeg.Cc("INDEX") *
@@ -217,7 +218,7 @@ local linegrammar = {
       (lpeg.Ct (lpeg.Cc("GOTO") * lineno) * space + statement),
    dimstatement = lpeg.C(lpeg.P("DIM")) * space * dimlist,
    defstatement = lpeg.C(lpeg.P("DEF")) * space * lpeg.P("FN") * space
-      * varname * space *
+      * funname * space *
       lpeg.P("(") * space * dummylist * space * lpeg.P(")")
       * space * lpeg.P("=") * space * expr,
    forstatement =
@@ -473,10 +474,7 @@ local function parse(lines, optimize)
       local function opfloatvar(v)
 	 if type(v)~="table" then
 	    return false;
-	 elseif v[1] == "FLOATLVAR" or
-	    -- Need to be more discriminating about contexts where
-	    -- this change isn't applicable
-	 v[1] == "FUNCALL" then
+	 elseif v[1] == "FLOATLVAR" then
 	    return true, v;
 	 elseif v[1] == "FLOATVAR" then
 	    --print (makechunk(v[2]));

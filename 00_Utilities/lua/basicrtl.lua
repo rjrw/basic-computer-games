@@ -658,7 +658,7 @@ local function doreturn(basicenv,stat)
    m.pc = table.remove(m.substack);
 end
 local function dodef(basicenv,stat)
-   basicenv["FN"..stat[2]] = {args = stat[3], expr = stat[4]};
+   basicenv["FN"..stat[2][2]] = {args = stat[3], expr = stat[4]};
 end
 local function doend(basicenv,stat)
    basicenv._m.quit = true;
