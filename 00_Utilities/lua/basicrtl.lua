@@ -403,50 +403,54 @@ local function doinput(basicenv,inputlist)
    -- Cursor will move back to l.h.s. once input is accepted
    basicenv._m.printcol = 0;
    local j = i;
-   while j <= #inputlist do
-      local input = "";
-      while input == "" do
-	 if j == i then
-	    write(prompt);
-	 else
-	    write("?? ");
-	 end
-	 input = io.read("*l");
+   local fields = {};
+   local input = "";
+   while i+#fields <= #inputlist do
+      if j == i then
+	 write(prompt);
+      else
+	 write("?? ");
       end
-      local fields = parser.input:match(input);
+      local next = io.read("*l");
+      if input ~= "" then
+	 next = input..","..next
+      end
+      fields = parser.input:match(next);
       if not fields then
 	 write("Error, input format not recognized\n");
+	 fields = {};
       else
-	 for iv,v in ipairs(fields) do
-	    local input = v[2];
-	    local item = inputlist[j];
-	    if item[1] == "FLOATLVAR" then
-	       item = item[2];
-	    end
-	    local vartype = item[1];
-	    local varname = item[2];
-	    if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
-	       assigns(basicenv,item,input);
-	    elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
-	       if v[1] == "STRING" then
-		  write("Error, expected numeric input -- retry input line\n");
-		  j = i;
-		  break;
-	       end
-	       assignf(basicenv,item,tonumber(input));
-	    else
-	       error("Vartype "..vartype.." not yet supported");
-	    end
-	    j = j+1;
-	    if j > #inputlist then
-	       if iv ~= #fields then
-		  write("Extra input text ignored\n");
-	       end
-	       return
-	    end
-	    --print(inputlist[j][1]);
-	 end
+	 input = next;
       end
+   end
+   for iv,v in ipairs(fields) do
+      local input = v[2];
+      local item = inputlist[j];
+      if item[1] == "FLOATLVAR" then
+	 item = item[2];
+      end
+      local vartype = item[1];
+      local varname = item[2];
+      if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
+	 assigns(basicenv,item,input);
+      elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
+	 if v[1] == "STRING" then
+	    write("Error, expected numeric input -- retry input line\n");
+	    j = i;
+	    break;
+	 end
+	 assignf(basicenv,item,tonumber(input));
+      else
+	 error("Vartype "..vartype.." not yet supported");
+      end
+      j = j+1;
+      if j > #inputlist then
+	 if iv ~= #fields then
+	    write("Extra input text ignored\n");
+	 end
+	 return
+      end
+      --print(inputlist[j][1]);
    end
 end
 
