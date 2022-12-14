@@ -89,8 +89,8 @@ local function eval(basicenv,expr)
    if t == "number" or t == "string" then
       return expr;
    end
-   if type(expr) ~= "table" then
-      error("Parser failure");
+   if t ~= "table" then
+      error("Parser failure, found expression of type "..t);
    end
    local op = ops[expr[1]];
    if not op then
@@ -362,6 +362,9 @@ local function assigns(basicenv,lval,value)
 end
 
 local function assignf(basicenv,lval,value)
+   if lval[1] == "FLOATLVAR" then
+      lval = lval[2];
+   end
    local ttype = lval[1];
    local target = lval[2];
    if ttype == "FLOATVAR" then
@@ -417,17 +420,21 @@ local function doinput(basicenv,inputlist)
       else
 	 for iv,v in ipairs(fields) do
 	    local input = v[2];
-	    local vartype = inputlist[j][1];
-	    local varname = inputlist[j][2];
+	    local item = inputlist[j];
+	    if item[1] == "FLOATLVAR" then
+	       item = item[2];
+	    end
+	    local vartype = item[1];
+	    local varname = item[2];
 	    if vartype == "STRINGVAR" or vartype == "STRINGELEMENT" then
-	       assigns(basicenv,inputlist[j],input);
+	       assigns(basicenv,item,input);
 	    elseif vartype == "FLOATVAR" or vartype == "ELEMENT" then
 	       if v[1] == "STRING" then
 		  write("Error, expected numeric input -- retry input line\n");
 		  j = i;
 		  break;
 	       end
-	       assignf(basicenv,inputlist[j],tonumber(input));
+	       assignf(basicenv,item,tonumber(input));
 	    else
 	       error("Vartype "..vartype.." not yet supported");
 	    end
@@ -620,6 +627,9 @@ local function doread(basicenv,stat)
    local m = basicenv._m;
    for i=2,#stat do
       local lval = stat[i];
+      if m.datapc > #m.data then
+	 error("Error: out of data"); 
+      end
       local dat = m.data[m.datapc];
       local dtype = type(dat)
       local value = eval(basicenv,dat);

@@ -254,7 +254,7 @@ local linegrammar = {
       lpeg.Cc("STRINGELEMENT") * stringarr * space *
 	 lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
    -- Lowest-level groups
-   floatlval = element + floatvar,
+   floatlval = element + floatlvar,
    stringlval = stringelement + stringvar, 
 };
 
@@ -443,7 +443,9 @@ local function parse(lines, optimize)
    table.sort(floatkeys);
    local defs = {};
    for _,v in ipairs(floatkeys) do
-      local let = {"LETN",{"FLOATVAR",v},{"FLOATVAL",0},line="0"};
+      local let = {"LETN",
+		   {"FLOATLVAR",{"FLOATVAR",v}},
+		   {"FLOATVAL",0},line="0"};
       table.insert(defs,let);
    end
    for _,v in ipairs(prog) do
@@ -474,9 +476,6 @@ local function parse(lines, optimize)
 	 elseif v[1] == "FLOATLVAR" or
 	    -- Need to be more discriminating about contexts where
 	    -- this change isn't applicable
-	    v[1] == "LETN" and v[2][1] == "FLOATVAR" or
-	    v[1] == "INPUT" or
-	    v[1] == "READ" or	    
 	 v[1] == "FUNCALL" then
 	    return true, v;
 	 elseif v[1] == "FLOATVAR" then
