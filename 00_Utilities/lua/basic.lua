@@ -5,10 +5,6 @@
 
 parser = require"basicparser";
 
-local function usage()
-   print("Usage: basic.lua [opts] <file>.bas");
-end
-
 local function readfile(filename)
    local file = assert(io.open(filename));
    local lines = {}
@@ -46,38 +42,80 @@ end
 
 local exec = true;
 local dump, optimize, verbose = false, false, false;
+local outfile = nil;
+local usage;
+
+local opts = {
+   ["-d"] = {
+      function(par)
+	 dump = true; exec = false;
+	 outfile = par;
+      end,
+      "[file]",
+      "Dump (optimized) parser output as standalone Lua script" },
+   ["-O"] = { function() optimize = true end,
+      "",
+     "Run optimization phase on parser output before execution/dump" },
+   ["-v"] = { function() verbose = true end,
+     "","Enable verbose diagnostics"},
+   ["--help"] = { function() usage(); end, "", "Print this help" },
+};
+
+usage = function ()
+   io.write("Usage: basic.lua [opts] <file>.bas\nOptions:\n");
+   local keys = {};
+   local ltab = 0;
+   for k,v in pairs(opts) do
+      keys[#keys+1] = k;
+      local l = #k+#v[2];
+      ltab = ltab > l and ltab or l;
+   end
+   table.sort(keys, function (a,b) return a:lower() < b:lower() end);
+   for _,k in ipairs(keys) do
+      local a = k..opts[k][2];
+      io.write(string.format("  %s%s%s\n",
+			     a,string.rep(" ",ltab-#a+2),opts[k][3]));
+   end
+end
 
 local narg = 1;
-while narg < #arg do
-   if arg[narg] == "-d" then
-      dump = true;
-      exec = false;
-   elseif arg[narg] == "-O" then
-      optimize = true;
-   elseif arg[narg] == "-v" then
-      verbose = true;
-   else
-      break;
+while narg <= #arg do
+   local opt, par="";
+   local argn = arg[narg];
+   if argn:sub(1,1) == "-" then
+      if #argn == 1 then
+	 usage();
+	 os.exit();
+      elseif argn:sub(2,2) == "-" then
+	 opt = opts[argn];
+      else
+	 opt = opts[argn:sub(1,2)];
+	 par = argn:sub(3);
+      end
    end
+   if opt == nil then break; end
+   opt[1](par);
    narg = narg+1;
 end
 if #arg ~= narg then
    usage();
    os.exit(1);
 end
+
 local filename = arg[narg];
 local baspat = ".bas$";
 if not string.find(filename, baspat) then
-   usage();
+   print("Error: Filename should have '.bas' extension");
    os.exit(1);
 end
+outfile = outfile ~= "" and outfile or filename:gsub(baspat,".lua");
 
 local lines = readfile(filename);
 local prog, data, datatargets = parser.parse(lines, optimize);
 
 if dump then
    -- Save
-   local outfile = string.gsub(filename,baspat,".lua");
+   print("Saving compiled output to "..outfile);
    local file = assert(io.open(outfile,"w"));
    file:write("local rtl = require\"basicrtl\";\n");
    file:write("local data = ");
