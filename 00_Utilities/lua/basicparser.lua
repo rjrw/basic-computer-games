@@ -293,23 +293,6 @@ local function ifconnect(v,endlab)
    applystat(v,op);
 end
 
-local function findusedtargets(prog)
-   local usedtargets = {};
-   function op(v)
-      if v[1] == "GOTO" or v[1] == "GOSUB" then
-	 usedtargets[v[2]] = true;
-      elseif v[1] == "ON" then
-	 for i = 4,#v do
-	    usedtargets[v[i]] = true;
-	 end
-      elseif v[1] == "IF" then
-	 usedtargets[v[#v]] = true;
-      end
-   end
-   applyprog(prog,op);
-   return usedtargets;
-end
-
 local function parse(lines, optimize)
    local prog, data, datatargets = {}, {}, {};
    local nerr = 0;
@@ -372,7 +355,7 @@ local function parse(lines, optimize)
       end
    end
 
-   function fixtarget(v, i, targetuniq)
+   local function fixtarget(v, i, targetuniq)
       local target = v[i];
       if targetuniq[target] == nil then
 	 print("Warning: Found jump to missing target "..target..
@@ -387,7 +370,7 @@ local function parse(lines, optimize)
       return targetuniq[target];
    end
    
-   function retarget(v)
+   local function retarget(v)
       if v[1] == "GOTO" or v[1] == "GOSUB" then
 	 v[2] = fixtarget(v, 2, targetuniq);
       elseif v[1] == "ON" then
@@ -400,6 +383,24 @@ local function parse(lines, optimize)
    end
    applyprog(prog,retarget);
    -- Remove unused targets to highlight basic blocks
+
+   local function findusedtargets(prog)
+      local usedtargets = {};
+      function op(v)
+	 if v[1] == "GOTO" or v[1] == "GOSUB" then
+	    usedtargets[v[2]] = true;
+	 elseif v[1] == "ON" then
+	    for i = 4,#v do
+	       usedtargets[v[i]] = true;
+	    end
+	 elseif v[1] == "IF" then
+	    usedtargets[v[#v]] = true;
+	 end
+      end
+      applyprog(prog,op);
+      return usedtargets;
+   end
+   
    local usedtargets = findusedtargets(prog);
    local prog1 = {}; 
    for _,v in ipairs(prog) do
@@ -420,6 +421,30 @@ local function parse(lines, optimize)
       end
    end
 
+   -- Ensure all floating variables in program are initialized
+   local floatvars = {};
+   local function findvars(v)
+      if type(v) == "table" and v[1] == "FLOATVAR" then
+	 floatvars[v[2]] = true;
+      end
+      return false;
+   end
+   apply(prog,findvars);
+   local floatkeys = {};
+   for k,_ in pairs(floatvars) do
+      table.insert(floatkeys,k);
+   end
+   table.sort(floatkeys);
+   local defs = {};
+   for _,v in ipairs(floatkeys) do
+      local let = {"LETN",{"FLOATVAR",v},{"FLOATVAL",0},line="0"};
+      table.insert(defs,let);
+   end
+   for _,v in ipairs(prog) do
+      table.insert(defs,v);
+   end
+   prog = defs;
+
    if optimize then
       local function oplit(v)
 	 if v[1] == "FLOATVAL" then
@@ -431,6 +456,7 @@ local function parse(lines, optimize)
       end
       apply(prog, oplit);
 
+
       -- Not correct yet, enabled by apply() below
       local function makechunk(v)
 	 return "("..v.." and "..v.." or 0);";
@@ -440,7 +466,7 @@ local function parse(lines, optimize)
 	 if type(v)~="table" then
 	    return false;
 	 elseif v[1] == "FLOATVAR" then
-	    print (makechunk(v[2]));
+	    --print (makechunk(v[2]));
 	    return true, { "CHUNK", makechunk(v[2]) };
 	 end
 	 return false;
