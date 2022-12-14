@@ -398,6 +398,8 @@ local function doinput(basicenv,inputlist)
       prompt = eval(basicenv,inputlist[i+1])..prompt;
       i=i+2;
    end
+   -- Cursor will move back to l.h.s. once input is accepted
+   basicenv._m.printcol = 0;
    local j = i;
    while j <= #inputlist do
       local input = "";
