@@ -46,9 +46,10 @@ local stringval = lpeg.Ct(
 local floatval = lpeg.Ct(lpeg.Cc("FLOATVAL")*lpeg.C(float));
 
 local floatvar = lpeg.Ct(lpeg.Cc("FLOATVAR") * varname);
+local floatarr = lpeg.Ct(lpeg.Cc("FLOATARR") * varname);
 local stringname = varname * lpeg.P("$");
 local stringvar = lpeg.Ct(lpeg.Cc("STRINGVAR")*stringname);
-local anyvar = stringvar + floatvar;
+local stringarr = lpeg.Ct(lpeg.Cc("STRINGARR")*stringname);
 
 
 local word = (any-lpeg.S(", \t"))^1;
@@ -176,10 +177,10 @@ local exprgrammar = {
       lpeg.Cc("INDEX") *
 	 --lpeg.Cmt(lpeg.P"",
       --function (s,p,c) print("Matching INDEX at",p); return true; end) *
-	 floatvar * space *
+	 floatarr * space *
 	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
    stringindex = lpeg.Ct(
-      lpeg.Cc("STRINGINDEX") * stringvar * space *
+      lpeg.Cc("STRINGINDEX") * stringarr * space *
 	 lpeg.P("(") * space * arglist * space * lpeg.P(")")),
 };
 
@@ -236,8 +237,8 @@ local linegrammar = {
    statementlist = (statement * lpeg.P(":") * space )^0 * statement,
    line = lpeg.Ct(lineno * space * lpeg.Ct(statementlist) * lpeg.Cp()),
    -- lists
-   dimitem = lpeg.Ct(anyvar * space * lpeg.P("(") * space * exprlist *
-			space * lpeg.P(")")),
+   dimitem = lpeg.Ct((stringarr + floatarr) * space *
+	 lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
    dimlist = ( dimitem * space * lpeg.P(",") * space)^0 * dimitem,
    printexpr = stringexpr + expr + lpeg.C(lpeg.S(";,")),
    printlist = (printexpr * space )^0,
@@ -246,10 +247,10 @@ local linegrammar = {
    dummylist = lpeg.Ct( (varname*space*lpeg.P(",")*space)^0 * varname),
    -- Element and stringelement are for rvalue array access on
    -- l.h.s. of assignment, distinct from lvalue access in expressions
-   element = lpeg.Ct(lpeg.Cc("ELEMENT") * floatvar * space *
+   element = lpeg.Ct(lpeg.Cc("ELEMENT") * floatarr * space *
 			lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
    stringelement = lpeg.Ct(
-      lpeg.Cc("STRINGELEMENT") * stringvar * space *
+      lpeg.Cc("STRINGELEMENT") * stringarr * space *
 	 lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
    -- Lowest-level groups
    floatlval = element + floatvar,

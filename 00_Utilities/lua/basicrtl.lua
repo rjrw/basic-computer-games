@@ -178,7 +178,8 @@ local function doindex(basicenv,expr)
       return "";
    end
    local builtins = builtins;
-   local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
+   local builtin = exprtype == "FLOATARR" and
+      builtins[name] or builtins["s_"..name];
    if builtin then
       return builtin(table.unpack(args));
    end
@@ -212,7 +213,8 @@ local function dostringindex(basicenv,expr)
       args[#args+1] = eval(basicenv,v);
    end
    local builtins = builtins;
-   local builtin = exprtype == "FLOATVAR" and builtins[name] or builtins["s_"..name];
+   local builtin = exprtype == "FLOATARR" and
+      builtins[name] or builtins["s_"..name];
    if builtin then
       return builtin(table.unpack(args));
    end
@@ -336,8 +338,8 @@ local function assigns(basicenv,lval,value)
       if #lval[3] > 2 then
 	 error("More than 2-dimensional access not yet implemented");
       end
-      if eltype ~= "STRINGVAR" then
-	 error("Non-stringvar access not yet implemented");
+      if eltype ~= "STRINGARR" then
+	 error("Non-string access not yet implemented");
       end
       if #lval[3] == 1 then
 	 local index = eval(basicenv,lval[3][1]);
@@ -361,8 +363,8 @@ local function assignf(basicenv,lval,value)
       if #lval[3] > 2 then
 	 error("More than 2-dimensional access not yet implemented");
       end
-      if eltype ~= "FLOATVAR" then
-	 error("Non-floatvar access not yet implemented");
+      if eltype ~= "FLOATARR" then
+	 error("Non-floating access not yet implemented");
       end
       if #lval[3] == 1 then
 	 local index = eval(basicenv,lval[3][1]);
@@ -557,7 +559,7 @@ local function dodim(basicenv,stat)
 	 error("Don't yet handle more than 2-dimensional arrays");
       end
       local store = {};
-      if dimtype == "FLOATVAR" then
+      if dimtype == "FLOATARR" then
 	 if #shape == 1 then
 	    for j = 0, eval(basicenv,shape[1]) do
 	       store[j] = 0.0;
