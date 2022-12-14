@@ -372,19 +372,21 @@ local function assignf(basicenv,lval,value)
       if eltype ~= "FLOATARR" then
 	 error("Non-floating access not yet implemented");
       end
+      local arrname = "fa_"..target[2];
       if #lval[3] == 1 then
+	 -- Create default size array
 	 local index = eval(basicenv,lval[3][1]);
-	 if basicenv["fa_"..target[2]] == nil then
+	 if basicenv[arrname] == nil then
 	    local store = {};
 	    for j = 0, 10 do
 	       store[j] = 0.0;
 	    end
-	    basicenv["fa_"..target[2]] = store;
+	    basicenv[arrname] = store;
 	 end
-	 basicenv["fa_"..target[2]][index] = value;
+	 basicenv[arrname][index] = value;
       else
 	 local i1, i2 = eval(basicenv,lval[3][1]),eval(basicenv,lval[3][2]);
-	 basicenv["fa_"..target[2]][i1][i2] = value;
+	 basicenv[arrname][i1][i2] = value;
       end
    else
       error("Type mismatch in floating assignment");
