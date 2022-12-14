@@ -471,16 +471,13 @@ local function parse(lines, optimize)
       local function opfloatvar(v)
 	 if type(v)~="table" then
 	    return false;
-	 elseif
+	 elseif v[1] == "FLOATLVAR" or
 	    -- Need to be more discriminating about contexts where
 	    -- this change isn't applicable
 	    v[1] == "LETN" and v[2][1] == "FLOATVAR" or
 	    v[1] == "INPUT" or
-	    v[1] == "FOR" or
-	    v[1] == "NEXT" or
 	    v[1] == "READ" or	    
-	    v[1] == "FUNCALL"
-	 then
+	 v[1] == "FUNCALL" then
 	    return true, v;
 	 elseif v[1] == "FLOATVAR" then
 	    --print (makechunk(v[2]));
