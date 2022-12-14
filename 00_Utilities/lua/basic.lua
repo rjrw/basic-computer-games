@@ -42,18 +42,16 @@ local function deepwrite(file,dat,level)
    end      
 end
 
--- Parse = 1, interpret = 2, compile = 3, compile & optimize = 4
-local mode = 2;
-local verbose = false;
+local exec = true;
+local dump, optimize, verbose = false, false, false;
 
 local narg = 1;
 while narg < #arg do
-   if arg[narg] == "-i" then
-      mode = 2;
-   elseif arg[narg] == "-p" then
-      mode = 1;
-   elseif arg[narg] == "-c" then
-      mode = 3;
+   if arg[narg] == "-d" then
+      dump = true;
+      exec = false;
+   elseif arg[narg] == "-O" then
+      optimize = true;
    elseif arg[narg] == "-v" then
       verbose = true;
    else
@@ -73,12 +71,9 @@ if not string.find(filename, baspat) then
 end
 
 local lines = readfile(filename);
-local prog, data, datatargets = parser.parse(lines);
+local prog, data, datatargets = parser.parse(lines, optimize);
 
-if mode == 2 then
-   local rtl = require"basicrtl";
-   rtl.run(prog, data, datatargets);
-else
+if dump then
    -- Save
    local outfile = string.gsub(filename,baspat,".lua");
    local file = assert(io.open(outfile,"w"));
@@ -91,4 +86,9 @@ else
    deepwrite(file,prog,0);
    file:write(";\nrtl.run(prog, data, datatargets);\n");
    file:close();
+end
+
+if exec then
+   local rtl = require"basicrtl";
+   rtl.run(prog, data, datatargets);
 end

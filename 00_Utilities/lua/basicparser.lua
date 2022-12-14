@@ -310,7 +310,7 @@ local function findusedtargets(prog)
    return usedtargets;
 end
 
-local function parse(lines)
+local function parse(lines, optimize)
    local prog, data, datatargets = {}, {}, {};
    local nerr = 0;
    -- Read and parse input file
@@ -399,6 +399,15 @@ local function parse(lines)
       end
    end
    applyprog(prog,retarget);
+   -- Remove unused targets to highlight basic blocks
+   local usedtargets = findusedtargets(prog);
+   local prog1 = {}; 
+   for _,v in ipairs(prog) do
+      if v[1] ~= "TARGET" or usedtargets[v[2]] then
+	 prog1[#prog1+1] = v;
+      end
+   end
+   prog = prog1;
    
    local function apply(prog, op)
       for k,v in ipairs(prog) do
@@ -410,43 +419,37 @@ local function parse(lines)
 	 end
       end
    end
-   local function oplit(v)
-      if v[1] == "FLOATVAL" then
-	 return true, tonumber(v[2]);
-      elseif v[1] == "STRING" then
-	 return true, v[2];
-      end
-      return false;
-   end
-   apply(prog, oplit);
 
-   --[[
-   local function makechunk(v)
-      return "("..v.." and "..v.." or 0);";
-   end
-   local function opfloatvar(v)
-      if type(v)~="table" then
+   if optimize then
+      local function oplit(v)
+	 if v[1] == "FLOATVAL" then
+	    return true, tonumber(v[2]);
+	 elseif v[1] == "STRING" then
+	    return true, v[2];
+	 end
 	 return false;
-      elseif v[1] == "FLOATVAR" then
-	 print (makechunk(v[2]));
-	 return true, { "CHUNK", makechunk(v[2]) };
       end
-      return false;
+      apply(prog, oplit);
+
+      -- Not correct yet, enabled by apply() below
+      local function makechunk(v)
+	 return "("..v.." and "..v.." or 0);";
+      end
+      -- Need to only apply this to rvalues at present
+      local function opfloatvar(v)
+	 if type(v)~="table" then
+	    return false;
+	 elseif v[1] == "FLOATVAR" then
+	    print (makechunk(v[2]));
+	    return true, { "CHUNK", makechunk(v[2]) };
+	 end
+	 return false;
+      end
+      -- Start on compilation, need to distinguish array and variable
+      -- access, and probably control via flag
+      -- apply(prog, opfloatvar);
    end
-   --Start on compilation, need to distinguish array and variable
-   --access, and probably control via flag
-   --apply(prog, opfloatvar);
-   --]]
    
-   -- Remove unused targets to highlight basic blocks
-   local usedtargets = findusedtargets(prog);
-   local prog1 = {}; 
-   for _,v in ipairs(prog) do
-      if v[1] ~= "TARGET" or usedtargets[v[2]] then
-	 prog1[#prog1+1] = v;
-      end
-   end
-   prog = prog1;
    if nerr ~= 0 then
       error("Parser failure");
    end

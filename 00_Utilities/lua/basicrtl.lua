@@ -495,6 +495,13 @@ local function doon(basicenv,stat)
    end
 end
 
+local function dofloatval(basicenv, stat)
+   return tonumber(stat[2]);
+end
+
+local function dostring(basicenv, stat)
+   return stat[2];
+end
 
 local function dofor(basicenv,stat)
    local control = stat[2][2];
@@ -672,6 +679,8 @@ local function makemachine(prog, data, datatargets)
       TARGET    = donothing,
       END       = doend,
       REM       = donothing,
+      FLOATVAL  = dofloatval,
+      STRING    = dostring,
       DIM       = dodim,
       DATA      = donothing,
       RESTORE   = dorestore,
