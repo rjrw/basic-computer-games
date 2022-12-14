@@ -1,8 +1,7 @@
 #!/usr/bin/env lua
 
--- $Id: test.lua $
-
---require"strict"    -- just to be pedantic
+-- check for use of undefined globals
+-- local _ENV = require 'std.strict' (_G)
 
 parser = require"basicparser";
 
