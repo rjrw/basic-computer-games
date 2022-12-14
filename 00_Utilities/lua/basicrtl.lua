@@ -612,14 +612,14 @@ local function doread(basicenv,stat)
    for i=2,#stat do
       local lval = stat[i];
       local dat = m.data[m.datapc];
+      local dtype = type(dat)
       local value = eval(basicenv,dat);
-      local dtype = dat[1];
-      if dtype == "FLOATVAL" then
+      if dtype == "number" then
 	 assignf(basicenv,lval, value);
-      elseif dtype == "STRING" then
+      elseif dtype == "string" then
 	 assigns(basicenv,lval, value);
       else
-	 error("READ data type "..tostring(lval[1]).." not implemented");
+	 error("READ data type "..dtype.." not implemented");
       end
       m.datapc = m.datapc+1;
    end

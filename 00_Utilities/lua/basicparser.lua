@@ -296,7 +296,8 @@ end
 local function parse(lines, optimize)
    local prog, data, datatargets = {}, {}, {};
    local nerr = 0;
-   -- Read and parse input file
+   
+   -- Parse input file
    for count,line in ipairs(lines) do
       if verbose then print(line); end
       local m = basicline:match(line);
@@ -321,15 +322,20 @@ local function parse(lines, optimize)
 	       if v[1] == "DATA" then
 		  datatargets[m[1]] = #data+1;
 		  for i = 2, #v do
-		     table.insert(data,v[i]);
+		     if v[i][1] == "FLOATVAL" then
+			table.insert(data,tonumber(v[i][2]));
+		     else
+			table.insert(data,v[i][2]);
+		     end
 		  end
+	       else
+		  if v[1] == "IF" then
+		     hasif = true;
+		  end
+		  ifconnect(v,endlab);
+		  v.line = lineno;
+		  prog[#prog+1] = v;
 	       end
-	       if v[1] == "IF" then
-		  hasif = true;
-	       end
-	       ifconnect(v,endlab);
-	       v.line = lineno;
-	       prog[#prog+1] = v;
 	    end
 	    if hasif then
 	       prog[#prog+1] = {"TARGET",endlab};
@@ -338,7 +344,7 @@ local function parse(lines, optimize)
       end      
    end
 
-   -- Merge adjacent targets
+   -- Merge adjacent targets and patch over jumps to undefined targets
    local targetuniq, targ, lastt = {}, "", "";
    for i=#prog,1,-1 do
       local v = prog[i];
@@ -354,7 +360,6 @@ local function parse(lines, optimize)
 	 targetuniq[v[2]]=targ;
       end
    end
-
    local function fixtarget(v, i, targetuniq)
       local target = v[i];
       if targetuniq[target] == nil then
@@ -382,8 +387,8 @@ local function parse(lines, optimize)
       end
    end
    applyprog(prog,retarget);
+   
    -- Remove unused targets to highlight basic blocks
-
    local function findusedtargets(prog)
       local usedtargets = {};
       function op(v)
@@ -456,8 +461,8 @@ local function parse(lines, optimize)
       end
       apply(prog, oplit);
 
-
-      -- Not correct yet, enabled by apply() below
+      -- Not correct yet, would be enabled by apply(prog, opfloatvar)
+      -- below
       local function makechunk(v)
 	 return "("..v..");";
       end
