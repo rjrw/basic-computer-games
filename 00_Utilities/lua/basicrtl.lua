@@ -460,14 +460,16 @@ local function doprint(basicenv,stat)
    for j=1,#printlist do
       local element = printlist[j]
       flush = true;
-      if element == ";" then
-	 flush = false;
-      elseif element == "," then
-	 local newcol = 14*(math.floor(m.printcol/14)+1);
-	 printtab(basicenv,newcol);
-	 flush = false;
-      else
-	 local val = eval(basicenv,element);
+      if element[1] == "PRINTSEP" then
+	 if element[2] == ";" then
+	    flush = false;
+	 elseif element[2] == "," then
+	    local newcol = 14*(math.floor(m.printcol/14)+1);
+	    printtab(basicenv,newcol);
+	    flush = false;
+	 end
+      elseif element[1] == "PRINTVAL" then
+	 local val = eval(basicenv,element[2]);
 	 if type(val) == "number" then
 	    if val>=0 then
 	       val = " "..tostring(val).." ";
@@ -477,6 +479,8 @@ local function doprint(basicenv,stat)
 	 end
 	 m.printstr = m.printstr..val;
 	 m.printcol = m.printcol + #val;
+      else
+	 error("Unknown printexpr type "..element[1]);
       end
    end
    if flush then

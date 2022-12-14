@@ -242,7 +242,8 @@ local linegrammar = {
    dimitem = lpeg.Ct((stringarr + floatarr) * space *
 	 lpeg.P("(") * space * exprlist * space * lpeg.P(")")),
    dimlist = ( dimitem * space * lpeg.P(",") * space)^0 * dimitem,
-   printexpr = stringexpr + expr + lpeg.C(lpeg.S(";,")),
+   printexpr = lpeg.Ct(lpeg.Cc"PRINTVAL"*(stringexpr + expr)) +
+      lpeg.Ct(lpeg.Cc"PRINTSEP"*lpeg.C(lpeg.S(";,"))),
    printlist = (printexpr * space )^0,
    inputitem = stringlval + floatlval,
    inputlist = (inputitem * space * lpeg.P(",") * space)^0 * inputitem * space,
