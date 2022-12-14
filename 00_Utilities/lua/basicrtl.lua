@@ -164,6 +164,10 @@ local function dofloatvar(basicenv,expr)
    return basicenv[expr[2]];
 end
 
+local function dofloatlval(basicenv,expr)
+   return expr[2];
+end
+
 local function dostringvar(basicenv,expr)
    return basicenv["s_"..expr[2]];
 end
@@ -325,6 +329,7 @@ ops.NOT       = donot;
 ops.COMPARE   = docompare;
 ops.FLOATVAL  = dofloatval;
 ops.FLOATVAR  = dofloatvar;
+ops.FLOATLVAL = dofloatlval;
 ops.STRINGVAR = dostringvar;
 ops.INDEX     = doindex;
 ops.STRINGINDEX = dostringindex;
@@ -534,12 +539,13 @@ local function donext(basicenv,stat)
       end
    else
       for i=2,#stat do
-	 if stat[i][1] ~= "FLOATVAR" then
+	 local var = stat[i][2];
+	 if var[1] ~= "FLOATVAR" then
 	    error("NEXT tag must be floating variable");
 	 end
 	 local frame = forstack[#forstack];
 	 local control = frame[2];
-	 while control ~= stat[i][2] do
+	 while control ~= var[2] do
 	    table.remove(forstack);
 	    frame = forstack[#forstack];
 	    control = frame[2];

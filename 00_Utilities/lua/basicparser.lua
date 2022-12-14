@@ -45,8 +45,9 @@ local stringval = lpeg.Ct(
       lpeg.P("\""));
 local floatval = lpeg.Ct(lpeg.Cc("FLOATVAL")*lpeg.C(float));
 
-local floatvar = lpeg.Ct(lpeg.Cc("FLOATVAR") * varname);
-local floatarr = lpeg.Ct(lpeg.Cc("FLOATARR") * varname);
+local floatvar  = lpeg.Ct(lpeg.Cc("FLOATVAR") * varname);
+local floatlval = lpeg.Ct(lpeg.Cc("FLOATLVAL") * floatvar);
+local floatarr  = lpeg.Ct(lpeg.Cc("FLOATARR") * varname);
 local stringname = varname * lpeg.P("$");
 local stringvar = lpeg.Ct(lpeg.Cc("STRINGVAR")*stringname);
 local stringarr = lpeg.Ct(lpeg.Cc("STRINGARR")*stringname);
@@ -58,7 +59,7 @@ local unquotedstringval = lpeg.Ct(lpeg.Cc("STRING")*lpeg.C(wordlist));
 local dataliteral = floatval + stringval + unquotedstringval;
 local datalist = space * ( dataliteral * space * lpeg.P(",") * space ) ^0 *
    dataliteral * space;
-local nextlist = ( floatvar * space * lpeg.P"," * space)^0 * floatvar * space;
+local nextlist = ( floatlval * space * lpeg.P"," * space)^0 * floatlval * space;
 
 local stringexpr = lpeg.V"stringexpr";
 local concat = lpeg.V"concat";
