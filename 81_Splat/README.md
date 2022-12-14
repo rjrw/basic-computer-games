@@ -18,3 +18,5 @@ http://www.vintage-basic.net/games.html
 #### Porting Notes
 
 (please note any difficulties or challenges in porting here)
+
+- `610 GOTO 540`: line 540 is not present in code

@@ -354,27 +354,46 @@ local function parse(lines)
    end
 
    -- Merge adjacent targets
-   local targetuniq, targ = {}, "";
+   local targetuniq, targ, lastt = {}, "", "";
    for i=#prog,1,-1 do
       local v = prog[i];
       if v[1] ~= "TARGET" then
 	 targ = "";
       else
+	 if lastt == "" then
+	    lastt = v[2];
+	 end
 	 if targ == "" then
 	    targ = v[2];
 	 end
 	 targetuniq[v[2]]=targ;
       end
    end
+
+   function fixtarget(v, i, targetuniq)
+      local target = v[i];
+      if targetuniq[target] == nil then
+	 print("Warning: Found jump to missing target "..target..
+		  " at BASIC line "..v.line);
+      end
+      while targetuniq[target] == nil do
+	 target = string.format("%d",1+target);
+	 if target == lastt then
+	    break;
+	 end
+      end
+      return targetuniq[target];
+   end
+   
    function retarget(v)
       if v[1] == "GOTO" or v[1] == "GOSUB" then
-	 v[2] = targetuniq[v[2]];
+	 v[2] = fixtarget(v, 2, targetuniq);
       elseif v[1] == "ON" then
 	 for i = 3,#v do
-	    v[i] = targetuniq[v[i]];
+	    v[i] = fixtarget(v, i, targetuniq);
 	 end
       elseif v[1] == "IF" then
-	 v[#v] = targetuniq[v[#v]];	 
+	 v[#v] = fixtarget(v, #v, targetuniq);
       end
    end
    applyprog(prog,retarget);
