@@ -484,8 +484,12 @@ end
 local function doon(basicenv,stat)
    local switch = math.floor(eval(basicenv,stat[2]));
    local m = basicenv._m;
-   if switch > 0 and switch+2 <= #stat then
-      m.pc = m.targets[stat[2+switch]]-1;
+   local loc = 3+switch;
+   if switch > 0 and loc <= #stat then
+      if stat[3] == "GOSUB" then
+	 table.insert(m.substack,m.pc);
+      end
+      m.pc = m.targets[stat[loc]]-1;
    end
 end
 

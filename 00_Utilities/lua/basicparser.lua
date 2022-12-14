@@ -223,7 +223,8 @@ local linegrammar = {
       ( lpeg.P("STEP") * space * expr * space )^-1,
    onstatement =
       lpeg.C(lpeg.P("ON")) * space * expr * space * lpeg.P("GO") * space *
-      lpeg.P("TO") * space * (lineno * space * lpeg.P(",") * space)^0 *
+      (lpeg.P("TO")*lpeg.Cc("GOTO")+lpeg.P("SUB")*lpeg.Cc("GOSUB"))
+      * space * (lineno * space * lpeg.P(",") * space)^0 *
       lineno * space,
    numericassignment =
       lpeg.Cc("LETN") * lpeg.P("LET")^-1 * space *
@@ -297,7 +298,7 @@ local function findusedtargets(prog)
       if v[1] == "GOTO" or v[1] == "GOSUB" then
 	 usedtargets[v[2]] = true;
       elseif v[1] == "ON" then
-	 for i = 3,#v do
+	 for i = 4,#v do
 	    usedtargets[v[i]] = true;
 	 end
       elseif v[1] == "IF" then
@@ -389,7 +390,7 @@ local function parse(lines)
       if v[1] == "GOTO" or v[1] == "GOSUB" then
 	 v[2] = fixtarget(v, 2, targetuniq);
       elseif v[1] == "ON" then
-	 for i = 3,#v do
+	 for i = 4,#v do
 	    v[i] = fixtarget(v, i, targetuniq);
 	 end
       elseif v[1] == "IF" then
