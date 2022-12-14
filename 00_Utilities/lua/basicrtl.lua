@@ -1,6 +1,7 @@
 local m = {};
 
 local parser = require"basicparser";
+-- local _ENV = require 'std.strict' (_G)
 
 -- Builtin function table
 

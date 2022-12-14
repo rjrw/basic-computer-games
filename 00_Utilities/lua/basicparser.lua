@@ -1,5 +1,8 @@
 local m = {};
 
+-- check for use of undefined globals
+--local _ENV = require 'std.strict' (_G)
+
 local lpeg = require"lpeg";
 
 -- Cache values for expr rule, to speed up run time
@@ -288,7 +291,7 @@ local function applyprog(prog,op)
 end
 
 local function ifconnect(v,endlab)
-   function op(v)
+   local function op(v)
       if v[1] == "IF" then
 	 v[#v+1] = endlab;
       end
@@ -296,7 +299,7 @@ local function ifconnect(v,endlab)
    applystat(v,op);
 end
 
-local function parse(lines, optimize)
+local function parse(lines, optimize, verbose)
    local prog, data, datatargets = {}, {}, {};
    local nerr = 0;
    
@@ -394,7 +397,7 @@ local function parse(lines, optimize)
    -- Remove unused targets to highlight basic blocks
    local function findusedtargets(prog)
       local usedtargets = {};
-      function op(v)
+      local function op(v)
 	 if v[1] == "GOTO" or v[1] == "GOSUB" then
 	    usedtargets[v[2]] = true;
 	 elseif v[1] == "ON" then

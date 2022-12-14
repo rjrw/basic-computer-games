@@ -80,20 +80,26 @@ end
 
 local narg = 1;
 while narg <= #arg do
-   local opt, par="";
    local argn = arg[narg];
-   if argn:sub(1,1) == "-" then
-      if #argn == 1 then
-	 usage();
-	 os.exit();
-      elseif argn:sub(2,2) == "-" then
-	 opt = opts[argn];
-      else
-	 opt = opts[argn:sub(1,2)];
-	 par = argn:sub(3);
-      end
+   if argn:sub(1,1) ~= "-" then
+      break;
    end
-   if opt == nil then break; end
+   local opt;
+   local par = "";
+   if #argn == 1 then
+      usage();
+      os.exit();
+   elseif argn:sub(2,2) == "-" then
+      -- Long argument
+      opt = opts[argn];
+   else
+      -- Short argument, possibly with option
+      opt = opts[argn:sub(1,2)];
+      par = argn:sub(3);
+   end
+   if not opt then
+      break;
+   end
    opt[1](par);
    narg = narg+1;
 end
@@ -111,7 +117,7 @@ end
 outfile = outfile ~= "" and outfile or filename:gsub(baspat,".lua");
 
 local lines = readfile(filename);
-local prog, data, datatargets = parser.parse(lines, optimize);
+local prog, data, datatargets = parser.parse(lines, optimize, verbose);
 
 if dump then
    -- Save
