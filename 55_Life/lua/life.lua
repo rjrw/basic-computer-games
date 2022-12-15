@@ -121,7 +121,8 @@ function Board:evolve()
    self:expand()
 
    local a = self.a
-
+   local Empty, Full, Dying, New = 0,1,2,3
+   
    for x=self.x1,self.x2 do
       local ax = a[x];
       for y=self.y1,self.y2 do
@@ -130,18 +131,18 @@ function Board:evolve()
 	    local ai = a[i];
 	    for j = y-1, y+1 do
 	       local aij = ai[j];
-	       if aij == 1 or aij == 2 then
+	       if aij == Full or aij == Dying then
 		  c = c+1;
 	       end
 	    end
 	 end
 	 if ax[y] == 1 then
 	    if c < 3 or c > 4 then
-	       ax[y] = 2; -- Dying
+	       ax[y] = Dying;
 	    end
 	 else
 	    if c == 3 then
-	       ax[y] = 3; -- New
+	       ax[y] = New;
 	    end
 	 end
       end
@@ -150,12 +151,12 @@ function Board:evolve()
    for x=self.x1,self.x2 do
       local ax = a[x];
       for y=self.y1,self.y2 do
-	 if ax[y] == 2 then
-	    ax[y] = 0;
-	 elseif ax[y] == 3 then
-	    ax[y] = 1;
+	 if ax[y] == Dying then
+	    ax[y] = Empty;
+	 elseif ax[y] == New then
+	    ax[y] = Full;
 	 end
-	 if ax[y] == 1 then
+	 if ax[y] == Full then
 	    p = p+1;
 	    x1 = math.min(x,x1);
 	    x2 = math.max(x,x2);
