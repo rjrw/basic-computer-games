@@ -12,9 +12,6 @@ function readlines(nx)
       if s == "done" then
 	 break;
       end
-      if string.sub(s,1,1) == "." then
-	    s = " "..string.sub(s,2);
-      end
       b[i] = s;
    end
    return b;
@@ -41,6 +38,34 @@ function Board:population()
 end
 
 function readboard(nx,ny)
+   local b = readlines(nx);
+   local l1,l2,c1,c2 = 0,0,0,0;
+   for x = 1,#b do
+      local s = b[x];
+      s = s:gsub("^%."," "); -- Replace a leading full stop with space
+      s = s:gsub("%s*$",""); -- Remove trailing whitespace
+      if s ~= "" then
+	 if c1 == 0 then
+	    c1 = x;
+	 end
+	 c2 = x;
+	 local left = s:find("[^ ]"); -- Look for first leading non-whitespace
+	 if l1 == 0 or left < l1 then
+	    l1 = left;
+	 end
+      end
+      b[x] = s;
+      l2 = math.max(l2,#s);
+   end
+   if c1 == 0 then
+      print("Input error, no active cells");
+      os.exit(0);
+   end
+
+   local c, l = c2 - c1 + 1, l2 - l1 + 1;
+   local x1 = 1+math.floor((nx-c)/2);
+   local y1 = 1+math.floor((ny-l)/2);
+   local x2, y2 = x1 + c - 1, y1 + l - 1;
    local a = {};
    for i = 1, nx do
       a[i] = {};
@@ -48,21 +73,12 @@ function readboard(nx,ny)
 	 a[i][j] = 0;
       end
    end
-   local b = readlines(nx);
-   local c = #b;
-   local l = 0;
-   for x = 1,c do
-      l = math.max(l,#b[x]);
-   end
-
-   local x1 = math.ceil(nx/2-c/2)
-   local y1 = math.ceil(ny/2-l/2)
-   local x2, y2 = x1+c, y1+l
    local p = 0;
-   for x=1,c do
-      local bx, ax1x = b[x], a[x1+x-1];
-      for y=1,#bx do
-	 if bx[y] ~= " " then
+   for x=1, c do
+      local bx, ax1x = b[c1+x-1], a[x1+x-1];
+      for y=l1,#bx do
+	 local c = bx:sub(y,y);
+	 if c ~= " " then
 	    ax1x[y1+y-1]=1;
 	    p = p+1;
 	 end
@@ -187,4 +203,8 @@ print();
 for ii=0,10 do
    a:print();
    a:evolve();
+   if a:population() == 0 then
+      print("Extinct at generation",a:generation());
+      break;
+   end
 end
