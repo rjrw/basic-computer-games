@@ -76,11 +76,11 @@ end
 local function printtab(basicenv,n)
    n = math.floor(n);
    local m = basicenv._m;
+   local printstr = ""
    if n > m.printcol then
-      m.printstr = m.printstr..string.rep(" ",n-m.printcol);
-      m.printcol = n;
+      printstr = string.rep(" ",n-m.printcol);
    end
-   return "";
+   return printstr;
 end
 
 local ops = {};
@@ -180,8 +180,7 @@ local function doindex(basicenv,expr)
       args[#args+1] = eval(basicenv,v);
    end
    if name == "TAB" then
-      printtab(basicenv,args[1]);
-      return "";
+      return printtab(basicenv,args[1]);
    end
    local builtins = builtins;
    local builtin = exprtype == "FLOATARR" and
@@ -457,22 +456,23 @@ end
 local function doprint(basicenv,stat)
    local printlist=stat[2];
    local m = basicenv._m;
-   m.printstr="";
+   local printstr="";
    local flush = true;
    local j = 1;
    for j=1,#printlist do
       local element = printlist[j]
       flush = true;
+      local val = "";
       if element[1] == "PRINTSEP" then
 	 if element[2] == ";" then
 	    flush = false;
 	 elseif element[2] == "," then
 	    local newcol = 14*(math.floor(m.printcol/14)+1);
-	    printtab(basicenv,newcol);
+	    val = printtab(basicenv,newcol);
 	    flush = false;
 	 end
       elseif element[1] == "PRINTVAL" then
-	 local val = eval(basicenv,element[2]);
+	 val = eval(basicenv,element[2]);
 	 if type(val) == "number" then
 	    if val>=0 then
 	       val = " "..tostring(val).." ";
@@ -480,17 +480,17 @@ local function doprint(basicenv,stat)
 	       val = tostring(val).." ";
 	    end
 	 end
-	 m.printstr = m.printstr..val;
-	 m.printcol = m.printcol + #val;
       else
 	 error("Unknown printexpr type "..element[1]);
       end
+      printstr = printstr..val;
+      m.printcol = m.printcol + #val;
    end
+   write(printstr);
    if flush then
-      m.printstr = m.printstr.."\n";
+      write("\n");
       m.printcol = 0;
    end
-   write(m.printstr);
 end
 
 local function doletn(basicenv,stat)
@@ -743,7 +743,6 @@ local function makemachine(prog, data, datatargets)
       substack = {},
       forstack = {},
       -- Output state
-      printstr = "",
       printcol = 0
    };
 end
