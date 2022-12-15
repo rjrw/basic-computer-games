@@ -83,27 +83,23 @@ function Board:print()
    if self.status ~= 0 then
       print("Invalid!");
    end
-   for x=1,self.x1-1 do
-      print()
-   end
+   local pic = {};
+   local rep = string.rep;
+   pic[#pic+1] = rep("\n",self.x1);
    for x=self.x1,self.x2 do
-      line = "";
-      for y=1,self.y1-1 do
-	 line = line.." ";
-      end
       local ax = a[x];
+      pic[#pic+1] = rep(" ",self.y1);
       for y=self.y1,self.y2 do
 	 if ax[y] == 1 then
-	    line = line.."*";
+	    pic[#pic+1] = "*";
 	 else
-	    line = line.." ";
+	    pic[#pic+1] = " ";
 	 end
       end
-      print(line);
+      pic[#pic+1] = "\n";
    end
-   for x=self.x2+1,self.nx do
-      print()
-   end
+   pic[#pic+1] = rep("\n",self.nx-self.x2);
+   io.write(table.concat(pic));
 end
 
 function Board:expand()
@@ -131,11 +127,10 @@ end
 
 function Board:evolve()
 
-   self:expand()
-
    local a = self.a
    local Empty, Full, Dying, New = 0,1,2,3
    
+   self:expand()
    for x=self.x1,self.x2 do
       local ax = a[x];
       for y=self.y1,self.y2 do
