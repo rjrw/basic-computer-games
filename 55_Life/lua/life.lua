@@ -158,7 +158,7 @@ function Board:evolve()
 	       end
 	    end
 	 end
-	 if ax[y] == 1 then
+	 if ax[y] == Full then
 	    if c < 3 or c > 4 then
 	       ax[y] = Dying;
 	    end
@@ -193,18 +193,22 @@ function Board:evolve()
    self:nextgeneration()
 end
 
-print(banner);
-local nx, ny = 24, 70;
-local a = readboard(nx,ny);
-print();
-print();
-print();
+local function main(gens)
+   print(banner);
+   local nx, ny = 24, 70;
+   local a = readboard(nx,ny);
+   print();
+   print();
+   print();
    
-for ii=0,10 do
-   a:print();
-   a:evolve();
-   if a:population() == 0 then
-      print("Extinct at generation",a:generation());
-      break;
+   for ii=0,gens do
+      a:print();
+      a:evolve();
+      if a:population() == 0 then
+	 print("Extinct at generation",a:generation());
+	 break;
+      end
    end
 end
+
+main(10);
