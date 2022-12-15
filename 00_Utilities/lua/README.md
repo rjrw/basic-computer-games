@@ -7,7 +7,7 @@ Lua using the [`lpeg`](http://www.inf.puc-rio.br/~roberto/lpeg/) parser
 library.  There is an initial capability to generate standalone output,
 which is work-in-progress towards translation to more fluent Lua code,
 inspired in part by
-[plusFORT SPAG]{https://polyhedron.com/?product=plusfort#sp}.
+[plusFORT SPAG](https://polyhedron.com/?product=plusfort#sp).
 
 This is intended primarily as a capability for code which has been found
 to be correct using another interpreter, so error diagnostics are
