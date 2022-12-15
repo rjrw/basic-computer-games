@@ -70,7 +70,7 @@ function readboard(nx,ny)
 	 end
       end
    end
-   return Board:new{a = a, i9 = 0, nx = nx, ny = ny,
+   return Board:new{a = a, status = 0, nx = nx, ny = ny,
 		    gen=0, pop=p,
 		    x1 = x1, x2 = x2, y1 = y1, y2 = y2};
 end
@@ -80,7 +80,7 @@ function Board:print()
 
    print(string.format("Generation:\t%d\tPopulation:\t%d",
 		       self:generation(),self:population()));
-   if self.i9 ~= 0 then
+   if self.status ~= 0 then
       print("Invalid!");
    end
    for x=1,self.x1-1 do
@@ -113,19 +113,19 @@ function Board:expand()
    self.y2 = self.y2+1;
    if self.x1 < 2 then
       self.x1 = 2;
-      self.i9 = -1;
+      self.status = -1;
    end
    if self.x2 > self.nx-1 then
       self.x2 = self.nx-1;
-      self.i9 = -1;
+      self.status = -1;
    end
    if self.y1 < 2 then
       self.y1 = 2;
-      self.i9 = -1;
+      self.status = -1;
    end
    if self.y2 > self.ny-1 then
       self.y2 = self.ny-1
-      self.i9 = -1;
+      self.status = -1;
    end
 end
 
