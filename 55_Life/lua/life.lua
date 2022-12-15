@@ -55,17 +55,15 @@ function readboard(nx,ny)
       l = math.max(l,#b[x]);
    end
 
-   local x1 = math.ceil(nx/2-1-c/2)
-   local y1 = math.ceil(ny/2-2-l/2)
-   local x2, y2 = 1, 1
+   local x1 = math.ceil(nx/2-c/2)
+   local y1 = math.ceil(ny/2-l/2)
+   local x2, y2 = x1+c, y1+l
    local p = 0;
    for x=1,c do
-      local bx, ax1x = b[x], a[x1+x];
+      local bx, ax1x = b[x], a[x1+x-1];
       for y=1,#bx do
 	 if bx[y] ~= " " then
-	    ax1x[y1+y]=1;
-	    x2 = math.max(x2,x1+x);
-	    y2 = math.max(y2,y1+y);
+	    ax1x[y1+y-1]=1;
 	    p = p+1;
 	 end
       end
@@ -85,10 +83,10 @@ function Board:print()
    end
    local pic = {};
    local rep = string.rep;
-   pic[#pic+1] = rep("\n",self.x1);
+   pic[#pic+1] = rep("\n",self.x1-1);
    for x=self.x1,self.x2 do
       local ax = a[x];
-      pic[#pic+1] = rep(" ",self.y1);
+      pic[#pic+1] = rep(" ",self.y1-1);
       for y=self.y1,self.y2 do
 	 if ax[y] == 1 then
 	    pic[#pic+1] = "*";
