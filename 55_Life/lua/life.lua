@@ -27,7 +27,19 @@ function Board:new(o)
    self.__index = self;
    return o;
 end
-   
+function Board:nextgeneration()
+   self.gen = self.gen+1;
+end
+function Board:generation()
+   return self.gen;
+end
+function Board:setpopulation(p)
+   self.pop = p;
+end
+function Board:population()
+   return self.pop;
+end
+
 function readboard(nx,ny)
    local a = {};
    for i = 1, nx do
@@ -53,12 +65,13 @@ function readboard(nx,ny)
 	 if bx[y] ~= " " then
 	    ax1x[y1+y]=1;
 	    x2 = math.max(x2,x1+x);
-	    y2 = math.max(y2,y1+x);
+	    y2 = math.max(y2,y1+y);
 	    p = p+1;
 	 end
       end
    end
-   return Board:new{a = a, g=0, i9 = 0, nx = nx, ny = ny, p = p,
+   return Board:new{a = a, i9 = 0, nx = nx, ny = ny,
+		    gen=0, pop=p,
 		    x1 = x1, x2 = x2, y1 = y1, y2 = y2};
 end
 
@@ -66,7 +79,7 @@ function Board:print()
    local a = self.a;
 
    print(string.format("Generation:\t%d\tPopulation:\t%d",
-		       self.g,self.p));
+		       self:generation(),self:population()));
    if self.i9 ~= 0 then
       print("Invalid!");
    end
@@ -165,8 +178,10 @@ function Board:evolve()
 	 end
       end
    end
-   self.x1, self.x2, self.y1, self.y2, self.p, self.g =
-      x1, x2, y1, y2, p, self.g+1;
+   self.x1, self.x2, self.y1, self.y2 =
+      x1, x2, y1, y2;
+   self:setpopulation(p);
+   self:nextgeneration()
 end
 
 print(banner);
