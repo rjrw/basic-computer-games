@@ -580,14 +580,16 @@ local function parse(lines, optimize, verbose)
 	    local name = expr[2][2];
 	    local exprtype = expr[2][1];
 	    local arglist = expr[3];
+	    if name == "TAB" then
+	       val = "TAB("..tostring(rtl.eval(basicenv,arglist[1]))..")";
+	       print(val);
+	       return Capture:new{val};
+	    end
 	    local val = "fa_"..name;
 	    for k,v in ipairs(arglist) do
 	       val = val.."["..tostring(rtl.eval(basicenv,v)).."]";
-	    end
+	    end	    
 	    --[[
-	       if name == "TAB" then
-	       return printtab(basicenv,args[1]);
-	       end
 	       local builtins = builtins;
 	       local builtin = exprtype == "FLOATARR" and
 	       builtins[name] or builtins["s_"..name];

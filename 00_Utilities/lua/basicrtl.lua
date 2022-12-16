@@ -779,7 +779,12 @@ local function makemachine(prog, data, datalabels)
 end
 
 local function run(prog, data, datalabels)
-   local basicenv = {_m=makemachine(prog, data, datalabels)};
+   local basicenv = {
+      _m=makemachine(prog, data, datalabels)
+   };
+   
+   basicenv.TAB=function(n) return printttab(basicenv, n); end;
+
    while true do
       local m = basicenv._m;
       local status, err = pcall(
