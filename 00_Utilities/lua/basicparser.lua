@@ -293,40 +293,40 @@ function Capture:new(o)
    return o;
 end
 function Capture:__add(a)
-   return Capture:new{tostring(self).."+"..a};
+   return Capture:new{tostring(self).."+"..tostring(a)};
 end
 function Capture:__sub(a)
-   return Capture:new{tostring(self).."-"..a};
+   return Capture:new{tostring(self).."-"..tostring(a)};
 end
 function Capture:__mul(a)
-   return Capture:new{tostring(self).."*"..a};
+   return Capture:new{tostring(self).."*"..tostring(a)};
 end
 function Capture:__div(a)
-   return Capture:new{tostring(self).."/"..a};
+   return Capture:new{tostring(self).."/"..tostring(a)};
 end
 function Capture:__pow(a)
-   return Capture:new{tostring(self).."^"..a};
+   return Capture:new{tostring(self).."^"..tostring(a)};
 end
 function Capture:__lt(a)
-   return Capture:new{tostring(self).."<"..a};
+   return Capture:new{tostring(self).."<"..tostring(a)};
 end
 function Capture:__gt(a)
-   return Capture:new{tostring(self)..">"..a};
+   return Capture:new{tostring(self)..">"..tostring(a)};
 end
 function Capture:__le(a)
-   return Capture:new{tostring(self).."<="..a};
+   return Capture:new{tostring(self).."<="..tostring(a)};
 end
 function Capture:__ge(a)
-   return Capture:new{tostring(self)..">="..a};
+   return Capture:new{tostring(self)..">="..tostring(a)};
 end
 function Capture:__concat(a)
    return Capture:new{tostring(self)..".."..tostring(a)};
 end
 function Capture:__eq(a)
-   return Capture:new{tostring(self).."=="..a};
+   return Capture:new{tostring(self).."=="..tostring(a)};
 end
 function Capture:__ne(a)
-   return Capture:new{tostring(self).."~="..a};
+   return Capture:new{tostring(self).."~="..tostring(a)};
 end
 function Capture:__unm(a)
    return Capture:new{"-"..tostring(self)};
@@ -573,23 +573,45 @@ local function parse(lines, optimize, verbose)
 	 end;
       ops.STRINGVAR =
 	 function(basicenv,expr)
-	    error("Implement me!");
+	    return Capture:new{"s_"..expr[2]};
 	 end;
       ops.INDEX =
 	 function(basicenv,expr)
-	    error("Implement me!");
+	    local name = expr[2][2];
+	    local exprtype = expr[2][1];
+	    local arglist = expr[3];
+	    local val = "fa_"..name;
+	    for k,v in ipairs(arglist) do
+	       val = val.."["..tostring(rtl.eval(basicenv,v)).."]";
+	    end
+	    --[[
+	       if name == "TAB" then
+	       return printtab(basicenv,args[1]);
+	       end
+	       local builtins = builtins;
+	       local builtin = exprtype == "FLOATARR" and
+	       builtins[name] or builtins["s_"..name];
+	       if builtin then
+	       return builtin(table.unpack(args));
+	       end
+	    --]]
+	    print("INDEX",val);
+	    return Capture:new{val};
 	 end;
       ops.STRINGINDEX =
 	 function(basicenv,expr)
 	    error("Implement me!");
+	    return Capture:new{expr[2]};
 	 end;
       ops.FUNCALL =
 	 function(basicenv,expr)
 	    error("Implement me!");
+	    return Capture:new{expr[2]};
 	 end;
       ops.EXPR =
 	 function(basicenv,expr)
-	    print(rtl.eval(basicenv,expr[2]));
+	    --print(expr[2][1]);
+	    --print(rtl.eval(basicenv,expr[2]));
 	    return Capture:new{"("..tostring(rtl.eval(basicenv,expr[2]))..")"};
 	 end;
       local function opexpr(v)
