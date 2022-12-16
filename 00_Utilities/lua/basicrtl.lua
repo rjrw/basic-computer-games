@@ -704,6 +704,7 @@ end
 
 local function exec(basicenv,stat)
    basicenv.lineno = stat.line;
+   basicenv.pos = stat.pos;
    local m = basicenv._m;
    local cmd = m.statements[stat[1]] or
       error("Unknown statement "..stat[1]);
@@ -781,7 +782,8 @@ local function run(prog, data, datalabels)
       );
       m.pc = m.pc + 1;
       if not status then
-	 local errorlocation = "BASIC line "..tostring(basicenv.lineno);
+	 local errorlocation = "BASIC line "..
+	    tostring(basicenv.lineno)..":"..tostring(basicenv.pos);
 	 print("At "..errorlocation);
 	 print(err);
 	 m.quit = true;

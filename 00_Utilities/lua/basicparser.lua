@@ -200,7 +200,7 @@ basicexpr = lpeg.P(exprgrammar);
 local linegrammar = {
    "line";
    statement =
-      lpeg.Ct(
+      lpeg.Cp()*lpeg.Ct(
 	 gotostatement + gosubstatement + forstatement + nextstatement
 	    + endstatement + stopstatement + printstatement 
 	    + returnstatement + dimstatement
@@ -218,7 +218,7 @@ local linegrammar = {
    readstatement = lpeg.C(lpeg.P("READ")) * space * inputlist,
    ifstatement = lpeg.C(lpeg.P("IF")) * space * expr * space *
       lpeg.P("THEN") * space *
-      (lpeg.Ct (lpeg.Cc("GOTO") * lineno) * space + statement),
+      (lpeg.Cp()*lpeg.Ct (lpeg.Cc("GOTO") * lineno) * space + statement),
    dimstatement = lpeg.C(lpeg.P("DIM")) * space * dimlist,
    defstatement = lpeg.C(lpeg.P("DEF")) * space * lpeg.P("FN") * space
       * funname * space *
@@ -294,6 +294,7 @@ local function parse(lines, optimize, verbose)
       if not m then
 	 io.write(string.format("Syntax Error at line %d\n", count));
 	 io.write(line, "\n");
+	 nerr = nerr + 1;
       else
 	 local mend = m[#m];
 	 if mend ~= #line+1 then
@@ -308,29 +309,34 @@ local function parse(lines, optimize, verbose)
 	    prog[#prog+1] = {"LABEL",lineno};
 	    local hasif = false;
 	    local endlab = "_"..lineno;
-	    for k,v in ipairs(m[2]) do
+	    for i=1,#m[2],2 do
+	       local position, stat = m[2][i],m[2][i+1];
 	       --print(">>",k,v[1]); --Confirm first-level commands are captured
-	       if v[1] == "DATA" then
+	       if stat[1] == "DATA" then
 		  datalabels[m[1]] = #data+1;
-		  for i = 2, #v do
-		     if v[i][1] == "FLOATVAL" then
-			table.insert(data,tonumber(v[i][2]));
+		  for i = 2, #stat do
+		     local typ, val = table.unpack(stat[i]);
+		     if typ == "FLOATVAL" then
+			table.insert(data,tonumber(val));
 		     else
-			table.insert(data,v[i][2]);
+			table.insert(data,val);
 		     end
 		  end
 	       else
 		  -- Flatten nested IFs, put ELSE jump label in
 		  -- element 3
-		  while v[1] == "IF" do
+		  while stat[1] == "IF" do
 		     hasif = true;
-		     local v1 = {v[1],v[2],endlab};
-		     v1.line = lineno;
-		     prog[#prog+1] = v1;
-		     v = v[3];
+		     local stat1 = {stat[1],stat[2],endlab};
+		     stat1.line = lineno;
+		     stat1.pos = position;
+		     prog[#prog+1] = stat1;
+		     position = stat[3];
+		     stat = stat[4];
 		  end
-		  v.line = lineno;
-		  prog[#prog+1] = v;
+		  stat.line = lineno;
+		  stat.pos = position;
+		  prog[#prog+1] = stat;
 	       end
 	    end
 	    if hasif then
@@ -396,7 +402,7 @@ local function parse(lines, optimize, verbose)
       local label = v[i];
       if labeluniq[label] == nil then
 	 print("Warning: Found jump to missing line number "..label..
-		  " at BASIC line "..v.line);
+		  " at BASIC line "..v.line.." column "..v.pos);
 	 -- Erroneous labels should always be numeric labels
 	 local nlabel = tonumber(label);
 	 while labeluniq[label] == nil do
@@ -408,7 +414,7 @@ local function parse(lines, optimize, verbose)
 	    label = tostring(nlabel);
 	 end
 	 if label ~= "__OOB__" then
-	    print("-- Re-labelting to next valid line "..label);
+	    print("-- Re-labelling to next valid line "..label);
 	 else
 	    print("-- Jumps off end of program");
 	 end
@@ -528,7 +534,8 @@ local function parse(lines, optimize, verbose)
    end
       
    if nerr ~= 0 then
-      error("Parser failure");
+      print("Failed to fully parse input, exiting");
+      os.exit(0);
    end
    return prog, data, datalabels;
 end
