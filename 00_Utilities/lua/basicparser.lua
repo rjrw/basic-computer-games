@@ -342,7 +342,7 @@ local function parse(lines, optimize, verbose)
    local targetuniq, targ, lastt = {}, "", "";
    for i=#prog,1,-1 do
       local v = prog[i];
-      if v[1] ~= "TARGET" then
+      if v[1] ~= "TARGET" and v[1] ~= "REM" then
 	 targ = "";
       else
 	 if lastt == "" then
