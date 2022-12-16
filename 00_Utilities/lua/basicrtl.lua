@@ -167,6 +167,10 @@ local function dofloatlvar(basicenv,expr)
    return expr[2];
 end
 
+local function doexpr(basicenv,expr)
+   return eval(basicenv,expr[2]);
+end
+
 local function dostringvar(basicenv,expr)
    return basicenv["s_"..expr[2]];
 end
@@ -329,6 +333,7 @@ ops.INDEX     = doindex;
 ops.STRINGINDEX = dostringindex;
 ops.FUNCALL   = dofuncall;
 ops.CHUNK     = dochunk;
+ops.EXPR      = doexpr;
 
 local write = io.write;
 
@@ -796,5 +801,7 @@ local function run(prog, data, datalabels)
 end
 
 m.run = run;
+m.ops = ops;
+m.eval = eval;
 
 return m;

@@ -138,7 +138,7 @@ local exprgrammar = {
    exprlist = lpeg.Ct(( expr * space * lpeg.P(",") * space)^0 * expr),
    -- Expression hierarchy
    expr = rawexpr,
-   rawexpr = Or,
+   rawexpr = lpeg.Ct(lpeg.Cc("EXPR")*Or),
    Or = lpeg.Ct(lpeg.Cc("OR") * (And * space * lpeg.P("OR") * space)^1 * And)
       + And,
    And = lpeg.Ct(lpeg.Cc("AND") * (Not * space * lpeg.P("AND") * space)^1 * Not)
@@ -282,6 +282,56 @@ local function applyprog(prog,op)
       op(v);
    end
 end
+
+-- Class for expression template capture of expressions
+local Capture = {};
+function Capture:new(o)
+   o = o or {};
+   setmetatable(o,self);
+   self.__index = self;
+   self.__tostring = function(self) return self[1] end;
+   return o;
+end
+function Capture:__add(a)
+   return Capture:new{tostring(self).."+"..a};
+end
+function Capture:__sub(a)
+   return Capture:new{tostring(self).."-"..a};
+end
+function Capture:__mul(a)
+   return Capture:new{tostring(self).."*"..a};
+end
+function Capture:__div(a)
+   return Capture:new{tostring(self).."/"..a};
+end
+function Capture:__pow(a)
+   return Capture:new{tostring(self).."^"..a};
+end
+function Capture:__lt(a)
+   return Capture:new{tostring(self).."<"..a};
+end
+function Capture:__gt(a)
+   return Capture:new{tostring(self)..">"..a};
+end
+function Capture:__le(a)
+   return Capture:new{tostring(self).."<="..a};
+end
+function Capture:__ge(a)
+   return Capture:new{tostring(self)..">="..a};
+end
+function Capture:__concat(a)
+   return Capture:new{tostring(self)..".."..tostring(a)};
+end
+function Capture:__eq(a)
+   return Capture:new{tostring(self).."=="..a};
+end
+function Capture:__ne(a)
+   return Capture:new{tostring(self).."~="..a};
+end
+function Capture:__unm(a)
+   return Capture:new{"-"..tostring(self)};
+end
+
 
 local function parse(lines, optimize, verbose)
    local prog, data, datalabels = {}, {}, {};
@@ -531,6 +581,52 @@ local function parse(lines, optimize, verbose)
 	 prog1[#prog1+1] = {"BLOCK",block,line=block[1].line};
       end
       prog = prog1;
+   end
+
+   if false then
+      -- Use expression template method to capture expressions
+      local rtl = require"basicrtl";
+      local ops = rtl.ops;
+      local
+	 rtFLOATVAR,rtSTRINGVAR,rtINDEX,rtSTRINGINDEX,rtFUNCALL,rtEXPR =
+	 ops.FLOATVAR,ops.STRINGVAR,ops.INDEX,ops.STRINDEX,ops.FUNCALL,ops.EXPR;
+      -- Also need to override terminals
+      -- STRINGVAL, FLOATVAL
+      ops.FLOATVAR =
+	 function(basicenv,expr)
+	    return Capture:new{expr[2]};
+	 end;
+      ops.STRINGVAR =
+	 function(basicenv,expr)
+	    error("Implement me!");
+	 end;
+      ops.INDEX =
+	 function(basicenv,expr)
+	    error("Implement me!");
+	 end;
+      ops.STRINGINDEX =
+	 function(basicenv,expr)
+	    error("Implement me!");
+	 end;
+      ops.FUNCALL =
+	 function(basicenv,expr)
+	    error("Implement me!");
+	 end;
+      ops.EXPR =
+	 function(basicenv,expr)
+	    print(rtl.eval(basicenv,expr[2]));
+	    return Capture:new{"("..tostring(rtl.eval(basicenv,expr[2]))..")"};
+	 end;
+      local function opexpr(v)
+	 if type(v) ~= "table" or v[1] ~= "EXPR" then
+	    return false;
+	 end
+	 local c = rtl.eval({},v);
+	 return true,{"CHUNK",c};
+      end
+      apply(prog,opexpr);
+      ops.FLOATVAR,ops.STRINGVAR,ops.INDEX,ops.STRINDEX,ops.FUNCALL,ops.EXPR
+	 = rtFLOATVAR,rtSTRINGVAR,rtINDEX,rtSTRINGINDEX,rtFUNCALL,rtEXPR;
    end
       
    if nerr ~= 0 then
