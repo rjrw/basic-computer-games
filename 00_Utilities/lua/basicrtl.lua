@@ -392,11 +392,255 @@ local function assignf(basicenv,lval,value)
    end
 end
 
+local function donothing(basicenv,stat)
+end
+
+-- Literals
+local function dofloatval(basicenv, stat)
+   return tonumber(stat[2]);
+end
+
+local function dostring(basicenv, stat)
+   return stat[2];
+end
+
+-- Definitions
+local function dodim(basicenv,stat)
+   for i = 2,#stat do
+      local dimvar = stat[i][1];
+      local dimtype = dimvar[1];
+      local name = dimvar[2];
+      local shape = stat[i][2];
+      if #shape > 2 then
+	 error("Don't yet handle more than 2-dimensional arrays");
+      end
+      local store = {};
+      if dimtype == "FLOATARR" then
+	 if #shape == 1 then
+	    for j = 0, eval(basicenv,shape[1]) do
+	       store[j] = 0.0;
+	    end
+	 else
+	    for j = 0, eval(basicenv,shape[1]) do
+	       store[j] = {};
+	       for k = 0, eval(basicenv,shape[2]) do
+		  store[j][k] = 0.0;
+	       end
+	    end
+	 end
+	 basicenv["fa_"..name] = store;
+      else
+	 if #shape == 1 then
+	    for j = 0, eval(basicenv,shape[1]) do
+	       store[j] = "";
+	    end
+	 else
+	    for j = 0, eval(basicenv,shape[1]) do
+	       store[j] = {};
+	       for k = 0, eval(basicenv,shape[2]) do
+		  store[j][k] = "";
+	       end
+	    end
+	 end
+	 basicenv["sa_"..name] = store;
+      end	 
+   end
+end
+
+local function dodef(basicenv,stat)
+   basicenv["FN"..stat[2][2]] = {args = stat[3], expr = stat[4]};
+end
+
+-- Assignments
+local function doletn(basicenv,stat)
+   local lval = stat[2];
+   local expr = stat[3];
+   assignf(basicenv,lval,eval(basicenv,expr))
+end
+local function dolets(basicenv,stat)
+   local lval = stat[2];
+   local expr = stat[3];
+   assigns(basicenv,lval,eval(basicenv,expr))
+end
+
+-- Control flow: END, GOTO, GOSUB/RETURN, IF, ON, FOR/NEXT
+local function doend(basicenv,stat)
+   basicenv._m.quit = true;
+end
+
+-- Utilities: m_goto/ m_gosub
 local function m_goto(basicenv,label)
    local m = basicenv._m;
    m.pc = m.targets[label]-1;
 end
+local function m_gosub(basicenv,label)
+   local m = basicenv._m;
+   table.insert(m.substack,m.pc);
+   m_goto(basicenv,label);
+end
 
+local function dogoto(basicenv,stat)
+   m_goto(basicenv,stat[2]);
+end
+
+local function dogosub(basicenv,stat)
+   local m = basicenv._m;
+   m_gosub(basicenv,stat[2]);
+end
+
+local function doreturn(basicenv,stat)
+   local m = basicenv._m;
+   m.pc = table.remove(m.substack);
+end
+
+local function doif(basicenv,stat)
+   -- Logic is inverted, as machine default is to fall through to next
+   -- operation
+   local test = stat[2];
+   if not f2l(eval(basicenv,test)) then
+      -- Jump over rest of line
+      m_goto(basicenv,stat[3]);
+   end
+end
+
+local function doon(basicenv,stat)
+   local switch = math.floor(eval(basicenv,stat[2]));
+   local m = basicenv._m;
+   local loc = 3+switch;
+   if switch > 0 and loc <= #stat then
+      if stat[3] == "GOTO" then
+	 m_goto(basicenv,stat[loc]);
+      else
+	 m_gosub(basicenv,stat[loc]);
+      end
+   end
+end
+
+local function dofor(basicenv,stat)
+   local control = stat[2][2][2];
+   local init = eval(basicenv,stat[3]);
+   local last = eval(basicenv,stat[4]);
+   local step = #stat == 5 and eval(basicenv,stat[5]) or 1;
+   basicenv[control] = init;
+   local frame = { basicenv._m.pc, control, last, step};
+   table.insert(basicenv._m.forstack,frame);
+end
+
+local function donext(basicenv,stat)
+   local forstack = basicenv._m.forstack;
+   if #stat == 1 then
+      local frame = forstack[#forstack];
+      local control = frame[2];
+      local last = frame[3];
+      local step = frame[4];
+      local oldval = basicenv[control];
+      local newval = oldval + step;
+      basicenv[control] = newval;
+      if step*(newval-last) <= 0 then
+	 basicenv._m.pc = frame[1];
+	 return;
+      else
+	 table.remove(forstack);
+      end
+   else
+      for i=2,#stat do
+	 local var = stat[i][2];
+	 if var[1] ~= "FLOATVAR" then
+	    error("NEXT tag must be floating variable");
+	 end
+	 local frame = forstack[#forstack];
+	 local control = frame[2];
+	 while control ~= var[2] do
+	    table.remove(forstack);
+	    frame = forstack[#forstack];
+	    control = frame[2];
+	 end
+	 local last = frame[3];
+	 local step = frame[4];
+	 local oldval = basicenv[control];
+	 local newval = oldval + step;
+	 basicenv[control] = newval;
+	 if step*(newval-last) <= 0 then
+	    basicenv._m.pc = frame[1];
+	    return;
+	 else
+	    table.remove(forstack);
+	 end
+      end
+   end
+end
+
+-- Internal data: READ/RESTORE
+local function doread(basicenv,stat)
+   local m = basicenv._m;
+   for i=2,#stat do
+      if m.datapc > #m.data then
+	 error("Error: out of data"); 
+      end
+      local dat = m.data[m.datapc];
+      local value = eval(basicenv,dat);
+      local dtype = type(dat)
+      local lval = stat[i];
+      if dtype == "number" then
+	 assignf(basicenv,lval, value);
+      elseif dtype == "string" then
+	 assigns(basicenv,lval, value);
+      else
+	 error("READ data type "..dtype.." not implemented");
+      end
+      m.datapc = m.datapc+1;
+   end
+end
+
+local function dorestore(basicenv,stat)
+   local m = basicenv._m;
+   if #stat then
+      m.datapc = 1;
+   else
+      m.datapc = m.datatargets[stat[2]];
+   end
+end
+
+-- Input/output PRINT/INPUT
+local function doprint(basicenv,stat)
+   local printlist=stat[2];
+   local m = basicenv._m;
+   local printstr="";
+   local flush = true;
+   local j = 1;
+   for j=1,#printlist do
+      local element = printlist[j]
+      flush = true;
+      local val = "";
+      if element[1] == "PRINTSEP" then
+	 if element[2] == ";" then
+	    flush = false;
+	 elseif element[2] == "," then
+	    local newcol = 14*(math.floor(m.printcol/14)+1);
+	    val = printtab(basicenv,newcol);
+	    flush = false;
+	 end
+      elseif element[1] == "PRINTVAL" then
+	 val = eval(basicenv,element[2]);
+	 if type(val) == "number" then
+	    if val>=0 then
+	       val = " "..tostring(val).." ";
+	    else
+	       val = tostring(val).." ";
+	    end
+	 end
+      else
+	 error("Unknown printexpr type "..element[1]);
+      end
+      printstr = printstr..val;
+      m.printcol = m.printcol + #val;
+   end
+   write(printstr);
+   if flush then
+      write("\n");
+      m.printcol = 0;
+   end
+end
 local function doinput(basicenv,inputlist)
    local i=2;
    local prompt = "? ";
@@ -458,224 +702,6 @@ local function doinput(basicenv,inputlist)
    end
 end
 
-local function doprint(basicenv,stat)
-   local printlist=stat[2];
-   local m = basicenv._m;
-   local printstr="";
-   local flush = true;
-   local j = 1;
-   for j=1,#printlist do
-      local element = printlist[j]
-      flush = true;
-      local val = "";
-      if element[1] == "PRINTSEP" then
-	 if element[2] == ";" then
-	    flush = false;
-	 elseif element[2] == "," then
-	    local newcol = 14*(math.floor(m.printcol/14)+1);
-	    val = printtab(basicenv,newcol);
-	    flush = false;
-	 end
-      elseif element[1] == "PRINTVAL" then
-	 val = eval(basicenv,element[2]);
-	 if type(val) == "number" then
-	    if val>=0 then
-	       val = " "..tostring(val).." ";
-	    else
-	       val = tostring(val).." ";
-	    end
-	 end
-      else
-	 error("Unknown printexpr type "..element[1]);
-      end
-      printstr = printstr..val;
-      m.printcol = m.printcol + #val;
-   end
-   write(printstr);
-   if flush then
-      write("\n");
-      m.printcol = 0;
-   end
-end
-
-local function doletn(basicenv,stat)
-   local lval = stat[2];
-   local expr = stat[3];
-   assignf(basicenv,lval,eval(basicenv,expr))
-end
-
-local function dolets(basicenv,stat)
-   local lval = stat[2];
-   local expr = stat[3];
-   assigns(basicenv,lval,eval(basicenv,expr))
-end
-
-local function doon(basicenv,stat)
-   local switch = math.floor(eval(basicenv,stat[2]));
-   local m = basicenv._m;
-   local loc = 3+switch;
-   if switch > 0 and loc <= #stat then
-      if stat[3] == "GOSUB" then
-	 table.insert(m.substack,m.pc);
-      end
-      m_goto(basicenv,stat[loc]);
-   end
-end
-
-local function dofloatval(basicenv, stat)
-   return tonumber(stat[2]);
-end
-
-local function dostring(basicenv, stat)
-   return stat[2];
-end
-
-local function dofor(basicenv,stat)
-   local control = stat[2][2][2];
-   local init = eval(basicenv,stat[3]);
-   local last = eval(basicenv,stat[4]);
-   local step = #stat == 5 and eval(basicenv,stat[5]) or 1;
-   basicenv[control] = init;
-   local frame = { basicenv._m.pc, control, last, step};
-   table.insert(basicenv._m.forstack,frame);
-end
-
-local function donext(basicenv,stat)
-   local forstack = basicenv._m.forstack;
-   if #stat == 1 then
-      local frame = forstack[#forstack];
-      local control = frame[2];
-      local last = frame[3];
-      local step = frame[4];
-      local oldval = basicenv[control];
-      local newval = oldval + step;
-      basicenv[control] = newval;
-      if step*(newval-last) <= 0 then
-	 basicenv._m.pc = frame[1];
-	 return;
-      else
-	 table.remove(forstack);
-      end
-   else
-      for i=2,#stat do
-	 local var = stat[i][2];
-	 if var[1] ~= "FLOATVAR" then
-	    error("NEXT tag must be floating variable");
-	 end
-	 local frame = forstack[#forstack];
-	 local control = frame[2];
-	 while control ~= var[2] do
-	    table.remove(forstack);
-	    frame = forstack[#forstack];
-	    control = frame[2];
-	 end
-	 local last = frame[3];
-	 local step = frame[4];
-	 local oldval = basicenv[control];
-	 local newval = oldval + step;
-	 basicenv[control] = newval;
-	 if step*(newval-last) <= 0 then
-	    basicenv._m.pc = frame[1];
-	    return;
-	 else
-	    table.remove(forstack);
-	 end
-      end
-   end
-end
-
-local function dodim(basicenv,stat)
-   for i = 2,#stat do
-      local dimvar = stat[i][1];
-      local dimtype = dimvar[1];
-      local name = dimvar[2];
-      local shape = stat[i][2];
-      if #shape > 2 then
-	 error("Don't yet handle more than 2-dimensional arrays");
-      end
-      local store = {};
-      if dimtype == "FLOATARR" then
-	 if #shape == 1 then
-	    for j = 0, eval(basicenv,shape[1]) do
-	       store[j] = 0.0;
-	    end
-	 else
-	    for j = 0, eval(basicenv,shape[1]) do
-	       store[j] = {};
-	       for k = 0, eval(basicenv,shape[2]) do
-		  store[j][k] = 0.0;
-	       end
-	    end
-	 end
-	 basicenv["fa_"..name] = store;
-      else
-	 if #shape == 1 then
-	    for j = 0, eval(basicenv,shape[1]) do
-	       store[j] = "";
-	    end
-	 else
-	    for j = 0, eval(basicenv,shape[1]) do
-	       store[j] = {};
-	       for k = 0, eval(basicenv,shape[2]) do
-		  store[j][k] = "";
-	       end
-	    end
-	 end
-	 basicenv["sa_"..name] = store;
-      end	 
-   end
-end
-
-local function dorestore(basicenv,stat)
-   local m = basicenv._m;
-   if #stat then
-      m.datapc = 1;
-   else
-      m.datapc = m.datatargets[stat[2]];
-   end
-end
-
-local function doread(basicenv,stat)
-   local m = basicenv._m;
-   for i=2,#stat do
-      if m.datapc > #m.data then
-	 error("Error: out of data"); 
-      end
-      local dat = m.data[m.datapc];
-      local value = eval(basicenv,dat);
-      local dtype = type(dat)
-      local lval = stat[i];
-      if dtype == "number" then
-	 assignf(basicenv,lval, value);
-      elseif dtype == "string" then
-	 assigns(basicenv,lval, value);
-      else
-	 error("READ data type "..dtype.." not implemented");
-      end
-      m.datapc = m.datapc+1;
-   end
-end
-
-local function dogoto(basicenv,stat)
-   m_goto(basicenv,stat[2]);
-end
-local function dogosub(basicenv,stat)
-   local m = basicenv._m;
-   table.insert(m.substack,m.pc);
-   m_goto(basicenv,stat[2]);
-end
-local function doreturn(basicenv,stat)
-   local m = basicenv._m;
-   m.pc = table.remove(m.substack);
-end
-local function dodef(basicenv,stat)
-   basicenv["FN"..stat[2][2]] = {args = stat[3], expr = stat[4]};
-end
-local function doend(basicenv,stat)
-   basicenv._m.quit = true;
-end
-local function donothing(basicenv,stat)
-end
 
 local function exec(basicenv,stat)
    local m = basicenv._m;
@@ -684,15 +710,6 @@ local function exec(basicenv,stat)
    cmd(basicenv,stat);
 end
 
-local function doif(basicenv,stat)
-   -- Logic is inverted, as machine default is to fall through to next
-   -- operation
-   local test = stat[2];
-   if not f2l(eval(basicenv,test)) then
-      -- Jump over rest of line
-      m_goto(basicenv,stat[3]);
-   end
-end
 
 
 -- Machine state
