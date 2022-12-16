@@ -526,39 +526,6 @@ local function parse(lines, optimize, verbose)
    end
    prog = defs;
 
-   if optimize then
-      local function oplit(v)
-	 if v[1] == "FLOATVAL" then
-	    return true, tonumber(v[2]);
-	 elseif v[1] == "STRING" then
-	    return true, v[2];
-	 end
-	 return false;
-      end
-      apply(prog, oplit);
-
-      -- Not correct yet, would be enabled by apply(prog, opfloatvar)
-      -- below
-      local function makechunk(v)
-	 return "("..v..")";
-      end
-      -- Need to only apply this to rvalues at present
-      local function opfloatvar(v)
-	 if type(v)~="table" then
-	    return false;
-	 elseif v[1] == "FLOATLVAR" then
-	    return true, v;
-	 elseif v[1] == "FLOATVAR" then
-	    --print (makechunk(v[2]));
-	    return true, { "CHUNK", makechunk(v[2]) };
-	 end
-	 return false;
-      end
-      -- Start on compilation, need to distinguish array and variable
-      -- access, and probably control via flag
-      apply(prog, opfloatvar);
-   end
-
    -- Build basic blocks from code
    if true then
       local prog1,block = {},{};
@@ -587,11 +554,19 @@ local function parse(lines, optimize, verbose)
       -- Use expression template method to capture expressions
       local rtl = require"basicrtl";
       local ops = rtl.ops;
-      local
-	 rtFLOATVAR,rtSTRINGVAR,rtINDEX,rtSTRINGINDEX,rtFUNCALL,rtEXPR =
-	 ops.FLOATVAR,ops.STRINGVAR,ops.INDEX,ops.STRINDEX,ops.FUNCALL,ops.EXPR;
+      local original = {};
+      for k,v in pairs(ops) do
+	 original[k] = v
+      end
       -- Also need to override terminals
-      -- STRINGVAL, FLOATVAL
+      ops.FLOATVAL =
+	 function(basicenv,expr)
+	    return Capture:new{expr[2]};
+	 end;
+      ops.STRINGVAL =
+	 function(basicenv,expr)
+	    return Capture:new{"\""..expr[2].."\""};
+	 end;
       ops.FLOATVAR =
 	 function(basicenv,expr)
 	    return Capture:new{expr[2]};
@@ -625,8 +600,9 @@ local function parse(lines, optimize, verbose)
 	 return true,{"CHUNK",c};
       end
       apply(prog,opexpr);
-      ops.FLOATVAR,ops.STRINGVAR,ops.INDEX,ops.STRINDEX,ops.FUNCALL,ops.EXPR
-	 = rtFLOATVAR,rtSTRINGVAR,rtINDEX,rtSTRINGINDEX,rtFUNCALL,rtEXPR;
+      for k,v in original do
+	 rtl.ops[k] = v
+      end
    end
       
    if nerr ~= 0 then
