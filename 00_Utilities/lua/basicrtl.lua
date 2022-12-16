@@ -392,6 +392,11 @@ local function assignf(basicenv,lval,value)
    end
 end
 
+local function m_goto(basicenv,label)
+   local m = basicenv._m;
+   m.pc = m.targets[label]-1;
+end
+
 local function doinput(basicenv,inputlist)
    local i=2;
    local prompt = "? ";
@@ -513,7 +518,7 @@ local function doon(basicenv,stat)
       if stat[3] == "GOSUB" then
 	 table.insert(m.substack,m.pc);
       end
-      m.pc = m.targets[stat[loc]]-1;
+      m_goto(basicenv,stat[loc]);
    end
 end
 
@@ -652,13 +657,12 @@ local function doread(basicenv,stat)
 end
 
 local function dogoto(basicenv,stat)
-   local m = basicenv._m;
-   m.pc = m.targets[stat[2]]-1;
+   m_goto(basicenv,stat[2]);
 end
 local function dogosub(basicenv,stat)
    local m = basicenv._m;
    table.insert(m.substack,m.pc);
-   m.pc = m.targets[stat[2]]-1;
+   m_goto(basicenv,stat[2]);
 end
 local function doreturn(basicenv,stat)
    local m = basicenv._m;
@@ -681,15 +685,12 @@ local function exec(basicenv,stat)
 end
 
 local function doif(basicenv,stat)
+   -- Logic is inverted, as machine default is to fall through to next
+   -- operation
    local test = stat[2];
-   if f2l(eval(basicenv,test)) then
-      -- If true, run sub-statement and fall through to rest of line
-      local substat = stat[3];
-      exec(basicenv,substat);
-   else
+   if not f2l(eval(basicenv,test)) then
       -- Jump over rest of line
-      local m = basicenv._m;
-      m.pc = m.targets[stat[4]]-1;
+      m_goto(basicenv,stat[3]);
    end
 end
 

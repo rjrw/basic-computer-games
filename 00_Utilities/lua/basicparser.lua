@@ -277,26 +277,10 @@ linegrammar.expr = lpeg.Cmt(any,matchexpr);
 local basicline = lpeg.P(linegrammar);
 
 -- Functions for walking and refactoring parser output
-local function applystat(v,op)
-   op(v);
-   if v[1] == "IF" then
-      applystat(v[3],op);
-   end
-end
-
 local function applyprog(prog,op)
    for _,v in ipairs(prog) do
-      applystat(v,op);
+      op(v);
    end
-end
-
-local function ifconnect(v,endlab)
-   local function op(v)
-      if v[1] == "IF" then
-	 v[#v+1] = endlab;
-      end
-   end
-   applystat(v,op);
 end
 
 local function parse(lines, optimize, verbose)
@@ -335,10 +319,14 @@ local function parse(lines, optimize, verbose)
 		     end
 		  end
 	       else
-		  if v[1] == "IF" then
+		  -- Flatten nested IFs
+		  while v[1] == "IF" do
 		     hasif = true;
+		     local v1 = {v[1],v[2],endlab};
+		     v1.line = lineno;
+		     prog[#prog+1] = v1;
+		     v = v[3];
 		  end
-		  ifconnect(v,endlab);
 		  v.line = lineno;
 		  prog[#prog+1] = v;
 	       end
@@ -389,7 +377,7 @@ local function parse(lines, optimize, verbose)
 	    v[i] = fixtarget(v, i, targetuniq);
 	 end
       elseif v[1] == "IF" then
-	 v[#v] = fixtarget(v, #v, targetuniq);
+	 v[#v] = fixtarget(v, 3, targetuniq);
       end
    end
    applyprog(prog,retarget);
@@ -405,7 +393,7 @@ local function parse(lines, optimize, verbose)
 	       usedtargets[v[i]] = true;
 	    end
 	 elseif v[1] == "IF" then
-	    usedtargets[v[#v]] = true;
+	    usedtargets[v[3]] = true;
 	 end
       end
       applyprog(prog,op);
