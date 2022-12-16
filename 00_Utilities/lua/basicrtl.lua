@@ -701,18 +701,20 @@ local function doinput(basicenv,inputlist)
       --print(inputlist[j][1]);
    end
 end
+
+local function exec(basicenv,stat)
+   basicenv.lineno = stat.line;
+   local m = basicenv._m;
+   local cmd = m.statements[stat[1]] or
+      error("Unknown statement "..stat[1]);
+   cmd(basicenv,stat);
+end
+
 local function doblock(basicenv,stat)
    local blockstats = stat[2];
    for _,stat in ipairs(blockstats) do
       exec(basicenv, stat);
    end
-end
-
-local function exec(basicenv,stat)
-   local m = basicenv._m;
-   local cmd = m.statements[stat[1]] or
-      error("Unknown statement "..stat[1]);
-   cmd(basicenv,stat);
 end
 
 -- Machine state
@@ -764,8 +766,9 @@ local function makemachine(prog, data, datalabels)
       quit = false,
       substack = {},
       forstack = {},
+      lineno = 0,
       -- Output state
-      printcol = 0
+      printcol = 0,
    };
 end
 
@@ -773,13 +776,12 @@ local function run(prog, data, datalabels)
    local basicenv = {_m=makemachine(prog, data, datalabels)};
    while true do
       local m = basicenv._m;
-      local lineno = prog[m.pc].line;
       local status, err = pcall(
 	 function () exec(basicenv,prog[m.pc]) end
       );
       m.pc = m.pc + 1;
       if not status then
-	 local errorlocation = "BASIC line "..tostring(lineno);
+	 local errorlocation = "BASIC line "..tostring(basicenv.lineno);
 	 print("At "..errorlocation);
 	 print(err);
 	 m.quit = true;

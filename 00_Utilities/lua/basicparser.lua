@@ -502,7 +502,31 @@ local function parse(lines, optimize, verbose)
       -- access, and probably control via flag
       apply(prog, opfloatvar);
    end
-   
+
+   -- Build basic blocks from code
+   if true then
+      local prog1,block = {},{};
+      for _,v in ipairs(prog) do
+	 if v[1] == "LABEL" then
+	    if #block > 0 then
+	       prog1[#prog1+1] = {"BLOCK",block,line=block[1].line};
+	       block = {};
+	    end	 
+	    prog1[#prog1+1] = v;
+	 else
+	    block[#block+1] = v;
+	    if jumpfields[v[1]] or v[1] == "NEXT" or v[1] == "FOR" then
+	       prog1[#prog1+1] = {"BLOCK",block,line=block[1].line};
+	       block = {};
+	    end
+	 end
+      end
+      if #block > 0 then
+	 prog1[#prog1+1] = {"BLOCK",block,line=block[1].line};
+      end
+      prog = prog1;
+   end
+      
    if nerr ~= 0 then
       error("Parser failure");
    end
