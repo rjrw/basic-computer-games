@@ -284,7 +284,7 @@ local function applyprog(prog,op)
 end
 
 local function parse(lines, optimize, verbose)
-   local prog, data, datatargets = {}, {}, {};
+   local prog, data, datalabels = {}, {}, {};
    local nerr = 0;
    
    -- Parse input file
@@ -305,13 +305,13 @@ local function parse(lines, optimize, verbose)
 	 else	 
 	    local lineno = m[1];
 	    lastline = tonumber(lineno);
-	    prog[#prog+1] = {"TARGET",lineno};
+	    prog[#prog+1] = {"LABEL",lineno};
 	    local hasif = false;
 	    local endlab = "_"..lineno;
 	    for k,v in ipairs(m[2]) do
 	       --print(">>",k,v[1]); --Confirm first-level commands are captured
 	       if v[1] == "DATA" then
-		  datatargets[m[1]] = #data+1;
+		  datalabels[m[1]] = #data+1;
 		  for i = 2, #v do
 		     if v[i][1] == "FLOATVAL" then
 			table.insert(data,tonumber(v[i][2]));
@@ -320,7 +320,7 @@ local function parse(lines, optimize, verbose)
 		     end
 		  end
 	       else
-		  -- Flatten nested IFs, put ELSE jump target in
+		  -- Flatten nested IFs, put ELSE jump label in
 		  -- element 3
 		  while v[1] == "IF" do
 		     hasif = true;
@@ -334,12 +334,12 @@ local function parse(lines, optimize, verbose)
 	       end
 	    end
 	    if hasif then
-	       prog[#prog+1] = {"TARGET",endlab};
+	       prog[#prog+1] = {"LABEL",endlab};
 	    end
 	 end
       end      
    end
-   prog[#prog+1] = {"TARGET","__OOB__"};
+   prog[#prog+1] = {"LABEL","__OOB__"};
 
    -- Find last valid line number in program
    local lastline = 0;
@@ -359,8 +359,8 @@ local function parse(lines, optimize, verbose)
       ON = {4,-1}
    };
 
-   -- Utility to apply operation to jump targets
-   local function forjumptargets(op)
+   -- Utility to apply operation to jump labels
+   local function forjumplabels(op)
       local function range(fields, v)
 	 local i1 = fields[1];
 	 local i2 = fields[2] or i1;
@@ -378,56 +378,56 @@ local function parse(lines, optimize, verbose)
       end      
    end
 
-   -- Merge adjacent targets and patch over jumps to undefined targets
-   local targetuniq, lasttarget = {}, "";
+   -- Merge adjacent labels and patch over jumps to undefined labels
+   local labeluniq, lastlabel = {}, "";
    for i=#prog,1,-1 do
       local v = prog[i];
-      if v[1] == "TARGET" then
-	 if lasttarget == "" then
-	    lasttarget = v[2];
+      if v[1] == "LABEL" then
+	 if lastlabel == "" then
+	    lastlabel = v[2];
 	 end
-	 targetuniq[v[2]]=lasttarget;
+	 labeluniq[v[2]]=lastlabel;
       elseif v[1] ~= "REM" then
-	 lasttarget = "";
+	 lastlabel = "";
       end
    end
    
-   local function fixtarget(v, i)
-      local target = v[i];
-      if targetuniq[target] == nil then
-	 print("Warning: Found jump to missing line number "..target..
+   local function fixlabel(v, i)
+      local label = v[i];
+      if labeluniq[label] == nil then
+	 print("Warning: Found jump to missing line number "..label..
 		  " at BASIC line "..v.line);
-	 -- Erroneous targets should always be numeric labels
-	 local ntarget = tonumber(target);
-	 while targetuniq[target] == nil do
-	    ntarget = 1+ntarget;
-	    if ntarget > lastline then
-	       target = "__OOB__";
+	 -- Erroneous labels should always be numeric labels
+	 local nlabel = tonumber(label);
+	 while labeluniq[label] == nil do
+	    nlabel = 1+nlabel;
+	    if nlabel > lastline then
+	       label = "__OOB__";
 	       break;
 	    end
-	    target = tostring(ntarget);
+	    label = tostring(nlabel);
 	 end
-	 if target ~= "__OOB__" then
-	    print("-- Re-targetting to next valid line "..target);
+	 if label ~= "__OOB__" then
+	    print("-- Re-labelting to next valid line "..label);
 	 else
 	    print("-- Jumps off end of program");
 	 end
       end
-      v[i] = targetuniq[target];
+      v[i] = labeluniq[label];
    end
-   applyprog(prog,forjumptargets(fixtarget));
+   applyprog(prog,forjumplabels(fixlabel));
    
-   -- Remove unused targets to highlight basic blocks
-   local usedtargets = {};
+   -- Remove unused labels to highlight basic blocks
+   local usedlabels = {};
    function collectused(v,i)
-      usedtargets[v[i]] = true;
+      usedlabels[v[i]] = true;
    end
-   applyprog(prog,forjumptargets(collectused));
+   applyprog(prog,forjumplabels(collectused));
 
-   -- Copy across used targets and executable statements
+   -- Copy across used labels and executable statements
    local prog1 = {}; 
    for _,v in ipairs(prog) do
-      if v[1] ~= "TARGET" or usedtargets[v[2]] then
+      if v[1] ~= "LABEL" or usedlabels[v[2]] then
 	 prog1[#prog1+1] = v;
       end
    end
@@ -506,7 +506,7 @@ local function parse(lines, optimize, verbose)
    if nerr ~= 0 then
       error("Parser failure");
    end
-   return prog, data, datatargets;
+   return prog, data, datalabels;
 end
 
 -- Cut-down grammar just for reading user input

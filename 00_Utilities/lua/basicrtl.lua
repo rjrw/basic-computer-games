@@ -334,24 +334,24 @@ local write = io.write;
 
 local function assigns(basicenv,lval,value)
    local ttype = lval[1];
-   local target = lval[2];
+   local label = lval[2];
    if ttype == "STRINGELEMENT" then
       if #lval[3] > 2 then
 	 error("More than 2-dimensional access not yet implemented");
       end
-      local eltype = target[1];
+      local eltype = label[1];
       if eltype ~= "STRINGARR" then
 	 error("Non-string access not yet implemented");
       end
       if #lval[3] == 1 then
 	 local index = eval(basicenv,lval[3][1]);
-	 basicenv["sa_"..target[2]][index] = value;
+	 basicenv["sa_"..label[2]][index] = value;
       else
 	 local i1, i2 = eval(basicenv,lval[3][1]),eval(basicenv,lval[3][2]);
-	 basicenv["sa_"..target[2]][i1][i2] = value;
+	 basicenv["sa_"..label[2]][i1][i2] = value;
       end
    else
-      basicenv["s_"..target] = value;
+      basicenv["s_"..label] = value;
    end
 end
 
@@ -360,18 +360,18 @@ local function assignf(basicenv,lval,value)
       lval = lval[2];
    end
    local ttype = lval[1];
-   local target = lval[2];
+   local label = lval[2];
    if ttype == "FLOATVAR" then
-      basicenv[target] = value;
+      basicenv[label] = value;
    elseif ttype == "ELEMENT" then
       if #lval[3] > 2 then
 	 error("More than 2-dimensional access not yet implemented");
       end
-      local eltype = target[1];
+      local eltype = label[1];
       if eltype ~= "FLOATARR" then
 	 error("Non-floating access not yet implemented");
       end
-      local arrname = "fa_"..target[2];
+      local arrname = "fa_"..label[2];
       if #lval[3] == 1 then
 	 -- Create default size array
 	 local index = eval(basicenv,lval[3][1]);
@@ -471,7 +471,7 @@ end
 -- Utilities: m_goto/ m_gosub
 local function m_goto(basicenv,label)
    local m = basicenv._m;
-   m.pc = m.targets[label]-1;
+   m.pc = m.labels[label]-1;
 end
 local function m_gosub(basicenv,label)
    local m = basicenv._m;
@@ -597,7 +597,7 @@ local function dorestore(basicenv,stat)
    if #stat then
       m.datapc = 1;
    else
-      m.datapc = m.datatargets[stat[2]];
+      m.datapc = m.datalabels[stat[2]];
    end
 end
 
@@ -719,9 +719,9 @@ end
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
 -- sa_xxx is string array
-local function makemachine(prog, data, datatargets)
+local function makemachine(prog, data, datalabels)
    local statements = {
-      TARGET    = donothing,
+      LABEL     = donothing,
       END       = doend,
       REM       = donothing,
       FLOATVAL  = dofloatval,
@@ -746,18 +746,18 @@ local function makemachine(prog, data, datatargets)
       BLOCK     = doblock      
    };
    -- Create jump table
-   local targets = {};
+   local labels = {};
    for k,v in ipairs(prog) do
-      if v[1] == "TARGET" then
-	 targets[v[2]] = k;
+      if v[1] == "LABEL" then
+	 labels[v[2]] = k;
       end
    end
 
    return {
       prog = prog,
-      targets = targets,
+      labels = labels,
       data = data,
-      datatargets = datatargets,
+      datalabels = datalabels,
       statements = statements,
       pc = 1,
       datapc = 1,
@@ -769,8 +769,8 @@ local function makemachine(prog, data, datatargets)
    };
 end
 
-local function run(prog, data, datatargets)
-   local basicenv = {_m=makemachine(prog, data, datatargets)};
+local function run(prog, data, datalabels)
+   local basicenv = {_m=makemachine(prog, data, datalabels)};
    while true do
       local m = basicenv._m;
       local lineno = prog[m.pc].line;

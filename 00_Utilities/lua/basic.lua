@@ -120,7 +120,7 @@ end
 outfile = outfile ~= "" and outfile or filename:gsub(baspat,".lua");
 
 local lines = readfile(filename);
-local prog, data, datatargets = parser.parse(lines, optimize, verbose);
+local prog, data, datalabels = parser.parse(lines, optimize, verbose);
 
 if dump then
    -- Save
@@ -129,15 +129,15 @@ if dump then
    file:write("local rtl = require\"basicrtl\";\n");
    file:write("local data = ");
    deepwrite(file,data,0);
-   file:write(";\nlocal datatargets = ");
-   deepwrite(file,datatargets,0);
+   file:write(";\nlocal datalabels = ");
+   deepwrite(file,datalabels,0);
    file:write(";\nlocal prog = ");
    deepwrite(file,prog,0);
-   file:write(";\nrtl.run(prog, data, datatargets);\n");
+   file:write(";\nrtl.run(prog, data, datalabels);\n");
    file:close();
 end
 
 if exec then
    local rtl = require"basicrtl";
-   rtl.run(prog, data, datatargets);
+   rtl.run(prog, data, datalabels);
 end
