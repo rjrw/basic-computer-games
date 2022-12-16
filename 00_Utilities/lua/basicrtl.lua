@@ -701,7 +701,12 @@ local function doinput(basicenv,inputlist)
       --print(inputlist[j][1]);
    end
 end
-
+local function doblock(basicenv,stat)
+   local blockstats = stat[2];
+   for _,stat in ipairs(blockstats) do
+      exec(basicenv, stat);
+   end
+end
 
 local function exec(basicenv,stat)
    local m = basicenv._m;
@@ -709,8 +714,6 @@ local function exec(basicenv,stat)
       error("Unknown statement "..stat[1]);
    cmd(basicenv,stat);
 end
-
-
 
 -- Machine state
 -- Symbol table -> environment
@@ -739,7 +742,8 @@ local function makemachine(prog, data, datatargets)
       PRINT     = doprint,
       INPUT     = doinput,
       RANDOMIZE = dorandomize,
-      IF        = doif
+      IF        = doif,
+      BLOCK     = doblock      
    };
    -- Create jump table
    local targets = {};

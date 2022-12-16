@@ -319,7 +319,8 @@ local function parse(lines, optimize, verbose)
 		     end
 		  end
 	       else
-		  -- Flatten nested IFs
+		  -- Flatten nested IFs, put ELSE jump target in
+		  -- element 3
 		  while v[1] == "IF" do
 		     hasif = true;
 		     local v1 = {v[1],v[2],endlab};
@@ -333,6 +334,33 @@ local function parse(lines, optimize, verbose)
 	    end
 	    if hasif then
 	       prog[#prog+1] = {"TARGET",endlab};
+	    end
+	 end
+      end      
+   end
+
+   -- Specify which fields in control flow statements contain labels
+   local jumpfields = {
+      GOTO = {2},
+      GOSUB = {2},
+      IF = {3},
+      ON = {4,-1}
+   };
+
+   -- Utility to apply operation to jump targets
+   local function forjumptargets(op)
+      local function range(fields, v)
+	 local i1 = fields[1];
+	 local i2 = fields[2] or i1;
+	 if i2 == -1 then i2 = #v end;
+	 return i1, i2;
+      end
+      return function (v)
+	 local fields = jumpfields[v[1]];
+	 if fields then
+	    local i1, i2 = range(fields, v);
+	    for i = i1,i2 do
+	       op(v, i);
 	    end
 	 end
       end      
@@ -354,7 +382,7 @@ local function parse(lines, optimize, verbose)
 	 targetuniq[v[2]]=targ;
       end
    end
-   local function fixtarget(v, i, targetuniq)
+   local function fixtarget(v, i)
       local target = v[i];
       if targetuniq[target] == nil then
 	 print("Warning: Found jump to missing target "..target..
@@ -366,37 +394,18 @@ local function parse(lines, optimize, verbose)
 	    break;
 	 end
       end
-      return targetuniq[target];
+      v[i] = targetuniq[target];
    end
    
-   local function retarget(v)
-      if v[1] == "GOTO" or v[1] == "GOSUB" then
-	 v[2] = fixtarget(v, 2, targetuniq);
-      elseif v[1] == "ON" then
-	 for i = 4,#v do
-	    v[i] = fixtarget(v, i, targetuniq);
-	 end
-      elseif v[1] == "IF" then
-	 v[#v] = fixtarget(v, 3, targetuniq);
-      end
-   end
-   applyprog(prog,retarget);
+   applyprog(prog,forjumptargets(fixtarget));
    
    -- Remove unused targets to highlight basic blocks
    local function findusedtargets(prog)
       local usedtargets = {};
-      local function op(v)
-	 if v[1] == "GOTO" or v[1] == "GOSUB" then
-	    usedtargets[v[2]] = true;
-	 elseif v[1] == "ON" then
-	    for i = 4,#v do
-	       usedtargets[v[i]] = true;
-	    end
-	 elseif v[1] == "IF" then
-	    usedtargets[v[3]] = true;
-	 end
+      function collect(v,i)
+	 usedtargets[v[i]] = true;
       end
-      applyprog(prog,op);
+      applyprog(prog,forjumptargets(collect));
       return usedtargets;
    end
    
