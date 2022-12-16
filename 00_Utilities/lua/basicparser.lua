@@ -304,6 +304,7 @@ local function parse(lines, optimize, verbose)
 	    nerr = nerr + 1;
 	 else	 
 	    local lineno = m[1];
+	    lastline = tonumber(lineno);
 	    prog[#prog+1] = {"TARGET",lineno};
 	    local hasif = false;
 	    local endlab = "_"..lineno;
@@ -338,6 +339,17 @@ local function parse(lines, optimize, verbose)
 	 end
       end      
    end
+   prog[#prog+1] = {"TARGET","__OOB__"};
+
+   -- Find last valid line number in program
+   local lastline = 0;
+   for i=#prog,1,-1 do
+      local v = prog[i];
+      if v.line then
+	 lastline = tonumber(v.line);
+	 break;
+      end
+   end
 
    -- Specify which fields in control flow statements contain labels
    local jumpfields = {
@@ -367,49 +379,52 @@ local function parse(lines, optimize, verbose)
    end
 
    -- Merge adjacent targets and patch over jumps to undefined targets
-   local targetuniq, targ, lastt = {}, "", "";
+   local targetuniq, lasttarget = {}, "";
    for i=#prog,1,-1 do
       local v = prog[i];
-      if v[1] ~= "TARGET" and v[1] ~= "REM" then
-	 targ = "";
-      else
-	 if lastt == "" then
-	    lastt = v[2];
+      if v[1] == "TARGET" then
+	 if lasttarget == "" then
+	    lasttarget = v[2];
 	 end
-	 if targ == "" then
-	    targ = v[2];
-	 end
-	 targetuniq[v[2]]=targ;
+	 targetuniq[v[2]]=lasttarget;
+      elseif v[1] ~= "REM" then
+	 lasttarget = "";
       end
    end
+   
    local function fixtarget(v, i)
       local target = v[i];
       if targetuniq[target] == nil then
-	 print("Warning: Found jump to missing target "..target..
+	 print("Warning: Found jump to missing line number "..target..
 		  " at BASIC line "..v.line);
-      end
-      while targetuniq[target] == nil do
-	 target = string.format("%d",1+target);
-	 if target == lastt then
-	    break;
+	 -- Erroneous targets should always be numeric labels
+	 local ntarget = tonumber(target);
+	 while targetuniq[target] == nil do
+	    ntarget = 1+ntarget;
+	    if ntarget > lastline then
+	       target = "__OOB__";
+	       break;
+	    end
+	    target = tostring(ntarget);
+	 end
+	 if target ~= "__OOB__" then
+	    print("-- Re-targetting to next valid line "..target);
+	 else
+	    print("-- Jumps off end of program");
 	 end
       end
       v[i] = targetuniq[target];
    end
-   
    applyprog(prog,forjumptargets(fixtarget));
    
    -- Remove unused targets to highlight basic blocks
-   local function findusedtargets(prog)
-      local usedtargets = {};
-      function collect(v,i)
-	 usedtargets[v[i]] = true;
-      end
-      applyprog(prog,forjumptargets(collect));
-      return usedtargets;
+   local usedtargets = {};
+   function collectused(v,i)
+      usedtargets[v[i]] = true;
    end
-   
-   local usedtargets = findusedtargets(prog);
+   applyprog(prog,forjumptargets(collectused));
+
+   -- Copy across used targets and executable statements
    local prog1 = {}; 
    for _,v in ipairs(prog) do
       if v[1] ~= "TARGET" or usedtargets[v[2]] then
