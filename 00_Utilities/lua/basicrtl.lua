@@ -502,9 +502,10 @@ local function doif(basicenv,stat)
    -- Logic is inverted, as machine default is to fall through to next
    -- operation
    local test = stat[2];
-   if not f2l(eval(basicenv,test)) then
-      -- Jump over rest of line
+   if f2l(eval(basicenv,test)) then
       m_goto(basicenv,stat[3]);
+   else
+      m_goto(basicenv,stat[4]);
    end
 end
 

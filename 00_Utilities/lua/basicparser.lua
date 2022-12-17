@@ -335,7 +335,7 @@ end
 
 local function parse(lines, optimize, verbose)
    local prog, data, datalabels = {}, {}, {};
-   local nerr = 0;
+   local nerr, ifcount = 0, 0;
    
    -- Parse input file
    for count,line in ipairs(lines) do
@@ -358,7 +358,7 @@ local function parse(lines, optimize, verbose)
 	    lastline = tonumber(lineno);
 	    prog[#prog+1] = {"LABEL",lineno};
 	    local hasif = false;
-	    local endlab = "_"..lineno;
+	    local elselabel = "_E"..lineno;
 	    for i=1,#m[2],2 do
 	       local position, stat = m[2][i],m[2][i+1];
 	       --print(">>",k,v[1]); --Confirm first-level commands are captured
@@ -377,10 +377,14 @@ local function parse(lines, optimize, verbose)
 		  -- element 3
 		  while stat[1] == "IF" do
 		     hasif = true;
-		     local stat1 = {stat[1],stat[2],endlab};
+		     ifcount = ifcount+1;
+		     local iflabel = "_I"..tostring(ifcount);
+		     local stat1 = {"IF",stat[2],
+				    iflabel,elselabel};
 		     stat1.line = lineno;
 		     stat1.pos = position;
 		     prog[#prog+1] = stat1;
+		     prog[#prog+1] = {"LABEL",iflabel};
 		     position = stat[3];
 		     stat = stat[4];
 		  end
@@ -390,7 +394,7 @@ local function parse(lines, optimize, verbose)
 	       end
 	    end
 	    if hasif then
-	       prog[#prog+1] = {"LABEL",endlab};
+	       prog[#prog+1] = {"LABEL",elselabel};
 	    end
 	 end
       end      
@@ -411,7 +415,7 @@ local function parse(lines, optimize, verbose)
    local jumpfields = {
       GOTO = {2},
       GOSUB = {2},
-      IF = {3},
+      IF = {3,4},
       ON = {4,-1}
    };
 
