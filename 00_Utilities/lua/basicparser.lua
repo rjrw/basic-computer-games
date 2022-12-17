@@ -530,7 +530,8 @@ local function parse(lines, optimize, verbose)
    end
    prog = defs;
 
-   -- Build basic blocks from code
+   -- Build basic blocks from code.  To make blocks truly relocatable,
+   -- need to add fall-through targets for FOR and NEXT
    if true then
 
       function addblock(prog, block)
@@ -547,9 +548,14 @@ local function parse(lines, optimize, verbose)
 	    prog1[#prog1+1] = v;
 	 else
 	    block[#block+1] = v;
-	    -- Statements with jumps, plus "NEXT" and "FOR" end basic
-	    -- blocks
-	    if jumpfields[v[1]] or v[1] == "NEXT" or v[1] == "FOR" then
+	    -- Statements with jumps, plus "FOR" end basic blocks.
+	    -- "FOR" needs next statement to be accessible after the
+	    -- implicit jump sets the pc.  "NEXT" is more arguable,
+	    -- but is useful to have as last statement in block for
+	    -- static analysis purposes and implementations of
+	    -- FOR/NEXT which assume nesting
+	    if jumpfields[v[1]] or
+	       v[1] == "FOR" or v[1] == "NEXT" or v[1] == "RETURN" then
 	       addblock(prog1,block);
 	       block = {};
 	    end
@@ -561,6 +567,64 @@ local function parse(lines, optimize, verbose)
       prog = prog1;
    end
 
+   if false then
+      local rtl = require"basicrtl";
+      local jumps = rtl.jumptable(prog);
+      local forstack = {};
+      local starts = {1};
+      local annotation = {};
+      local function copystack(stack)
+	 local s = {};
+	 for k,v in pairs(stack) do
+	    s[k] = v;
+	 end
+	 return s;
+      end
+      -- Add all GOSUB targets to starts
+      for _,startpc in ipairs(starts) do
+	 local tips = {startpc};
+	 while #tips > 1 do
+	    pc = table.remove(tips);
+	    while pc <= #prog do
+	       -- if we've been here before, check and quit
+	       if annotation[pc] then
+		  if startpc ~= annotation[pc].startpc then
+		     print("Warning, reached same statement from within"..
+			      "differing routines");
+		  end
+		  -- check consistent forstack
+		  break;
+	       end
+	       -- first time through, leave breadcrumb
+	       annotation[pc] = {
+		  forstack = copystack(forstack),
+		  startpc  = startpc
+	       };
+	       local block = prog[pc];
+	       if block[1] == "BLOCK" then
+		  local stats = block[2];
+		  local laststat = stats[#stats];
+		  if laststat[1] == "FOR" then
+		     -- Add variable to forstack
+		     forstack[#forstack+1] = laststat[2];
+		  elseif laststat[1] == "NEXT" then
+		     -- Check if variable is on forstack, pop forstack
+		  elseif laststat[1] == "GOSUB" then
+		     -- Assume fall-through
+		  elseif laststat[1] == "RETURN" then
+		     -- Check forstack is empty
+		  else
+		     for _,v in ipairs(jumpfields[laststat[1]]) do
+			tips[#tips+1] = jumps[laststat[v]];
+		     end
+		  end
+	       end
+	       pc = pc+1;
+	    end
+	 end
+      end
+   end
+   
    if false then
       -- Use expression template method to capture expressions
       local rtl = require"basicrtl";

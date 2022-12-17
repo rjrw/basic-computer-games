@@ -724,6 +724,17 @@ local function doblock(basicenv,stat)
    end
 end
 
+
+local function jumptable(prog)
+   local labels = {};
+   for k,v in ipairs(prog) do
+      if v[1] == "LABEL" then
+	 labels[v[2]] = k;
+      end
+   end
+   return labels;
+end
+
 -- Machine state
 -- Symbol table -> environment
 -- Loose names are floats, fa_xxx is floating array, s_xxx is string,
@@ -754,17 +765,10 @@ local function makemachine(prog, data, datalabels)
       IF        = doif,
       BLOCK     = doblock      
    };
-   -- Create jump table
-   local labels = {};
-   for k,v in ipairs(prog) do
-      if v[1] == "LABEL" then
-	 labels[v[2]] = k;
-      end
-   end
-
+   -- Create jump table   
    return {
       prog = prog,
-      labels = labels,
+      labels = jumptable(prog),
       data = data,
       datalabels = datalabels,
       statements = statements,
@@ -809,5 +813,6 @@ end
 m.run = run;
 m.ops = ops;
 m.eval = eval;
+m.jumptable = jumptable;
 
 return m;
