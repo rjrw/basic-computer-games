@@ -532,24 +532,31 @@ local function parse(lines, optimize, verbose)
 
    -- Build basic blocks from code
    if true then
+
+      function addblock(prog, block)
+	 prog[#prog+1] = {"BLOCK",block,line=block[1].line};
+      end
+      
       local prog1,block = {},{};
       for _,v in ipairs(prog) do
 	 if v[1] == "LABEL" then
 	    if #block > 0 then
-	       prog1[#prog1+1] = {"BLOCK",block,line=block[1].line};
+	       addblock(prog1,block);
 	       block = {};
 	    end	 
 	    prog1[#prog1+1] = v;
 	 else
 	    block[#block+1] = v;
+	    -- Statements with jumps, plus "NEXT" and "FOR" end basic
+	    -- blocks
 	    if jumpfields[v[1]] or v[1] == "NEXT" or v[1] == "FOR" then
-	       prog1[#prog1+1] = {"BLOCK",block,line=block[1].line};
+	       addblock(prog1,block);
 	       block = {};
 	    end
 	 end
       end
       if #block > 0 then
-	 prog1[#prog1+1] = {"BLOCK",block,line=block[1].line};
+	 addblock(prog1,block);
       end
       prog = prog1;
    end
