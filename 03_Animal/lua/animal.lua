@@ -14,7 +14,12 @@ local a = {
 a[0] = 4;
 local n = a[0];
 -- Main control section
-io.write("Are you thinking of an animal? ");
+local s = "";
+repeat
+   io.write("Are you thinking of an animal? ");
+   s = io.read():lower();
+until s:sub(1,1) == "y";
+local k = 1;
 
 --[[
 110 N=VAL(A$(0))
