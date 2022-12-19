@@ -4,19 +4,19 @@ function banner()
    io.write(string.rep(" ",15),
 	    "CREATIVE COMPUTING  MORRISTOWN, NEW JERSEY\n");
    io.write("\n\n\n");
+   io.write("Play 'Guess the Animal'\n\n");
+   io.write("Think of an animal and the computer will try to guess it.\n\n");
 end
-banner();
+
+local a = {
+   ":Q Does it swim:Y2:N3:", ":AFish",":ABird"
+};
+a[0] = 4;
+local n = a[0];
+-- Main control section
+io.write("Are you thinking of an animal? ");
+
 --[[
-20 PRINT TAB(15);"CREATIVE COMPUTING  MORRISTOWN, NEW JERSEY"
-30 PRINT: PRINT: PRINT
-40 PRINT "PLAY 'GUESS THE ANIMAL'"
-45 PRINT
-50 PRINT "THINK OF AN ANIMAL AND THE COMPUTER WILL TRY TO GUESS IT."
-60 PRINT
-70 DIM A$(200)
-80 FOR I=0 TO 3
-90 READ A$(I)
-100 NEXT I
 110 N=VAL(A$(0))
 120 REM          MAIN CONTROL SECTION
 130 INPUT "ARE YOU THINKING OF AN ANIMAL";A$
