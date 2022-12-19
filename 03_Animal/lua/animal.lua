@@ -44,17 +44,11 @@ local function nextquestion(a,k)
    local q = a[k];
    local c = "";
    repeat
-      for z=3,#q do
-	 if q:sub(z,z) ~= ":" then
-	    io.write(q:sub(z,z));
-	 else
-	    io.write("? ");
-	    break;
-	 end
-      end
+      local f = assert(q:find(":",3));
+      io.write (q:sub(3,f-1),"? ");
       c = io.read():lower():sub(1,1);
    until c == "y" or c == "n";
-   local x = assert(q:match(":"..c.."([^:])",3));
+   local x = assert(q:match(":"..c.."([^:]+)",3));
    return tonumber(x);
 end
 
@@ -68,8 +62,9 @@ while true do
       k = nextquestion(a,k);
       if a[k] == nil then os.exit(); end;
    until a[k]:sub(1,2) ~= ":q";
-   
-   io.write("Is it a ",a[k]:sub(3),"? ");
+
+   local found = a[k]:sub(3);
+   io.write("Is it a ",found,"? ");
    local s = io.read():sub(1,1):lower();
    if s == "y" then
       print("Why not try another animal?");
@@ -77,7 +72,7 @@ while true do
       io.write("The animal you were thinking of was a ? ");
       local animal = io.read();
       io.write("Please type in a question that would distinguish a ",
-	       animal," from a ",a[k]:sub(3)," ? ");
+	       animal," from a ",found," ? ");
       local query = io.read();
       local answer = "";
       repeat
@@ -89,6 +84,6 @@ while true do
       a[z1] = a[k];
       a[z1+1] = ":a"..animal;
       a[k] = ":q"..query..":"..
-	 answer..tonumber(z1+1)..":"..other..tonumber(z1)..":";
+	 answer..tostring(z1+1)..":"..other..tostring(z1)..":";
    end
 end
