@@ -9,77 +9,86 @@ function banner()
 end
 
 local a = {
-   ":Q Does it swim:Y2:N3:", ":AFish",":ABird"
+   ":q Does it swim:y2:n3:", ":aFish",":aBird"
 };
-a[0] = 4;
-local n = a[0];
--- Main control section
-local s = "";
-repeat
-   io.write("Are you thinking of an animal? ");
-   s = io.read():lower();
-until s:sub(1,1) == "y";
-local k = 1;
+local function list()
+   io.write("\n\nThe animals I already know are\n");
+   local x=0;
+   for i=1,#a do
+      local animal = a[i]:match("^:a(.*)");
+      if animal then
+	 io.write(animal);
+	 x = x+1;
+	 if x == 4 then
+	    x = 0;
+	    io.write("\n");
+	 else
+	    io.write(string.rep(" ",15-#animal));
+	 end
+      end
+   end
+   io.write(x == 0 and "\n" or "\n\n");
+end
 
---[[
-110 N=VAL(A$(0))
-120 REM          MAIN CONTROL SECTION
-130 INPUT "ARE YOU THINKING OF AN ANIMAL";A$
-140 IF A$="LIST" THEN 600
-150 IF LEFT$(A$,1)<>"Y" THEN 120
-160 K=1
-170 GOSUB 390
-180 IF LEN(A$(K))=0 THEN 999
-190 IF LEFT$(A$(K),2)="\Q" THEN 170
-200 PRINT "IS IT A ";RIGHT$(A$(K),LEN(A$(K))-2);
-210 INPUT A$
-220 A$=LEFT$(A$,1)
-230 IF LEFT$(A$,1)="Y" THEN PRINT "WHY NOT TRY ANOTHER ANIMAL?": GOTO 120
-240 INPUT "THE ANIMAL YOU WERE THINKING OF WAS A ";V$
-250 PRINT "PLEASE TYPE IN A QUESTION THAT WOULD DISTINGUISH A"
-260 PRINT V$;" FROM A ";RIGHT$(A$(K),LEN(A$(K))-2)
-270 INPUT X$
-280 PRINT "FOR A ";V$;" THE ANSWER WOULD BE ";
-290 INPUT A$
-300 A$=LEFT$(A$,1): IF A$<>"Y" AND A$<>"N" THEN 280
-310 IF A$="Y" THEN B$="N"
-320 IF A$="N" THEN B$="Y"
-330 Z1=VAL(A$(0))
-340 A$(0)=STR$(Z1+2)
-350 A$(Z1)=A$(K)
-360 A$(Z1+1)="\A"+V$
-370 A$(K)="\Q"+X$+"\"+A$+STR$(Z1+1)+"\"+B$+STR$(Z1)+"\"
-380 GOTO 120
-390 REM     SUBROUTINE TO PRINT QUESTIONS
-400 Q$=A$(K)
-410 FOR Z=3 TO LEN(Q$)
-415 IF MID$(Q$,Z,1)<>"\" THEN PRINT MID$(Q$,Z,1);: NEXT Z
-420 INPUT C$
-430 C$=LEFT$(C$,1)
-440 IF C$<>"Y" AND C$<>"N" THEN 410
-450 T$="\"+C$
-455 FOR X=3 TO LEN(Q$)-1
-460 IF MID$(Q$,X,2)=T$ THEN 480
-470 NEXT X
-475 STOP
-480 FOR Y=X+1 TO LEN(Q$)
-490 IF MID$(Q$,Y,1)="\" THEN 510
-500 NEXT Y
-505 STOP
-510 K=VAL(MID$(Q$,X+2,Y-X-2))
-520 RETURN
-530 DATA "4","\QDOES IT SWIM\Y2\N3\","\AFISH","\ABIRD"
-600 PRINT:PRINT "ANIMALS I ALREADY KNOW ARE:"
-605 X=0
-610 FOR I=1 TO 200
-620 IF LEFT$(A$(I),2)<>"\A" THEN 650
-624 PRINT TAB(15*X);
-630 FOR Z=3 TO LEN(A$(I))
-640 IF MID$(A$(I),Z,1)<>"\" THEN PRINT MID$(A$(I),Z,1);: NEXT Z
-645 X=X+1: IF X=4 THEN X=0: PRINT
-650 NEXT I
-660 PRINT
-670 PRINT
-680 GOTO 120
-999 END
---]]
+local function prompt(s)
+   repeat
+      io.write("Are you thinking of an animal? ");
+      local s = io.read():lower();
+      if s == "list" then
+	 list();
+      end
+   until s:sub(1,1) == "y";
+end
+
+local function nextquestion(a,k)
+   local q = a[k];
+   local c = "";
+   repeat
+      for z=3,#q do
+	 if q:sub(z,z) ~= ":" then
+	    io.write(q:sub(z,z));
+	 else
+	    io.write("? ");
+	    break;
+	 end
+      end
+      c = io.read():lower():sub(1,1);
+   until c == "y" or c == "n";
+   local x = assert(q:match(":"..c.."([^:])",3));
+   return tonumber(x);
+end
+
+-- Main control section
+while true do
+   prompt("Are you thinking of an animal");
+   
+   local k = 1;
+
+   repeat
+      k = nextquestion(a,k);
+      if a[k] == nil then os.exit(); end;
+   until a[k]:sub(1,2) ~= ":q";
+   
+   io.write("Is it a ",a[k]:sub(3),"? ");
+   local s = io.read():sub(1,1):lower();
+   if s == "y" then
+      print("Why not try another animal?");
+   else
+      io.write("The animal you were thinking of was a ? ");
+      local animal = io.read();
+      io.write("Please type in a question that would distinguish a ",
+	       animal," from a ",a[k]:sub(3)," ? ");
+      local query = io.read();
+      local answer = "";
+      repeat
+	 io.write("For a ",animal," the answer would be? ");
+	 answer = io.read():sub(1,1):lower();
+      until answer == "y" or answer == "n";
+      local other = answer == "y" and "n" or "y";
+      local z1 = #a+1;
+      a[z1] = a[k];
+      a[z1+1] = ":a"..animal;
+      a[k] = ":q"..query..":"..
+	 answer..tonumber(z1+1)..":"..other..tonumber(z1)..":";
+   end
+end
