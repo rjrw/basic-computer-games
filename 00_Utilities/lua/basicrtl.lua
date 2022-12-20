@@ -262,7 +262,7 @@ end
 
 local function donot(basicenv,expr)
    local val = eval(basicenv,expr[2]);
-   return l2f(~f2l(val));
+   return l2f(not f2l(val));
 end
 
 local function docompare(basicenv,expr)
